@@ -88,3 +88,90 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 imporaciones desde la terminal integrada del proyect
 npm i @nestjs/config
 npm i @neondatabase/serverless
+
+<!-- curso -->
+const id= "user cualquiera' OR '1'='1";
+sql ´select * from users where usersTable.login = ''´ 
+
+//21/02/2025
+
+//DELETE FROM users;  tarda 1hr en borrar los registros
+//TRUNCATE FROM users;  
+
+
+AUTENTICACION
+CONTRASEÑAS: HAY QUE ENCRIPTAR LAS CONTRASEÑAS PARA EVITAR HACKEOS O ROBOS DE INFORMACION
+INYECCIONES SQL? 
+
+QUERY BUILDER ES  SON LAS FUNCIONES QUE USO PARA CONSULTAS GRACIAS AL ORM
+TAMBIEN SE PUEDE ESCRIBIR EN MODO TEXTO COMO CONSULTA NORMAL asi: db.EXECUTE('select * from users') 
+
+instalar  https://www.npmjs.com/package/argon2 que es un algoritmo hasg para para encriptaciones de contraseña Y como es un hash no se puede desencriptar.
+
+  async getUsers() {
+    
+    const result = await this.conn
+    // .select()
+    .select({
+      id: usersTable.id,
+      nombre: usersTable.name,
+      apellido: usersTable.lastname,
+      // role_id: usersTable.roles_id, //no. Solo hay que cargar la informacion necesaria porque la informacion viaja como texto con el protocolo de comunicacion de datos: HTTPS , y mientras menos informacion mande mas rapido viaja
+      role: roleTable.code,
+    })
+    .from(usersTable)
+    .innerJoin( roleTable, eq( usersTable.roles_id ,roleTable.id ) )
+
+    return result; //resultado es un json con clave(nombre del campo) y valor(valor del campo)
+  }
+
+      const newUser = {
+        ...createUser,
+        password: hash, //reemplaza el password que viene en el ...createUser con un nuevo valor: hash. Estoy sobreescribiendo la contraseña
+        roles_id: 1
+      };
+
+try{
+}casj{
+}
+Es para  manejar los errores.
+Intenta gacer lo que esta en parentesis, y si encuentra un error ejecuta lo que hay en el hash
+Todo lo que coloque afuera del try para llamar algo que esta dentro del try NO lo va a reconocer porque solo existe dentro de las llaves del try, por eso el insert tambien va dentro de las llaves
+
+
+Ataque DoS o 'Ataque de denegacion de servicio'? investigar. inyectan virus que lo que hacen es i nyectar scripts y cuando hacen llamadas corren millones de scripts y eso tumba un servidor. entonces el serv se vuelve vulnerable y pueden acceder a sus datos.
+
+<!-- curso -->
+tabla de usuarios:
+SELECT id, name, lastname, age, email, created_at, roles_id, password, username
+	FROM public.users;
+	
+	/*
+	-inyeccion de sql de antes actualmente ya es raro pero ocurre en sistemas antiguos. asi pueden ser hackeados los sistemas para obtener todos los usuarios de un tabla
+	-info sensible
+	claves,cuentas de banco
+	las contraseñas no se deben ver. se debe usar CIFRASDO Y HASH para cifrar esta infrmacion sensible
+ejemplo los bancos cuando se hace transferencia la inform se cifra y no se descifra hasta que llega al banco
+los mensj de whasap cuando en vias un  mensj a un persona. el msj de cifra y solo puede ser descifrado por el destinatario.
+
+DIFERENCIAS ENTRE:
+HASH
+el cifrado puedes encriptar y desencriptar
+HASH
+no la puedes volver a desencriptar.
+conviertes un valor 'hola' en -> HASH y no lo puedes volver a su forma original
+Ejemplo usando la pagina md5.cz que coloco un valor y me da un hash. PERO ACTUAQLMENTE YA NO ES SEGURO PORQUE HAY PERSONAS QUE YA DESCRIFRARON ESTE HASH DE MD5
+Ejemplo con SHA1
+EJEMPLO SHA2
+DIFERENCIA ENTRE SHA1 Y SHA2: SHA2 ES MAS LARGO
+EJEMPLO : Argon2 . LIBRERIA node-argon2
+
+lo recomendable es SHA256  Y SHA512 TAMBIEN PERO ES MUY LARGO ASI QUE MUUUY LENTO, PPOR ESO ES MEJOR EL ***** SHA256 ******
+
+Y MIENTRAS MAS CORTO ES MAS INSEGURO, ENTONCERS HAY QUE BUSCAR LOS MAS LARGOS
+
+el ***** Argon2 ****** es mas seguro que el ***** SHA256 ******
+*/
+
+--inyeccion de sql: si ejecuto ese script en la tabla de mi BD me va a traer toda la informacion. Tambien si coloco solo esto en el campo de login de m i formulario login:  'user cualquiera' OR '1'='1' , y coloco contraseña y le doy al boton entonces me voy a las herramientas de desarrollador en Network que me saldra el endpoint del login, y entonces el hacker puede tomar el endpoint y coloar en el login ese scrip y le dara toda la info
+	select * from users where users.username = 'user cualquiera' OR '1'='1'
