@@ -4,7 +4,6 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { roleTable, usersTable } from './db/schema';
 import { eq } from 'drizzle-orm'
 import { CreateUserDto } from './app.controller';
-// import { hash } from 'argon2'; //no me sirve
 import * as argon2 from "argon2";
 
 @Injectable()
@@ -13,35 +12,53 @@ export class AppService {
  constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) {}
 
   async getUsers() {
-    
-    const result = await this.conn
-    // .select()
-    .select({
-      id: usersTable.id,
-      nombre: usersTable.name,
-      apellido: usersTable.lastname,
-      // role_id: usersTable.roles_id, //no. Solo hay que cargar la informacion necesaria porque la informacion viaja como texto con el protocolo de comunicacion de datos: HTTPS , y mientras menos informacion mande mas rapido viaja
-      role: roleTable.code,
-    })
-    .from(usersTable)
-    .innerJoin( roleTable, eq( usersTable.roles_id ,roleTable.id ) )
 
-    return result; //resultado es un json con clave(nombre del campo) y valor(valor del campo)
+    try{
+    
+      const result = await this.conn
+      // .select()
+      .select({
+        id: usersTable.id,
+        nombre: usersTable.name,
+        apellido: usersTable.lastname,
+        // role_id: usersTable.roles_id, //no. Solo hay que cargar la informacion necesaria porque la informacion viaja como texto con el protocolo de comunicacion de datos: HTTPS , y mientras menos informacion mande mas rapido viaja
+        role: roleTable.code,
+      })
+      .from(usersTable)
+      .innerJoin( roleTable, eq( usersTable.roles_id ,roleTable.id ) )
+  
+      return result; //resultado es un json con clave(nombre del campo) y valor(valor del campo)
+
+    }catch(err){
+
+      console.error("Error al obtener usuarios:", err);
+      throw new Error("Error al obtener usuarios");
+    }
+
   }
+
   async getUserbyId(id:number) {
     
-    const result = await this.conn.select().from(usersTable).where(
-      eq( usersTable.id, id )
-    )
+    try{
 
-    return result;
+      const result = await this.conn.select()
+        .from(usersTable)
+        .where(eq( usersTable.id, id ));
+  
+      return result[0] || null;
+      
+    }catch(err){
+      console.error("Error en la base de datos al buscar el usuario:", err);
+      throw new Error("Error al obtener el usuario " + err);
+    }
   }
+
   async createUser( createUser : CreateUserDto){
 
     try {//todo lo que coloque afuera del try para llamar algo que esta dentro del try NO lo va a reconocer porque solo existe dentro de las llaves del try, por eso el insert tambien va dentro de las llaves
       console.log("hascreateUser.passwordh" ,createUser.password)
         const hash = await argon2.hash( createUser.password );
-console.log("hash", hash ) 
+      console.log("hash", hash ) 
         /*     const newUser = {
         name: "katherine",
         lastname: "gutierrez",
@@ -61,7 +78,7 @@ console.log("hash", hash )
 
     } catch (err) {
 
-      throw new Error("Error al crear un usuario" + err);
+      throw new Error("Error al crear un usuario " + err);
     }
 
      return "Usuario registrado";
@@ -104,7 +121,7 @@ try{
 }
 
 es para  manejar los errores.
-intenta gacer lo que esta en parentesis, y si encuentra un error ejecuta lo que hay en el hash
+intenta hacer lo que esta en parentesis, y si encuentra un error ejecuta lo que hay en el hash
 
 Ataque DoS o 'Ataque de denegacion de servicio'? investigar. inyectan virus que lo que hacen es i nyectar scripts y cuando hacen llamadas corren millones de scripts y eso tumba un servidor. entonces el serv se vuelve vulnerable y pueden acceder a sus datos.
 

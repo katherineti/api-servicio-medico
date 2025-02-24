@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 
-export class CreateUserDto{
+export class CreateUserDto{//datos desde el formulario de registro de usuario
   name:string;
   lastname:string;
   email:string;
