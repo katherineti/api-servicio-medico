@@ -175,3 +175,45 @@ el ***** Argon2 ****** es mas seguro que el ***** SHA256 ******
 
 --inyeccion de sql: si ejecuto ese script en la tabla de mi BD me va a traer toda la informacion. Tambien si coloco solo esto en el campo de login de m i formulario login:  'user cualquiera' OR '1'='1' , y coloco contraseña y le doy al boton entonces me voy a las herramientas de desarrollador en Network que me saldra el endpoint del login, y entonces el hacker puede tomar el endpoint y coloar en el login ese scrip y le dara toda la info
 	select * from users where users.username = 'user cualquiera' OR '1'='1'
+
+  26/02
+  configurar el cors en el archivo main.ts
+  //funciona si haces request entre paginas web
+  app.enableCors({
+    // origin: ['*'], //colocar siempre : acepta todos
+    origin: ['https://www.appfrontangular.com'], //restringo las paginas que se pueden comunicar con mi api
+    methods: ['GET','POST','UPDATE','DELETE'],//si no coloco nada acepta todo
+    allowedHeaders: ['content-Type', 'origin'], //headers permitidos
+    credentials: false
+  })
+//limitador de velcoidad (request) : es para evitar el error 409 cuando una pagina recibe muchas peticiones
+//rey limit configurar el RATE LIMING limita la cantidad de solicitudes por segundos, si excedes el maximo se ace la conexion
+
+*******************
+  instalacion del comando: npm install --save @nestjs/jwt
+  en el servicio de autenticacion INYECTAR el :JwtService
+
+                                    es tu llave de acceso al servidor: JWT
+SUB - SIGNIFICA SUBJECT 
+PAGINA DE JWT: https://emn178.github.io/online-tools/sha256.html
+
+1)en el servicio del auth , en un metodo login colocar esto:
+            const payload = { sub: user.id, username: user.username };
+            return { //TOKEN  es la firma 
+              access_token: await this.jwtService.signAsync(payload),
+            };penv
+2) en el mo dulo App importar el modulo JWT con una configuracion, asi:
+a)en el archivo de constantes, agregar esto:
+export const JWTSecret = process.env.JWT_SECRET; //accede a la variable JWT_SECRET en el archivo enviroment
+a)en el enviroment agergar esto: 
+JWT_SECRET = 2ca98e7b4098aad1450a7351d3598d2eeddecfa508932caafe34387534725e90 
+
+a)agregar esto en el import dl modulo app:
+    JwtModule.register({
+      global: true,
+      secret: JWTSecret, //jwtConstants.secret,
+      // signOptions: { expiresIn: '60s' }, //se vence en una hora
+      // signOptions: { expiresIn: '1d' }, //expira en 1 dia
+      signOptions: { expiresIn: 60*60*24 },  //expira en 1 dia - tambien se pone asi
+    }),
+  
