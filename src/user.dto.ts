@@ -1,4 +1,5 @@
-import { IsString, IsNumber, IsNotEmpty, IsEmail } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsEmail, IsUUID, IsDate } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 /* 
 //DTO basico :
@@ -18,6 +19,7 @@ export class UserDto{
 export class UserDto{
 
     @IsNumber()
+    @IsUUID()
     id: number;
 
     @IsString()
@@ -45,6 +47,8 @@ export class UserDto{
     @IsNotEmpty()
     password: string;
 
+    @IsDate()
+    @Transform( ( {value} )=> new Date(value).toISOString() )
     created_at: string;
 
     @IsNumber()
