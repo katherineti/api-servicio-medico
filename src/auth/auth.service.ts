@@ -15,7 +15,7 @@ export class AuthService {
         private jwtService: JwtService
     ) {}
 
-        async signin(email:string, password: string) {
+        async signIn(email:string, password: string): Promise<any> {
             
             const user = await this.usersService.findOne(email);
 
@@ -29,9 +29,13 @@ export class AuthService {
                 throw new UnauthorizedException("Contraseña incorrecta");
             }
 
-            const payload = { sub: user.id, username: user.username };
+            const payload = { 
+              sub: user.id, 
+              username: user.username, 
+              email: user.email
+            };
 
-            return { //TOKEN  es la firma 
+            return { //TOKEN es la firma 
               access_token: await this.jwtService.signAsync(payload),
             };
           }
