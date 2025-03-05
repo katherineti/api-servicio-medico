@@ -219,3 +219,13 @@ a)agregar esto en el import dl modulo app:
       signOptions: { expiresIn: 60*60*24 },  //expira en 1 dia - tambien se pone asi
     }),
   
+
+ultimo usuario creado el 05/03
+{
+ // "name":"kathe",
+ // "lastname":"guti",
+  "email":"katy@gmail.com",
+ // "username":"miusername",
+  "password":"12345678"
+ // "age":2
+}
