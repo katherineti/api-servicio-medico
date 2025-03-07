@@ -1,6 +1,7 @@
 import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './signIn.dto';
+import { CreateUserDto } from 'src/app.controller';
 
 //crea un archivo llamado signIn.dto.ts en tu directorio auth
 /*
@@ -19,11 +20,17 @@ export class AuthController {
 
     @HttpCode(HttpStatus.OK)
     @Post('login')
+    // @Roles(Role.Admin)
     // signin( @Body() signInDto: signInDto ){
-    signin( @Body() signInDto: SignInDto ): Promise<{ access_token: string }>{
+    signIn( @Body() signInDto: SignInDto ): Promise<{ access_token: string }>{
         return this.authService.signIn(
             signInDto.email,
             signInDto.password
         );
     }
+
+/*     @Post('signUp')
+    signUp( @Body() createUser: CreateUserDto ) {
+    return this.authService.signUp(createUser);
+    } */
 }

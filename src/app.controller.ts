@@ -1,5 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import { Roles } from './decorators/role.decorators';
+import { RoleType } from 'types';
 
 export class CreateUserDto{//datos desde el formulario de registro de usuario
   name:string;
@@ -21,6 +23,7 @@ export class AppController {
   }
 
   @Post()
+  @Roles(RoleType.Admin)
   createUser( @Body() createUser: CreateUserDto ) {
     return this.appService.createUser(createUser);
   }
