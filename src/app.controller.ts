@@ -23,7 +23,7 @@ export class AppController {
   }
 
   @Post()
-  @Roles(RoleType.Admin)
+  @Roles(RoleType.Admin)//solo  el admin puede crear usuario.
   createUser( @Body() createUser: CreateUserDto ) {
     return this.appService.createUser(createUser);
   }

@@ -29,8 +29,8 @@ export class AuthController {
         );
     }
 
-/*     @Post('signUp')
+    @Post('signUp')
     signUp( @Body() createUser: CreateUserDto ) {
-    return this.authService.signUp(createUser);
-    } */
+        return this.authService.signUp(createUser);
+    } 
 }

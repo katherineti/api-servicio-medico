@@ -32,7 +32,8 @@ export class AuthService {
             const payload = { 
               sub: user.id, 
               username: user.username, 
-              email: user.email
+              email: user.email,
+              role: user.role
             };
             console.log("JWTSecret " , JWTSecret)
             console.log("payload " , payload)
@@ -42,5 +43,11 @@ export class AuthService {
                 secret: JWTSecret
               }),
             };
-          }
+        }
+
+        async signUp(signUp): Promise<string> {
+              
+              const user = await this.usersService.createUser(signUp);
+              return user
+        }
 }

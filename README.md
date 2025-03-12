@@ -196,7 +196,7 @@ el ***** Argon2 ****** es mas seguro que el ***** SHA256 ******
                                     es tu llave de acceso al servidor: JWT
 SUB - SIGNIFICA SUBJECT 
 
-PAGINA DE JWT: https://emn178.github.io/online-tools/sha256.html
+PAGINA DE JWT: https://emn178.github.io/online-tools/.html
 PAGINA WEB DE DOCUMENTACION PARA token con nest.js : https://docs.nestjs.com/security/authentication
 
 1)en el servicio del auth , en un metodo login colocar esto:
