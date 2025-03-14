@@ -1,7 +1,7 @@
 import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './signIn.dto';
-import { CreateUserDto } from 'src/app.controller';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
 //crea un archivo llamado signIn.dto.ts en tu directorio auth
 /*

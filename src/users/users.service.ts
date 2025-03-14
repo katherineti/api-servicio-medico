@@ -3,8 +3,8 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { roleTable, usersTable } from 'src/db/schema';
 import { eq } from 'drizzle-orm'
-import { CreateUserDto } from 'src/app.controller';
 import * as argon2 from "argon2";
+import { CreateUserDto } from './dto/create-user.dto';
 
 type User = {
     id: number;
@@ -68,12 +68,17 @@ export class UsersService {
             email: "katherine.revenga@gmail.com",
             username: "kathe",
             password: "12345678",
-            roles_id: 1
+            roles_id: 
+            //tambien:
+            url_image
+            id_departamento
+            id_cargo
           }; */
           const newUser = {
             ...createUser,
             password: hash, //reemplaza el password que viene en el ...createUser con un nuevo valor: hash. Estoy sobreescribiendo la contraseña
-            roles_id: 1
+            roles_id: 1,
+            status: 1
           };
     
          await this.db.insert(usersTable).values(newUser);

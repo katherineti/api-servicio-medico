@@ -3,8 +3,8 @@ import { PG_CONNECTION } from './constants';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { roleTable, usersTable } from './db/schema';
 import { eq } from 'drizzle-orm'
-import { CreateUserDto } from './app.controller';
 import * as argon2 from "argon2";
+import { CreateUserDto } from './users/dto/create-user.dto';
 
 @Injectable()
 export class AppService {
@@ -71,10 +71,11 @@ export class AppService {
       const newUser = {
         ...createUser,
         password: hash, //reemplaza el password que viene en el ...createUser con un nuevo valor: hash. Estoy sobreescribiendo la contraseña
-        roles_id: 1
+        roles_id: 1,
+        status: 1
       };
 
-     await this.conn.insert(usersTable).values(newUser);
+      await this.conn.insert(usersTable).values(newUser);
 
     } catch (err) {
 
