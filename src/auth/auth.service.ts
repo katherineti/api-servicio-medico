@@ -5,6 +5,8 @@ import { JWTSecret, PG_CONNECTION } from 'src/constants';
 import { UsersService } from 'src/users/users.service';
 import * as argon2 from "argon2";
 import { JwtService } from '@nestjs/jwt';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,7 +19,7 @@ export class AuthService {
 
         async signIn(email:string, password: string): Promise<{ access_token: string }> {
             
-            const user = await this.usersService.findOne(email);
+            const user = await this.usersService.findOnByEmail(email);
 
             if(!user){
                throw new UnauthorizedException("Usuario no encontrado"); 
@@ -49,5 +51,20 @@ export class AuthService {
               
               const user = await this.usersService.createUser(signUp);
               return user
+        }
+        async updateUser(user:CreateUserDto): Promise<any> {
+          //existe el id?
+/*           if( !await this.usersService.findOnByEmail(user.email) ){
+            throw new Error("No existe el email");
+          }
+            if( !await this.usersService.getUserbyId(id) ){
+              throw new Error("No existe el id usuario");
+            } */
+
+            return await this.usersService.updateUser(user);
+        }
+
+        async deleteUser(id:number): Promise<any> {
+          return await this.usersService.delete(id);
         }
 }

@@ -1,14 +1,22 @@
-import { IsString, IsNumber, IsNotEmpty, IsEmail } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsEmail, IsOptional } from 'class-validator';
 
 export class CreateUserDto{
 
+        @IsNumber()
+        @IsOptional()
+        id: number;
+
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     name: string;
 
     @IsString()
     @IsNotEmpty()
     lastname: string;
+
+    @IsString()
+    @IsNotEmpty()
+    birthdate: string;
 
     @IsEmail()
     @IsString()
@@ -23,10 +31,6 @@ export class CreateUserDto{
     @IsNotEmpty()
     password: string;  
 
-    @IsNumber()
-    @IsNotEmpty()
-    age: number;
-
     @IsString()
     @IsNotEmpty()
     url_image: string;
@@ -37,5 +41,10 @@ export class CreateUserDto{
 
     @IsNumber()
     @IsNotEmpty()
-    id_cargo: number;
+    id_cargo: number; 
+    
+    @IsNumber()
+    // @IsOptional()
+    @IsNotEmpty()
+    status: number; 
 }

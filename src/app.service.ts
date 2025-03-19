@@ -9,7 +9,9 @@ import { CreateUserDto } from './users/dto/create-user.dto';
 @Injectable()
 export class AppService {
 
- constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) {}
+ constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) {
+  console.log("********coneccion BD  " , this.conn);
+ }
 
   async getUsers() {
 
@@ -54,11 +56,14 @@ export class AppService {
   }
 
   async createUser( createUser : CreateUserDto){
+    console.log("********coneccion BD  " , this.conn);
 
     try {//todo lo que coloque afuera del try para llamar algo que esta dentro del try NO lo va a reconocer porque solo existe dentro de las llaves del try, por eso el insert tambien va dentro de las llaves
       console.log("hascreateUser.passwordh" ,createUser.password)
         const hash = await argon2.hash( createUser.password );
       console.log("hash", hash ) 
+  console.log("********coneccion BD  " , this.conn);
+
         /*     const newUser = {
         name: "katherine",
         lastname: "gutierrez",
@@ -68,17 +73,43 @@ export class AppService {
         password: "12345678",
         roles_id: 1
       }; */
-      const newUser = {
+/*       const newUser = {
         ...createUser,
         password: hash, //reemplaza el password que viene en el ...createUser con un nuevo valor: hash. Estoy sobreescribiendo la contraseña
         roles_id: 1,
-        status: 1
-      };
+        // status: 1
+      }; */
 
-      await this.conn.insert(usersTable).values(newUser);
+      // await this.conn.insert(usersTable).values(newUser);
+// await this.conn.select().from(usersTable);
+/* const result = await this.conn.select()
+.from(usersTable)
+.where(eq( usersTable.id, 1 )); */
+this.conn.select().from(usersTable)
+const newUser = {
+  ...createUser,
+  // password: hash, //reemplaza el password que viene en el ...createUser con un nuevo valor: hash. Estoy sobreescribiendo la contraseña
+  roles_id: 1,
+  // status: 1
+};
+/* console.log("entrada: " , newUser)
+      const a = await this.conn.insert(usersTable).values({
+        name: "katherine",
+        lastname: "gutierrez",
+        // age: 26,
+        email: "katherine.revenga@gmail.com",
+        username: "kathe",
+        password: "12345678",
+        roles_id: 1,
+        birthdate: "2000-01-01",
+        url_image:"",
+        id_departamento:0,
+        id_cargo:0,
+        status:0
+      }); */
 
     } catch (err) {
-
+      console.log(this.conn) 
       throw new Error("Error al crear un usuario " + err);
     }
 

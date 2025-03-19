@@ -32,7 +32,6 @@ export class RolesGuard implements CanActivate {
       return true;
     } */
 
-
     const request = context.switchToHttp().getRequest();
     console.log("request",request.headers.authorization)
     const bearerToken = request.headers.authorization
@@ -44,6 +43,7 @@ export class RolesGuard implements CanActivate {
     console.log("tokenSinBearer", tokenSinBearer )
 
     const payloadToken=this.jwtService.decode(tokenSinBearer)
+    console.log("payloadToken", payloadToken )
     console.log("payloadToken.role", payloadToken.role )
    
     // if( requiredRoles.includes('USER')){
