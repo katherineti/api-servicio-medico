@@ -52,14 +52,18 @@ export class AuthService {
               const user = await this.usersService.createUser(signUp);
               return user
         }
+        
         async updateUser(user:CreateUserDto): Promise<any> {
-          //existe el id?
-/*           if( !await this.usersService.findOnByEmail(user.email) ){
-            throw new Error("No existe el email");
-          }
-            if( !await this.usersService.getUserbyId(id) ){
+
+            let email = await this.usersService.findOnByEmail(user.email)
+            if( !email){
+              throw new Error("No existe el email");
+            }
+
+            let id= await this.usersService.getUserbyId(user.id);
+            if( !id ){
               throw new Error("No existe el id usuario");
-            } */
+            }
 
             return await this.usersService.updateUser(user);
         }

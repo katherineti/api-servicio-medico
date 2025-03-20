@@ -91,7 +91,7 @@ export class UsersService {
             roles_id: 
             //tambien:
             url_image
-            id_departamento
+            subdependency_id
             id_cargo
           }; */
           const newUser = {
@@ -130,13 +130,14 @@ export class UsersService {
           birthdate: createUser.birthdate,
           email: createUser.email,
           username: createUser.username,
-          password: createUser.password,
+          // password: createUser.password,
           url_image: createUser.url_image,
-          id_departamento: createUser.id_departamento,
-          id_cargo: createUser.id_cargo
+          subdependency_id: createUser.subdependency_id,
+          id_cargo: createUser.id_cargo,
+          contract_type: createUser.contract_type,
         })
         .where(eq(usersTable.id,  createUser.id))
-        .returning({ updatedId: usersTable.id });
+        .returning({ updatedId: usersTable.id }); //salida: [{"updatedId": 2 }]
 
         } catch (err) {
     
@@ -149,5 +150,4 @@ export class UsersService {
       delete(id:number){
         return this.db.delete(usersTable).where(eq(usersTable.id, id));
       }
-
 }

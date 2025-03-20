@@ -28,8 +28,9 @@ export class CreateUserDto{
     username: string;
 
     @IsString()
-    @IsNotEmpty()
-    password: string;  
+    @IsOptional()
+    // @IsNotEmpty()
+    password: string;  //en la actualizacion de usuario la contraseña no se necesita
 
     @IsString()
     @IsNotEmpty()
@@ -37,11 +38,15 @@ export class CreateUserDto{
     
     @IsNumber()
     @IsNotEmpty()
-    id_departamento: number;
+    subdependency_id: number;
 
     @IsNumber()
     @IsNotEmpty()
     id_cargo: number; 
+
+    @IsNumber()
+    @IsNotEmpty()
+    contract_type: number; 
     
     @IsNumber()
     // @IsOptional()
