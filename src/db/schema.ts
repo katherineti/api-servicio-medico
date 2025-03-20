@@ -36,7 +36,6 @@ export const usersTable = pgTable("users", {
   subdependency_id: integer().notNull().references( ()=>subdependenciesTable.id ),
   id_cargo: integer().notNull(),
   contract_type: integer().notNull(),
-  // status: integer().notNull(),
   status: integer().notNull().references( ()=>statusTable.id ),
   roles_id: integer().notNull().references( ()=>roleTable.id ),
   created_at: timestamp().defaultNow(),
@@ -44,6 +43,29 @@ export const usersTable = pgTable("users", {
 });
 
 /*
+--1
+select * from public.status
+--2
+SELECT * FROM public.roles;
+--3
+SELECT * FROM public.dependencies;
+--4
+SELECT * FROM public.subdependencies;
+--5
+SELECT * FROM public.users;
+
 INSERT INTO public.status(status)
 	VALUES ('Activo'),('Inactivo'),('De baja'),('Vacaciones');
+
+INSERT INTO public.dependencies(
+	 name, description, floor)
+	VALUES ( 'Tecnologia', 'Gerencia de Tecnologia',2);
+	
+INSERT INTO public.subdependencies(
+	 name, description, dependency_id)
+	VALUES 
+	('Soporte', null, 1),
+	('Redes', null, 1),
+	('Desarrollo de software', null, 1);
+
 */
