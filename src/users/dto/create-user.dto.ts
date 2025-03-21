@@ -1,10 +1,10 @@
-import { IsString, IsNumber, IsNotEmpty, IsEmail, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsEmail, IsOptional, IsDecimal } from 'class-validator';
 
 export class CreateUserDto{
 
-        @IsNumber()
-        @IsOptional()
-        id: number;
+    @IsNumber()
+    @IsOptional()
+    id: number;
 
     @IsString()
     @IsOptional()
@@ -13,6 +13,10 @@ export class CreateUserDto{
     @IsString()
     @IsNotEmpty()
     lastname: string;
+
+    @IsString()
+    @IsNotEmpty()
+    gender: string;
 
     @IsString()
     @IsNotEmpty()
@@ -29,7 +33,6 @@ export class CreateUserDto{
 
     @IsString()
     @IsOptional()
-    // @IsNotEmpty()
     password: string;  //en la actualizacion de usuario la contraseña no se necesita
 
     @IsString()
@@ -40,16 +43,23 @@ export class CreateUserDto{
     @IsNotEmpty()
     subdependency_id: number;
 
-    @IsNumber()
+    @IsString()
     @IsNotEmpty()
-    id_cargo: number; 
+    job_title: string;
 
     @IsNumber()
     @IsNotEmpty()
     contract_type: number; 
-    
-    @IsNumber()
+
+    // @IsDecimal()
+    // @IsNotEmpty()
     // @IsOptional()
-    @IsNotEmpty()
-    status: number; 
+    salary: number;
+
+    
+    updated_at: Date;
+    
+    // @IsNumber()
+    // @IsNotEmpty()
+    // status: number; 
 }
