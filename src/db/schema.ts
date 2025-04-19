@@ -1,133 +1,75 @@
-import { sql } from "drizzle-orm";
-import { check, integer, numeric, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, timestamp, varchar, boolean, pgEnum } from "drizzle-orm/pg-core";
 
-export const typesContractsTable = pgTable("types_contracts",{
-  id: serial().primaryKey(),
-  type_contract: varchar({ length: 255 }).notNull().unique(),
-})
+export const rolesEnum = pgEnum("roles", ["admin", "user"]);
+export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes","Equipos_Odontologicos"]);
 
-export const dependenciesTable = pgTable("dependencies",{
-  id: serial().primaryKey(),
-  name: varchar({ length: 255 }).notNull().unique(),
-  description: varchar({ length: 255 }).notNull(),
-  floor: integer().notNull()
-})
+export const usersTable = pgTable("users", {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    name: varchar({ length: 255 }).notNull(),
+    email: varchar({ length: 255 }).notNull().unique(),
+    password: varchar({ length: 255 }).notNull(),
+    role: rolesEnum().default("user"),
+    isActivate: boolean('isActivate').notNull().default(true),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().defaultNow()
+});
 
-export const subdependenciesTable = pgTable("subdependencies",{
-  id: serial().primaryKey(),
-  name: varchar({ length: 255 }).notNull().unique(),
-  description: varchar({ length: 255 }),
-  dependency_id: integer().notNull().references( ()=>dependenciesTable.id ),
-})
-
-export const statusTable = pgTable("status",{
+export const categoriesTable = pgTable("categories", {
+    id: serial().primaryKey(),
+    name: varchar({ length: 255 }).notNull(),
+    type: ProductTypeEnum().notNull(),
+    created_at: timestamp().defaultNow(),
+    updated_at: timestamp().defaultNow()
+});
+export const productStatusTable = pgTable("productStatus",{
   id: serial().primaryKey(),
   status: varchar({ length: 255 }).notNull().unique(),
 })
-
-export const roleTable = pgTable("roles",{
-  id: serial().primaryKey(),
-  code: varchar({ length: 255 }).notNull().unique() ,
-})
-
-export const usersTable = pgTable("users", {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar({ length: 255 }).notNull(),
-    lastname: varchar({ length: 255 }).notNull(),
-    gender: varchar({ length: 1 }).notNull(), 
-    birthdate: varchar().notNull(),
-    email: varchar({ length: 255 }).notNull().unique(),
-    username: varchar({ length: 255 }).notNull().unique(),
-    password: varchar({ length: 255 }).notNull(),
+export const productsTable = pgTable("products", {
+    id: serial().primaryKey(),
     url_image: varchar({ length: 255 }).notNull(),
-    subdependency_id: integer().notNull().references(() => subdependenciesTable.id),
-    job_title: varchar({ length: 255 }).notNull(),
-    contract_type: integer().notNull().references(() => typesContractsTable.id),
-    salary: numeric("salary", { precision: 10, scale: 2 }).default("0").notNull(),
-    roles_id: integer().notNull().references(() => roleTable.id),
-    created_at: timestamp().defaultNow(),
-    updated_at: timestamp().defaultNow(),
-    status: integer().notNull().references(() => statusTable.id),
-}, (table) => [ 
-    // check("salary_positive", sql`${table.salary} >= 0`), // Restricción CHECK
-    check("valid_gender", sql`${table.gender} IN ('F', 'M')`), // Restricción CHECK para gender
-]);
-
-/*
-export const usersTable = pgTable("users", {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    description: varchar({ length: 255 }).notNull(),
+    code: varchar({ length: 255 }).notNull().unique(),
+    stock: integer().notNull().default(0),
     name: varchar({ length: 255 }).notNull(),
-    lastname: varchar({ length: 255 }).notNull(),
-    birthdate: varchar().notNull(),
+    categoryId: integer().notNull().references(() => categoriesTable.id),
+    type: ProductTypeEnum().notNull(),
+    statusId: integer().notNull().references(() => productStatusTable.id),
+    //modificaciones
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow()
+});
+export const employeeTable = pgTable("employee", {
+    id: serial().primaryKey(),
+    name: varchar({ length: 255 }).notNull(),
+    cedula: varchar({ length: 255 }).notNull(),
     email: varchar({ length: 255 }).notNull().unique(),
-    username: varchar({ length: 255 }).notNull().unique(),
-    password: varchar({ length: 255 }).notNull(),
-    url_image: varchar({ length: 255 }).notNull(),
-    subdependency_id: integer().notNull().references(() => subdependenciesTable.id),
-    job_title: varchar({ length: 255 }).notNull(),
-    contract_type: integer().notNull().references(() => typesContractsTable.id),
-    status: integer().notNull().references(() => statusTable.id),
-    roles_id: integer().notNull().references(() => roleTable.id),
-    salary: numeric("salary", { precision: 10, scale: 2 }).default("0").notNull(),
-    created_at: timestamp().defaultNow(),
-    updated_at: timestamp().defaultNow(),
-}, (table) => { // Segundo argumento de pgTable
-    return {
-        salaryCheck: check("salary_positive", sql`${table.salary} >= 0`),
-    };
-});*/
-
-/*
-export const usersTable = pgTable("users", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull(),
-  lastname: varchar({ length: 255 }).notNull(),
-  birthdate: varchar().notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
-  username: varchar({ length: 255 }).notNull().unique(),
-  password: varchar({ length: 255 }).notNull(),
-  url_image: varchar({ length: 255 }).notNull(),
-  subdependency_id: integer().notNull().references( ()=>subdependenciesTable.id ),
-  job_title: varchar({ length: 255 }).notNull(),
-  contract_type: integer().notNull().references( ()=>typesContractsTable.id ),
-  status: integer().notNull().references( ()=>statusTable.id ),
-  roles_id: integer().notNull().references( ()=>roleTable.id ),
-  salary: numeric("salary", { precision: 10, scale: 2 }).default("0").notNull(),
-  created_at: timestamp().defaultNow(),
-  updated_at: timestamp().defaultNow(),
-}, (table) => {
-  return {
-      salaryCheck: check("salary_positive", sql`${table.salary} >= 0`),
-  };
-}
-);*/
-
-/*
---1
-select * from public.status
---2
-SELECT * FROM public.roles;
---3
-SELECT * FROM public.dependencies;
---4
-SELECT * FROM public.subdependencies;
---5
-SELECT * FROM public.users;
-
-INSERT INTO public.status(status)
-	VALUES ('Activo'),('Inactivo'),('De baja'),('Vacaciones
-	
-INSERT INTO public.types_contracts(type_contract)
-	VALUES ('Indefinido'),('Temporal'),('Fijo');
-
-INSERT INTO public.dependencies(
-	 name, description, floor)
-	VALUES ( 'Tecnologia', 'Gerencia de Tecnologia',2);
-	
-INSERT INTO public.subdependencies(
-	 name, description, dependency_id)
-	VALUES 
-	('Soporte', null, 1),
-	('Redes', null, 1),
-	('Desarrollo de software', null, 1);
-*/
+    phone: varchar({ length: 255 }).notNull(),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow()
+});
+export const familyTable = pgTable("family", {
+    id: serial().primaryKey(),
+    name: varchar({ length: 255 }).notNull(),
+    cedula: varchar({ length: 255 }).notNull(),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow()
+});
+export const assignmentTable = pgTable("assignment", {
+    id: serial().primaryKey(),
+    employeeId: integer().notNull().references(() => employeeTable.id),
+    familyId: integer().notNull().references(() => familyTable.id),
+    type: varchar({ length: 255 }).notNull().default("tipo de asignacion"),
+    observation: varchar({ length: 255 }).notNull(),
+    maxProducts: integer().default(0),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow()
+});
+export const assignedProductTable = pgTable("assignedProduct", {
+    id: serial().primaryKey(),
+    assignmentId: integer().notNull().references(() => assignmentTable.id),
+    productId: integer().notNull().references(() => productsTable.id),
+    quantity: integer().default(0),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow()
+});

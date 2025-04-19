@@ -1,8 +1,5 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
-import { Roles } from './decorators/role.decorators';
-import { RoleType } from 'types';
-import { CreateUserDto } from './users/dto/create-user.dto';
  
 @Controller()
 export class AppController {
@@ -15,8 +12,8 @@ export class AppController {
   }
 
   @Post()
-  @Roles(RoleType.Admin)//solo  el admin puede crear usuario.
-  createUser( @Body() createUser: CreateUserDto ) {
+  // @Roles(RoleType.Admin)//solo  el admin puede crear usuario.
+  createUser( @Body() createUser: any ) {
     return this.appService.createUser(createUser);
   }
 }

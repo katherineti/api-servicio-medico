@@ -4,22 +4,25 @@ import { AuthService } from './auth.service';
 import { UsersModule } from 'src/users/users.module';
 import { DrizzleDbConecctionModule } from 'src/db.module';
 import { JwtModule } from '@nestjs/jwt';
-import { JWTSecret } from 'src/constants';
+import { jwtConstants } from 'src/constants';
+import { JwtStrategy } from './jwt.strategy';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
     UsersModule,
     DrizzleDbConecctionModule,
+    PassportModule.register({
+      defaultStrategy: 'jwt',
+    }),
     JwtModule.register({
       global: true,
-      secret: JWTSecret, //jwtConstants.secret,
-      // signOptions: { expiresIn: '60s' }, //se vence en una hora
-      // signOptions: { expiresIn: '1d' }, //expira en 1 dia
-      signOptions: { expiresIn: 60*60*24 },  //expira en 1 dia - tambien se pone asi
+      secret: jwtConstants.secret,
+      signOptions: { expiresIn: '1d' },
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports:[AuthService]
+  providers: [AuthService, JwtStrategy],
+  exports:[AuthService,JwtStrategy, PassportModule]
 })
 export class AuthModule {}

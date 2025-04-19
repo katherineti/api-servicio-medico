@@ -1,28 +1,24 @@
-import { IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, IsOptional, IsBoolean, Matches } from 'class-validator';
 
 export class UpdateUserDto{
 
+    @IsOptional()
     @IsNumber()
-    @IsNotEmpty()
     id: number;
 
+    @IsNotEmpty()
     @IsString()
-    @IsOptional()
+    @Matches(/^[a-zA-ZÀ-ÿ0-9\s]+$/)
     name: string;
 
-    @IsString()
     @IsOptional()
-    lastname: string;
+    // @IsString()
+    role: any; //'admin' | 'user';
 
-    @IsString()
     @IsOptional()
-    url_image: string;
-    
-    @IsNumber()
-    @IsOptional()
-    id_departamento: number;
+    @IsBoolean()
+    isActivate: boolean;
 
-    @IsNumber()
-    @IsOptional()
-    id_cargo: number; 
+    // @IsOptional()
+    // updatedAt: Date;
 }
