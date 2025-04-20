@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { jwtConstants, JWTSecret } from 'src/constants';
+import { jwtConstants } from 'src/constants';
 import { UsersService } from 'src/users/users.service';
 import * as argon2 from "argon2";
 import { JwtService } from '@nestjs/jwt';
@@ -29,7 +29,6 @@ export class AuthService {
 
           const payload: IJwtPayload = { 
             sub: user.id, 
-            // username: user.username, 
             email: user.email,
             role: user.role
           };
@@ -41,7 +40,7 @@ export class AuthService {
           };
         }
 
-        async signUp(signUp:SignupDto): Promise<string> {
+        async signUp(signUp:SignupDto): Promise<any> {
 
           const userExist = await this.usersService.findOnByEmail(signUp.email);
 
@@ -49,7 +48,14 @@ export class AuthService {
             throw new ConflictException('El correo ya existe.');
           }
               
-          const user = await this.usersService.createUser(signUp);
-          return user;
+          await this.usersService.createUser(signUp);
+
+          const objSaved = {
+            ok: true,
+            status: 201,
+            description: 'Usuario registrado',
+          };
+      
+          return objSaved;
         }
 }
