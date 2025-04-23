@@ -1,6 +1,7 @@
 import { integer, pgTable, serial, timestamp, varchar, boolean, pgEnum } from "drizzle-orm/pg-core";
 
-export const rolesEnum = pgEnum("roles", ["admin", "user"]);
+// export const rolesEnum = pgEnum("roles", ["admin", "user"]);
+export const rolesEnum = pgEnum("roles", ["admin", "almacen","medico","auditor"]);
 export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes","Equipos_Odontologicos"]);
 
 export const usersTable = pgTable("users", {
@@ -8,7 +9,8 @@ export const usersTable = pgTable("users", {
     name: varchar({ length: 255 }).notNull(),
     email: varchar({ length: 255 }).notNull().unique(),
     password: varchar({ length: 255 }).notNull(),
-    role: rolesEnum().default("user"),
+    // role: rolesEnum().default("user"),
+    role: rolesEnum(),
     isActivate: boolean('isActivate').notNull().default(true),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp().defaultNow()

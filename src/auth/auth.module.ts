@@ -5,7 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { DrizzleDbConecctionModule } from 'src/db.module';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from 'src/constants';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 
 @Module({

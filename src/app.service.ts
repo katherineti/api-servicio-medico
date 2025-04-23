@@ -8,9 +8,7 @@ import * as argon2 from "argon2";
 @Injectable()
 export class AppService {
 
- constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) {
-  // console.log("********coneccion BD  " , this.conn);
- }
+ constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) { }
 
   async getUsers() {
 
@@ -53,20 +51,18 @@ export class AppService {
   async createUser( createUser : any){
 
     try {//todo lo que coloque afuera del try para llamar algo que esta dentro del try NO lo va a reconocer porque solo existe dentro de las llaves del try, por eso el insert tambien va dentro de las llaves
-      console.log("hascreateUser.passwordh" ,createUser.password)
-        const hash = await argon2.hash( createUser.password );
-      console.log("hash", hash ) 
+
+      const hash = await argon2.hash( createUser.password );
 
       this.conn.select().from(usersTable)
       const newUser = {
         ...createUser,
         // password: hash, //reemplaza el password que viene en el ...createUser con un nuevo valor: hash. Estoy sobreescribiendo la contraseña
         roles_id: 1,
-        // status: 1
       };
 
     } catch (err) {
-      console.log(this.conn) 
+
       throw new Error("Error al crear un usuario " + err);
     }
 

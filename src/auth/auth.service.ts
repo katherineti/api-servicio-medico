@@ -1,10 +1,11 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger, NotFoundException } from '@nestjs/common';
 import { jwtConstants } from 'src/constants';
 import { UsersService } from 'src/users/users.service';
 import * as argon2 from "argon2";
 import { JwtService } from '@nestjs/jwt';
 import { SignupDto } from './dto/signup.dto';
 import { IJwtPayload } from './dto/jwt-payload.interface';
+import { RoleType } from 'types';
 
 @Injectable()
 export class AuthService {
@@ -14,13 +15,18 @@ export class AuthService {
         private jwtService: JwtService
     ) {}
 
-        async signIn(email:string, password: string): Promise<{ access_token: string }> {
+        async signIn(email:string, password: string): Promise<{ token: string }> {
             
           const user = await this.usersService.findOnByEmail(email);
 
           if(!user){
               throw new UnauthorizedException("Usuario no encontrado"); 
           }
+
+          if (user.isActivate === false) {
+            throw new NotFoundException('El usuario esta inactivo');
+          }
+
           const authorized = await argon2.verify( user.password , password ); //devuelve true o false
 
           if( !authorized ){
@@ -30,11 +36,12 @@ export class AuthService {
           const payload: IJwtPayload = { 
             sub: user.id, 
             email: user.email,
-            role: user.role
+            role: user.role as RoleType
           };
+          Logger.debug(JSON.stringify(payload));
 
           return {
-            access_token: await this.jwtService.signAsync(payload, {
+            token: await this.jwtService.signAsync(payload, {
               secret: jwtConstants.secret
             }),
           };

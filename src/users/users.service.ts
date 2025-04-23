@@ -2,25 +2,28 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, STATUS_ACTIVO } from 'src/constants';
 import { usersTable } from 'src/db/schema';
-import { eq } from 'drizzle-orm'
+import { and, count, desc, eq, ilike } from 'drizzle-orm'
 import * as argon2 from "argon2";
 import { CreateUser, User } from 'src/db/types/users.types';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
+import { ResultGetAll } from './dto/read-user-dto';
+import { SearchUserDto } from './dto/search.user.dto';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
- constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {
- }
+ constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
 
-  async findOnByEmail(email: string): Promise< Omit<User, 'name'|'isActivate'|'createdAt'|'updatedAt'> | undefined> {
+  async findOnByEmail(email: string): Promise< Omit<User, 'name'|'createdAt'|'updatedAt'> | undefined> {
       const result = await 
       this.db.select({
               id:  usersTable.id,
               email: usersTable.email,
               password: usersTable.password,
-              role: usersTable.role
+              role: usersTable.role,
+              isActivate: usersTable.isActivate
         })
       .from(usersTable)
       .where(eq(usersTable.email , email ))
@@ -65,34 +68,34 @@ export class UsersService {
 
   }
 
-  async updateUser( updateUser: UpdateUserDto): Promise<User>{
+  async update(id: number, user: Partial<UpdateUserDto>): Promise<User>{
 
-    const User = await this.getUserbyId(updateUser.id);
+    const User = await this.getUserbyId(id);
 
     if (!User) {
       throw new NotFoundException('La usuario no existe');
     }
     
     const updateData: Partial<User> = {
-      name: updateUser.name,
-      role: updateUser.role,
-      isActivate: updateUser.isActivate,
+      name: user.name,
+      role: user.role,
+      isActivate: user.isActivate,
       updatedAt: new Date()
     };
 
     const updatedUser = await this.db
     .update(usersTable)
     .set(updateData)
-    .where(eq(usersTable.id,  updateUser.id))
+    .where(eq(usersTable.id, id))
 
     return updatedUser[0];
   }
 
   async delete(id: number): Promise<User>{
 
-    const User = await this.getUserbyId(id);
+    const user = await this.getUserbyId(id);
 
-    if (!User) {
+    if (!user) {
       throw new NotFoundException('La usuario no existe');
     }
     const updateData: Partial<User> = {
@@ -106,6 +109,38 @@ export class UsersService {
     .where(eq(usersTable.id, id));
 
     return await this.getUserbyId(id);
+  }
+
+  async getAll(filter: SearchUserDto, user: IJwtPayload): Promise<ResultGetAll> {
+    const buscadorLike: string = filter.name ? filter.name : '';
+
+    //Filtrar por status = true
+    const statusCondition = eq(usersTable.isActivate , true );
+
+    //Búsqueda por nombre
+    const searchCondition = ilike(usersTable.name, `%${buscadorLike}%`)
+
+    //Combinamos las condiciones con AND
+    const whereCondition = searchCondition ? and(statusCondition, searchCondition) : statusCondition
+
+    const rows = await 
+    this.db.select()
+    .from(usersTable)
+    // .where(whereCondition)
+    .where(searchCondition)
+    .orderBy(desc(usersTable.id))
+    .limit(filter.take)
+    .offset((filter.page - 1) * filter.take);
+
+    // Consulta para obtener el total de usuarios (para metadata)
+    const [{ value: total }] = await this.db.select({ value: count() }).from(usersTable).where(searchCondition);
+
+    const result = new ResultGetAll();
+    result.total = total;
+    result.page = filter.page;
+    result.list = rows;
+
+    return result;
   }
 
   async validarAdmin(email: string): Promise<any> {
