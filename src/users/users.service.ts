@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { PG_CONNECTION, STATUS_ACTIVO } from 'src/constants';
+import { PG_CONNECTION } from 'src/constants';
 import { usersTable } from 'src/db/schema';
 import { and, count, desc, eq, ilike } from 'drizzle-orm'
 import * as argon2 from "argon2";
@@ -56,7 +56,6 @@ export class UsersService {
         ...createUser,
         password: hash,
         isActivate:true,
-        status: STATUS_ACTIVO
       };
 
       await this.db.insert(usersTable).values(newUser);

@@ -1,8 +1,8 @@
-import { integer, pgTable, serial, timestamp, varchar, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { integer, pgTable, serial, timestamp, varchar, boolean, pgEnum, date } from "drizzle-orm/pg-core";
 
 // export const rolesEnum = pgEnum("roles", ["admin", "user"]);
 export const rolesEnum = pgEnum("roles", ["admin", "almacen","medico","auditor"]);
-export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes","Equipos_Odontologicos"]);
+export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes","Equipos odontologicos"]);
 
 export const usersTable = pgTable("users", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -18,26 +18,34 @@ export const usersTable = pgTable("users", {
 
 export const categoriesTable = pgTable("categories", {
     id: serial().primaryKey(),
-    name: varchar({ length: 255 }).notNull(),
+    name: varchar({ length: 50 }).notNull(),
     type: ProductTypeEnum().notNull(),
     created_at: timestamp().defaultNow(),
     updated_at: timestamp().defaultNow()
 });
 export const productStatusTable = pgTable("productStatus",{
   id: serial().primaryKey(),
-  status: varchar({ length: 255 }).notNull().unique(),
+  status: varchar({ length: 30 }).notNull().unique(),
 })
 export const productsTable = pgTable("products", {
     id: serial().primaryKey(),
-    url_image: varchar({ length: 255 }).notNull(),
+    url_image: varchar({ length: 255 }).default(''),
     description: varchar({ length: 255 }).notNull(),
-    code: varchar({ length: 255 }).notNull().unique(),
+    code: varchar({ length: 50 }).notNull().unique(),
     stock: integer().notNull().default(0),
-    name: varchar({ length: 255 }).notNull(),
+    name: varchar({ length: 100 }).notNull(),
     categoryId: integer().notNull().references(() => categoriesTable.id),
     type: ProductTypeEnum().notNull(),
     statusId: integer().notNull().references(() => productStatusTable.id),
     //modificaciones
+    // expirationDate: date("expiration_date", { mode: "date" }),
+    createdAt: timestamp().defaultNow(),
+    updatedAt: timestamp().defaultNow()
+});
+export const expiredProductsTable = pgTable("expiredProducts", {
+    id: serial().primaryKey(),
+    productId: integer().notNull().references(() => productsTable.id),
+    expirationDate: date("expirationDate", { mode: "date" }),
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });

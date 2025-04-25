@@ -8,7 +8,7 @@ import * as argon2 from "argon2";
 @Injectable()
 export class AppService {
 
- constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) { }
+ constructor(@Inject(PG_CONNECTION) private conn: NeonDatabase) {  }
 
   async getUsers() {
 

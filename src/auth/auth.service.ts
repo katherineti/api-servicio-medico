@@ -5,7 +5,7 @@ import * as argon2 from "argon2";
 import { JwtService } from '@nestjs/jwt';
 import { SignupDto } from './dto/signup.dto';
 import { IJwtPayload } from './dto/jwt-payload.interface';
-import { RoleType } from 'types';
+import { TypesRoles } from 'src/db/types/types-roles';
 
 @Injectable()
 export class AuthService {
@@ -36,7 +36,7 @@ export class AuthService {
           const payload: IJwtPayload = { 
             sub: user.id, 
             email: user.email,
-            role: user.role as RoleType
+            role: user.role as TypesRoles
           };
           Logger.debug(JSON.stringify(payload));
 

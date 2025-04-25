@@ -13,7 +13,7 @@ import { User } from 'src/db/types/users.types';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from 'src/decorators/role.decorators';
-import { RoleType } from 'types';
+import { TypesRoles } from 'src/db/types/types-roles';
 import { Usersesion } from 'src/auth/strategies/usersesion.decorator';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { SearchUserDto } from './dto/search.user.dto';
@@ -25,7 +25,8 @@ import { AuthService } from 'src/auth/auth.service';
 export class UserController {
 
   constructor(private readonly userService: UsersService, private readonly authService: AuthService) { }
-
+  
+  @Roles(TypesRoles.admin)
   @Post('getAll')
   @UsePipes(ValidationPipe)
   getUsers(@Body() body: SearchUserDto, @Usersesion() user: IJwtPayload): Promise<ResultGetAll> {
@@ -33,7 +34,7 @@ export class UserController {
   }
 
   @Post('/createAccount')
-  @Roles(RoleType.admin)
+  @Roles(TypesRoles.admin)
   @UsePipes(ValidationPipe)
   async createAccount(
     @Body() signupDto: SignupDto,
@@ -44,7 +45,7 @@ export class UserController {
 
   @Patch(':userId')
   // @UseGuards(AuthGuard())
-  @Roles(RoleType.admin)
+  @Roles(TypesRoles.admin)
   @UsePipes(ValidationPipe)
   updateUser(
     @Param('userId', ParseIntPipe) userId: number,
@@ -54,7 +55,7 @@ export class UserController {
     return this.userService.update(userId, user);
   }
 
-  @Roles(RoleType.admin)
+  @Roles(TypesRoles.admin)
   @Delete(':id')
   deleteUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
     return this.userService.delete(id);
