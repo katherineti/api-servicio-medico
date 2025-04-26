@@ -5,7 +5,7 @@ import * as argon2 from "argon2";
 import { JwtService } from '@nestjs/jwt';
 import { SignupDto } from './dto/signup.dto';
 import { IJwtPayload } from './dto/jwt-payload.interface';
-import { TypesRoles } from 'src/db/types/types-roles';
+import { TypesRoles } from 'src/db/enums/types-roles';
 
 @Injectable()
 export class AuthService {

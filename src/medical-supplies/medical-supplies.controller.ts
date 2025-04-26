@@ -6,7 +6,7 @@ import { ProductsGetAll } from './dto/read-products-dto';
 import { MedicalSuppliesService } from './medical-supplies.service';
 import { Product } from 'src/db/types/products.types';
 import { Roles } from 'src/decorators/role.decorators';
-import { TypesRoles } from 'src/db/types/types-roles';
+import { TypesRoles } from 'src/db/enums/types-roles';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 

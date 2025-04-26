@@ -13,7 +13,7 @@ import { User } from 'src/db/types/users.types';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Roles } from 'src/decorators/role.decorators';
-import { TypesRoles } from 'src/db/types/types-roles';
+import { TypesRoles } from 'src/db/enums/types-roles';
 import { Usersesion } from 'src/auth/strategies/usersesion.decorator';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { SearchUserDto } from './dto/search.user.dto';

@@ -6,8 +6,8 @@ export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes
 
 export const usersTable = pgTable("users", {
     id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar({ length: 255 }).notNull(),
-    email: varchar({ length: 255 }).notNull().unique(),
+    name: varchar({ length: 200 }).notNull(),
+    email: varchar().notNull().unique(),
     password: varchar({ length: 255 }).notNull(),
     // role: rolesEnum().default("user"),
     role: rolesEnum(),
@@ -15,10 +15,9 @@ export const usersTable = pgTable("users", {
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp().defaultNow()
 });
-
 export const categoriesTable = pgTable("categories", {
     id: serial().primaryKey(),
-    name: varchar({ length: 50 }).notNull(),
+    name: varchar({ length: 30 }).notNull(),
     type: ProductTypeEnum().notNull(),
     created_at: timestamp().defaultNow(),
     updated_at: timestamp().defaultNow()
@@ -29,16 +28,15 @@ export const productStatusTable = pgTable("productStatus",{
 })
 export const productsTable = pgTable("products", {
     id: serial().primaryKey(),
-    url_image: varchar({ length: 255 }).default(''),
-    description: varchar({ length: 255 }).notNull(),
     code: varchar({ length: 50 }).notNull().unique(),
     stock: integer().notNull().default(0),
     name: varchar({ length: 100 }).notNull(),
-    categoryId: integer().notNull().references(() => categoriesTable.id),
+    description: varchar({ length: 255 }).notNull(),
+    url_image: varchar({ length: 255 }).default(''),
     type: ProductTypeEnum().notNull(),
+    categoryId: integer().notNull().references(() => categoriesTable.id),
     statusId: integer().notNull().references(() => productStatusTable.id),
     //modificaciones
-    // expirationDate: date("expiration_date", { mode: "date" }),
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });
@@ -51,26 +49,30 @@ export const expiredProductsTable = pgTable("expiredProducts", {
 });
 export const employeeTable = pgTable("employee", {
     id: serial().primaryKey(),
-    name: varchar({ length: 255 }).notNull(),
-    cedula: varchar({ length: 255 }).notNull(),
-    email: varchar({ length: 255 }).notNull().unique(),
+    name: varchar({ length: 200 }).notNull(),
+    cedula: varchar({ length: 30 }).notNull().unique(),
+    email: varchar({ length: 100 }).notNull().unique(),
     phone: varchar({ length: 255 }).notNull(),
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });
 export const familyTable = pgTable("family", {
     id: serial().primaryKey(),
-    name: varchar({ length: 255 }).notNull(),
-    cedula: varchar({ length: 255 }).notNull(),
+    name: varchar({ length: 200 }).notNull(),
+    cedula: varchar({ length: 30 }).notNull().unique(),
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
+});
+export const typesAssignment = pgTable("typesAssignment" , {
+    id: serial().primaryKey(),
+    name: varchar({ length: 30 }).notNull().unique(),
 });
 export const assignmentTable = pgTable("assignment", {
     id: serial().primaryKey(),
     employeeId: integer().notNull().references(() => employeeTable.id),
     familyId: integer().notNull().references(() => familyTable.id),
-    type: varchar({ length: 255 }).notNull().default("tipo de asignacion"),
-    observation: varchar({ length: 255 }).notNull(),
+    type: integer().notNull().references(() => typesAssignment.id),
+    observation: varchar({ length: 200 }).notNull(),
     maxProducts: integer().default(0),
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
@@ -83,3 +85,4 @@ export const assignedProductTable = pgTable("assignedProduct", {
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });
+
