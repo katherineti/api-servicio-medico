@@ -6,6 +6,10 @@ export class SearchProductsDto {
   @IsString()
   name: string;
 
+  @IsOptional()
+  @IsString()
+  category: string;
+
   @IsNumber()
   @IsNotEmpty()
   page: number;

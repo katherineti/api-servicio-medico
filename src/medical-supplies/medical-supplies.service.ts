@@ -3,7 +3,7 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { PG_CONNECTION, PRODUCT_STATUS_ACTIVO, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable } from 'src/db/schema';
-import { count, desc, ilike, eq } from 'drizzle-orm'
+import { count, desc, ilike, eq, and } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
@@ -48,10 +48,18 @@ export class MedicalSuppliesService {
   }
 
   async getAll(filter: SearchProductsDto, user: IJwtPayload): Promise<ProductsGetAll> {
-    const buscadorLike: string = filter.name ? filter.name : '';
 
-    //Búsqueda por nombre
-    const searchCondition = ilike(productsTable.name, `%${buscadorLike}%`)
+    const whereConditions = [];
+    // Búsqueda por nombre (ilike) si se proporciona
+    if (filter.name) {
+      whereConditions.push(ilike(productsTable.name, `%${filter.name}%`));
+    }
+    // Búsqueda por categoria (ilike) si se proporciona
+    if (filter.category) {
+      whereConditions.push(ilike(categoriesTable.name, `%${filter.category}%`));
+    }
+    // Condición de búsqueda combinada (si hay alguna)
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     const rows = await
     this.db.select({
@@ -72,13 +80,17 @@ export class MedicalSuppliesService {
     .from(productsTable)
     .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
     .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id ) )
-    .where(searchCondition)
+    .where(whereClause)
     .orderBy(desc(productsTable.id))
     .limit(filter.take)
     .offset((filter.page - 1) * filter.take);
 
     // Consulta para obtener el total de productos
-    const [{ value: total }] = await this.db.select({ value: count() }).from(productsTable).where(searchCondition);
+    const [{ value: total }] = await 
+    this.db.select({ value: count() })
+    .from(productsTable)
+    .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+    .where(whereClause);
 
     const result = new ProductsGetAll();
     result.total = total;
