@@ -63,17 +63,20 @@ export const familyTable = pgTable("family", {
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });
-export const typesAssignment = pgTable("typesAssignment" , {
+export const typesAssignmentTable = pgTable("typesAssignment" , {
     id: serial().primaryKey(),
     name: varchar({ length: 30 }).notNull().unique(),
 });
 export const assignmentTable = pgTable("assignment", {
     id: serial().primaryKey(),
     employeeId: integer().notNull().references(() => employeeTable.id),
-    familyId: integer().notNull().references(() => familyTable.id),
-    type: integer().notNull().references(() => typesAssignment.id),
-    observation: varchar({ length: 200 }).notNull(),
-    maxProducts: integer().default(0),
+    // familyId: integer().notNull().references(() => familyTable.id),
+    familyId: integer().references(() => familyTable.id),
+    type: integer().notNull().references(() => typesAssignmentTable.id),
+    observation: varchar({ length: 200 }).default(""),
+    // maxProducts: integer().default(0),
+    productId: integer().notNull().references(() => productsTable.id),
+    products: integer().notNull().default(0),//numero de productos asignados a un empleado 
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });
@@ -81,8 +84,7 @@ export const assignedProductTable = pgTable("assignedProduct", {
     id: serial().primaryKey(),
     assignmentId: integer().notNull().references(() => assignmentTable.id),
     productId: integer().notNull().references(() => productsTable.id),
-    quantity: integer().default(0),
+    quantity: integer().notNull().default(0), //resto del producto en almacen
     createdAt: timestamp().defaultNow(),
     updatedAt: timestamp().defaultNow()
 });
-

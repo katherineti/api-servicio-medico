@@ -10,18 +10,20 @@ import { MedicalSuppliesModule } from './medical-supplies/medical-supplies.modul
 import { CategoriesModule } from './categories/categories.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { AssignmentModule } from './assignment/assignment.module';
 @Module({
   imports: [
     DrizzleDbConecctionModule,
     ConfigModule.forRoot({isGlobal:true,envFilePath: '.env'}),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads', // Ruta URL desde donde se servirán los archivos
+      serveRoot: '/uploads', // Ruta URL desde donde se servirán los archivos de imagen
     }),
     AuthModule,
     UsersModule,
     MedicalSuppliesModule,
     CategoriesModule,
+    AssignmentModule,
   ],
   // controllers: [AppController],
   controllers: [],
