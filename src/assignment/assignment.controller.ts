@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AssignmentService} from './assignment.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Family } from 'src/db/types/family.types';
@@ -22,9 +22,12 @@ export class AssignmentController {
     return this.assignmentService.getAllEmployees();
     }
 
-    @Get('getAllFamilies')
-    getFamilies( ): Promise<Family[]> {
-    return this.assignmentService.getAllFamilies();
+    @Get('getFamiliesByEmployee/:employeeId')
+    getFamiliesByEmployee(
+       @Param('employeeId', ParseIntPipe) employeeId: number,
+    ): Promise<any[]> {
+        console.log("this.assignmentService.getFamiliesByEmployee(employeeId) -> " , this.assignmentService.getFamiliesByEmployee(employeeId))
+    return this.assignmentService.getFamiliesByEmployee(employeeId);
     }
 
     @Get('getAllTypesAssignment')

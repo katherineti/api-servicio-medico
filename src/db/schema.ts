@@ -1,90 +1,99 @@
-import { integer, pgTable, serial, timestamp, varchar, boolean, pgEnum, date } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable as table } from "drizzle-orm/pg-core";
+import * as t from "drizzle-orm/pg-core";
 
-// export const rolesEnum = pgEnum("roles", ["admin", "user"]);
 export const rolesEnum = pgEnum("roles", ["admin", "almacen","medico","auditor"]);
 export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes","Equipos odontologicos"]);
 
-export const usersTable = pgTable("users", {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    name: varchar({ length: 200 }).notNull(),
-    email: varchar().notNull().unique(),
-    password: varchar({ length: 255 }).notNull(),
-    // role: rolesEnum().default("user"),
+export const usersTable = table("users", {
+    id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+    name: t.varchar({ length: 200 }).notNull(),
+    email: t.varchar().notNull().unique(),
+    password: t.varchar({ length: 255 }).notNull(),
     role: rolesEnum(),
-    isActivate: boolean('isActivate').notNull().default(true),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp().defaultNow()
+    isActivate: t.boolean('isActivate').notNull().default(true),
+    createdAt: t.timestamp().defaultNow().notNull(),
+    updatedAt: t.timestamp().defaultNow()
 });
-export const categoriesTable = pgTable("categories", {
-    id: serial().primaryKey(),
-    name: varchar({ length: 30 }).notNull(),
+export const categoriesTable = table("categories", {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 30 }).notNull(),
     type: ProductTypeEnum().notNull(),
-    created_at: timestamp().defaultNow(),
-    updated_at: timestamp().defaultNow()
+    created_at: t.timestamp().defaultNow(),
+    updated_at: t.timestamp().defaultNow()
 });
-export const productStatusTable = pgTable("productStatus",{
-  id: serial().primaryKey(),
-  status: varchar({ length: 30 }).notNull().unique(),
+export const productStatusTable = table("productStatus",{
+  id: t.serial().primaryKey(),
+  status: t.varchar({ length: 30 }).notNull().unique(),
 })
-export const productsTable = pgTable("products", {
-    id: serial().primaryKey(),
-    code: varchar({ length: 50 }).notNull().unique(),
-    stock: integer().notNull().default(0),
-    name: varchar({ length: 100 }).notNull(),
-    description: varchar({ length: 255 }).notNull(),
-    url_image: varchar({ length: 255 }).default(''),
+export const productsTable = table("products", {
+    id: t.serial().primaryKey(),
+    code: t.varchar({ length: 50 }).notNull().unique(),
+    stock: t.integer().notNull().default(0),
+    name: t.varchar({ length: 100 }).notNull(),
+    description: t.varchar({ length: 255 }).notNull(),
+    url_image: t.varchar({ length: 255 }).default(''),
     type: ProductTypeEnum().notNull(),
-    categoryId: integer().notNull().references(() => categoriesTable.id),
-    statusId: integer().notNull().references(() => productStatusTable.id),
-    //modificaciones
-    createdAt: timestamp().defaultNow(),
-    updatedAt: timestamp().defaultNow()
+    categoryId: t.integer().notNull().references(() => categoriesTable.id),
+    statusId: t.integer().notNull().references(() => productStatusTable.id),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
 });
-export const expiredProductsTable = pgTable("expiredProducts", {
-    id: serial().primaryKey(),
-    productId: integer().notNull().references(() => productsTable.id),
-    expirationDate: date("expirationDate", { mode: "date" }),
-    createdAt: timestamp().defaultNow(),
-    updatedAt: timestamp().defaultNow()
+export const expiredProductsTable = table("expiredProducts", {
+    id: t.serial().primaryKey(),
+    productId: t.integer().notNull().references(() => productsTable.id),
+    expirationDate: t.date("expirationDate", { mode: "date" }),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
 });
-export const employeeTable = pgTable("employee", {
-    id: serial().primaryKey(),
-    name: varchar({ length: 200 }).notNull(),
-    cedula: varchar({ length: 30 }).notNull().unique(),
-    email: varchar({ length: 100 }).notNull().unique(),
-    phone: varchar({ length: 255 }).notNull(),
-    createdAt: timestamp().defaultNow(),
-    updatedAt: timestamp().defaultNow()
+export const employeeTable = table("employee", {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 200 }).notNull(),
+    cedula: t.varchar({ length: 30 }).notNull().unique(),
+    email: t.varchar({ length: 100 }).notNull().unique(),
+    phone: t.varchar({ length: 255 }).notNull(),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
 });
-export const familyTable = pgTable("family", {
-    id: serial().primaryKey(),
-    name: varchar({ length: 200 }).notNull(),
-    cedula: varchar({ length: 30 }).notNull().unique(),
-    createdAt: timestamp().defaultNow(),
-    updatedAt: timestamp().defaultNow()
+export const familyTable = table("family", {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 200 }).notNull(),
+    cedula: t.varchar({ length: 30 }).unique(),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
 });
-export const typesAssignmentTable = pgTable("typesAssignment" , {
-    id: serial().primaryKey(),
-    name: varchar({ length: 30 }).notNull().unique(),
+export const typesAssignmentTable = table("typesAssignment" , {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 30 }).notNull().unique(),
 });
-export const assignmentTable = pgTable("assignment", {
-    id: serial().primaryKey(),
-    employeeId: integer().notNull().references(() => employeeTable.id),
-    // familyId: integer().notNull().references(() => familyTable.id),
-    familyId: integer().references(() => familyTable.id),
-    type: integer().notNull().references(() => typesAssignmentTable.id),
-    observation: varchar({ length: 200 }).default(""),
-    // maxProducts: integer().default(0),
-    productId: integer().notNull().references(() => productsTable.id),
-    products: integer().notNull().default(0),//numero de productos asignados a un empleado 
-    createdAt: timestamp().defaultNow(),
-    updatedAt: timestamp().defaultNow()
+export const assignmentTable = table("assignment", {
+    id: t.serial().primaryKey(),
+    employeeId: t.integer().notNull().references(() => employeeTable.id),
+    familyId: t.integer().references(() => familyTable.id),
+    type: t.integer().notNull().references(() => typesAssignmentTable.id),
+    observation: t.varchar({ length: 200 }).default(""),
+    productId: t.integer().notNull().references(() => productsTable.id),
+    products: t.integer().notNull().default(0),//numero de productos asignados a un empleado 
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
 });
-export const assignedProductTable = pgTable("assignedProduct", {
-    id: serial().primaryKey(),
-    assignmentId: integer().notNull().references(() => assignmentTable.id),
-    productId: integer().notNull().references(() => productsTable.id),
-    quantity: integer().notNull().default(0), //resto del producto en almacen
-    createdAt: timestamp().defaultNow(),
-    updatedAt: timestamp().defaultNow()
+export const assignedProductTable = table("assignedProduct", {
+    id: t.serial().primaryKey(),
+    assignmentId: t.integer().notNull().references(() => assignmentTable.id),
+    productId: t.integer().notNull().references(() => productsTable.id),
+    quantity: t.integer().notNull().default(0), //resto del producto en almacen
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
 });
+
+//uso para listar los familiares del empleado, en el formulario de asignacion de productos
+export const employeeFamilyTable = table("employeeFamily", {
+    id: t.serial().primaryKey(),
+    employeeId: t.integer().notNull().references(() => employeeTable.id, { onDelete: 'cascade' }),
+    familyId: t.integer().notNull().references(() => familyTable.id, { onDelete: 'cascade' }),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
+}, 
+(table) => [
+    t.uniqueIndex("employee_family_unique").on(table.employeeId, table.familyId)
+  ]
+);
