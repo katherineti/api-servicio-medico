@@ -1,10 +1,11 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, UsePipes, ValidationPipe } from '@nestjs/common';
-import { AssignmentService} from './assignment.service';
+import { AssignmentService } from './assignment.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Family } from 'src/db/types/family.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
 import { Assignment } from 'src/db/types/assignment.types';
+import { CreateFamilyDto } from './dto/create-family.dto';
 
 @Controller('assignment')
 export class AssignmentController {
@@ -33,5 +34,10 @@ export class AssignmentController {
     @Get('getAllTypesAssignment')
     getAllTypesAssignment( ): Promise<typesAssignment[]> {
     return this.assignmentService.getAllTypesAssignment();
+    }
+
+    @Post('addFamilyMember')
+    addFamilyMember( @Body() createFamilyDto: CreateFamilyDto ){
+        return this.assignmentService.addFamilyMember(createFamilyDto)
     }
 }

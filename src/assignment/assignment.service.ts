@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { assignmentTable, employeeFamilyTable, employeeTable, familyTable, typesAssignmentTable } from 'src/db/schema';
@@ -6,7 +6,8 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
+import { CreateFamilyDto } from './dto/create-family.dto';
 
 @Injectable()
 export class AssignmentService {
@@ -62,6 +63,52 @@ export class AssignmentService {
         } catch (error) {
             console.error('Error al obtener los familiares de un empleado', error);
             throw new Error(`Error al obtener los familiares de un empleado: ${error.message}`);
+        }
+    }
+
+    async addFamilyMember(family:CreateFamilyDto){
+        try{
+            const [resultFamily] =  await this.db.insert(familyTable).values(family).returning();
+            Logger.debug("Insert de familiar ", JSON.stringify(resultFamily))
+
+            if(!resultFamily){
+                throw new NotFoundException('Error al crear un familiar');
+            }
+
+                const insertEmployeeFamily = { 
+                    employeeId: family.employeeId,
+                    familyId: resultFamily.id
+                }
+                const [resultEmployeeFamily] =  await this.db.insert(employeeFamilyTable).values(insertEmployeeFamily).returning();
+
+                if(!resultEmployeeFamily){
+                    throw new NotFoundException('Error al crear la relacion empleado - familiar');
+                }
+                Logger.debug("Insert en Employee - Family ", JSON.stringify(resultEmployeeFamily))
+
+                const [getOneFamilyByEmployeeSelected] = await 
+                this.db.select({
+                    id: employeeFamilyTable.id,
+                    employeeId: employeeFamilyTable.employeeId,
+                    familyId: employeeFamilyTable.familyId,
+                    familyName:familyTable.name,
+                    familyCedula:familyTable.cedula
+                })
+                .from(employeeFamilyTable)
+                .leftJoin(familyTable, eq(employeeFamilyTable.familyId, familyTable.id))
+                .where( and( 
+                    eq(employeeFamilyTable.employeeId, family.employeeId),
+                    eq(employeeFamilyTable.familyId, resultFamily.id)
+                 ) )
+                .orderBy(familyTable.name);
+
+                Logger.debug("Consulta de la relacion Empleado seleccionado - Familiar nuevo ",JSON.stringify(getOneFamilyByEmployeeSelected))
+
+                return getOneFamilyByEmployeeSelected;
+
+        } catch (error) {
+            console.error('Error al crear un familiar', error);
+            throw new Error(`Error al crear un familiar: ${error.message}`);
         }
     }
     async getAllTypesAssignment(): Promise<typesAssignment[]> {
