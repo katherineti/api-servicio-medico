@@ -8,6 +8,7 @@ import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
 import { eq, and } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
 
 @Injectable()
 export class AssignmentService {
@@ -66,7 +67,16 @@ export class AssignmentService {
         }
     }
 
-    async addFamilyMember(family:CreateFamilyDto){
+    async getAllTypesAssignment(): Promise<typesAssignment[]> {
+        try{
+            return await this.db.select().from(typesAssignmentTable).orderBy(typesAssignmentTable.id);
+        } catch (error) {
+            console.error('Error al obtener todos los tipos de asignación', error);
+            throw new Error(`Error al obtener todos los tipos de asignación: ${error.message}`);
+        }
+    }
+
+    async addFamilyMember(family:CreateFamilyDto): Promise<any>{
         try{
             const [resultFamily] =  await this.db.insert(familyTable).values(family).returning();
             Logger.debug("Insert de familiar ", JSON.stringify(resultFamily))
@@ -111,12 +121,16 @@ export class AssignmentService {
             throw new Error(`Error al crear un familiar: ${error.message}`);
         }
     }
-    async getAllTypesAssignment(): Promise<typesAssignment[]> {
+
+
+    async addEmployee(createEmployeeDto:CreateEmployeeDto): Promise<Employee>{
         try{
-            return await this.db.select().from(typesAssignmentTable).orderBy(typesAssignmentTable.id);
+            const [resulEmployee] =  await this.db.insert(employeeTable).values(createEmployeeDto).returning();
+            Logger.debug("Insert de empleado", JSON.stringify(resulEmployee))
+            return resulEmployee;
         } catch (error) {
-            console.error('Error al obtener todos los tipos de asignación', error);
-            throw new Error(`Error al obtener todos los tipos de asignación: ${error.message}`);
+            console.error('Error al crear un empleado', error);
+            throw new Error(`Error al crear un empleado: ${error.message}`);
         }
     }
 }

@@ -48,16 +48,16 @@ export const expiredProductsTable = table("expiredProducts", {
 export const employeeTable = table("employee", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
-    cedula: t.varchar({ length: 30 }).notNull().unique(),
+    cedula: t.varchar({ length: 10 }).notNull().unique(),
     email: t.varchar({ length: 100 }).notNull().unique(),
-    phone: t.varchar({ length: 255 }).notNull(),
+    phone: t.varchar({ length: 50 }).notNull(),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
 export const familyTable = table("family", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
-    cedula: t.varchar({ length: 30 }).unique(),
+    cedula: t.varchar({length:10}).default(null),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });

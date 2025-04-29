@@ -37,7 +37,12 @@ export class AssignmentController {
     }
 
     @Post('addFamilyMember')
-    addFamilyMember( @Body() createFamilyDto: CreateFamilyDto ){
+    addFamilyMember( @Body() createFamilyDto: CreateFamilyDto ): Promise<any>{
         return this.assignmentService.addFamilyMember(createFamilyDto)
+    }
+
+    @Post('addEmployee')
+    addEmployee( @Body() createEmployeeDto: any ): Promise<Employee>{
+        return this.assignmentService.addEmployee(createEmployeeDto)
     }
 }
