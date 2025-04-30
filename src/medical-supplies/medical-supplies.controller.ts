@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, Post, Put, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SearchProductsDto } from './dto/search.products.dto';
 import { Usersesion } from 'src/auth/strategies/usersesion.decorator';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';

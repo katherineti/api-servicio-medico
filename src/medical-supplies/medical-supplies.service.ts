@@ -3,7 +3,7 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { PG_CONNECTION, PRODUCT_STATUS_ACTIVO, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable } from 'src/db/schema';
-import { count, desc, ilike, eq, and } from 'drizzle-orm'
+import { count, desc, ilike, eq, and, sql } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
@@ -248,7 +248,7 @@ export class MedicalSuppliesService {
       updatedAt: new Date()
     };
 
-    const updatedUser = await this.db
+    await this.db
     .update(productsTable)
     .set(updateData)
     .where(eq(productsTable.id, id));
@@ -260,4 +260,44 @@ export class MedicalSuppliesService {
     return texto.replace(/\s+/g, '_');
   }
 
+  //Para el contador de producto del dia, en el dashboard
+  async totalProductsOfTheDay(): Promise<{ count: number }> {
+    const nowCaracas = new Date();
+
+    const startOfDayCaracas = new Date(nowCaracas);
+    startOfDayCaracas.setHours(0, 0, 0, 0);
+
+    const endOfDayCaracas = new Date(nowCaracas);
+    endOfDayCaracas.setHours(23, 59, 59, 999);
+
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(productsTable)
+      .where(
+        sql`${productsTable.createdAt} >= ${startOfDayCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfDayCaracas.toISOString()}`
+      );
+
+    return result || { count: 0 };
+  }
+
+  async totalProductsOfMonth(): Promise<{ count: number }> {
+    const nowCaracas = new Date();
+    const year = nowCaracas.getFullYear();
+    const month = nowCaracas.getMonth();
+
+    // Obtener el primer día del mes actual en Caracas
+    const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
+
+    // Obtener el último día del mes actual en Caracas
+    const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(productsTable)
+      .where(
+        sql`${productsTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`
+      );
+
+    return result || { count: 0 };
+  }
 }

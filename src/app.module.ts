@@ -11,6 +11,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { AssignmentModule } from './assignment/assignment.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { RolesGuard } from './guards/roles.guard';
 @Module({
   imports: [
     DrizzleDbConecctionModule,
@@ -24,6 +26,7 @@ import { AssignmentModule } from './assignment/assignment.module';
     MedicalSuppliesModule,
     CategoriesModule,
     AssignmentModule,
+    DashboardModule,
   ],
   // controllers: [AppController],
   controllers: [],
@@ -33,6 +36,10 @@ import { AssignmentModule } from './assignment/assignment.module';
       provide: APP_GUARD,
       useClass: AtGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard
+    }
   ],
 })
 export class AppModule {}

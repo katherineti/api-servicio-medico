@@ -163,4 +163,13 @@ export class UsersService {
       throw error;
     }
   }
+
+  //Para el contador de usuarios en el dashboard
+  async countAllUsers(): Promise<{ count: number }> {
+    const [result] = await 
+    this.db.select({ count: count() })
+    .from(usersTable)
+    
+    return result ? result : { count: 0 };
+  }
 }
