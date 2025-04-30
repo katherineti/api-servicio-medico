@@ -6,12 +6,12 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq, and } from 'drizzle-orm'
+import { eq, and, count, sql, gte, lt } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
 import { MedicalSuppliesService } from 'src/medical-supplies/medical-supplies.service';
-  
+
 @Injectable()
 export class AssignmentService {
 
@@ -172,5 +172,48 @@ export class AssignmentService {
             console.error('Error al crear un empleado', error);
             throw new Error(`Error al crear un empleado: ${error.message}`);
         }
+    }
+
+   //Para el contador de asignacion del dia, en el dashboard
+    async totalAssignmentOfTheDay(): Promise<{ count: number }> {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00.000
+        const endOfDay = new Date(today);
+        endOfDay.setHours(23, 59, 59, 999);
+    
+        let whereConditions = and(
+            gte(assignmentTable.createdAt, today),
+            lt(assignmentTable.createdAt, endOfDay),
+        );
+    
+        const [assignmentsCount] = await this.db
+          .select({ count: count() })
+          .from(assignmentTable)
+          .where(whereConditions);
+        
+        Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
+        return assignmentsCount;
+      }
+
+    async totalAssignmentOfMonth(): Promise<{ count: number }> {
+        const nowCaracas = new Date();
+        const year = nowCaracas.getFullYear();
+        const month = nowCaracas.getMonth();
+    
+        // Obtener el primer día del mes actual en Caracas
+        const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
+    
+        // Obtener el último día del mes actual en Caracas
+        const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    
+        const [result] = await this.db
+          .select({ count: count() })
+          .from(assignmentTable)
+          .where(
+            sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`
+          );
+        Logger.debug("Contador asignacion del mes, en el dashboard" , JSON.stringify(result))
+    
+        return result || { count: 0 };
     }
 }
