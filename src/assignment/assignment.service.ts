@@ -1,7 +1,7 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
-import { assignmentTable, employeeFamilyTable, employeeTable, familyTable, typesAssignmentTable } from 'src/db/schema';
+import { assignmentTable, employeeFamilyTable, employeeTable, familyTable, productsTable, typesAssignmentTable } from 'src/db/schema';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
@@ -9,25 +9,65 @@ import { typesAssignment } from 'src/db/types/type-assignment.types';
 import { eq, and } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
-
+import { Product } from 'src/db/types/products.types';
+import { MedicalSuppliesService } from 'src/medical-supplies/medical-supplies.service';
+  
 @Injectable()
 export class AssignmentService {
 
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
+    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private medicalSuppliesService: MedicalSuppliesService) {}
+
     async createAssignment( create: CreateAssignmentDto): Promise<Assignment>{
-        try {
-        
-            const insert: CreateAssignment = {
-                ...create,
-            };
-            const [result] =  await this.db.insert(assignmentTable).values(insert).returning();
-            Logger.debug(JSON.stringify(result));
-            return result;
-    
-        } catch (err) {
-            console.error('Error al insertar en assignmentTable:', err);
-            throw new Error("Error al registrar una asignacion en la base de datos " + err);
+        console.log("Body ", create)
+        const product:Product = await this.medicalSuppliesService.getProductbyId(create.productId);
+        if (!product) {
+            throw new NotFoundException('El producto no existe');
         }
+
+        // Calcula el stock disponible considerando las asignaciones 
+        const stockDisponible = product.stock;
+        
+        // Asegura que la cantidad de productos a asignar no exceda el stock disponible.
+        if (stockDisponible < create.products) {
+            throw new ConflictException('El stock actual del producto es insuficiente');
+        }
+
+        Logger.debug("Producto " , JSON.stringify(product));
+        //Insert de la asignacion
+        const insert: CreateAssignment = {
+            ...create,
+        };
+        const [result] =  await this.db.insert(assignmentTable).values(insert).returning();
+        Logger.debug("Insert de la asignacion " ,JSON.stringify(result));
+
+        if(!result){
+            throw new Error('Error al crear la asignación de producto para el empleado');
+        }
+
+        //Actualiza el stock en la tabla productos
+        const updateData: Partial<Product> = {
+        name: product.name,
+        description: product.description,
+        categoryId: product.categoryId,
+        type: product.type,
+        stock: (stockDisponible - create.products ) as number,
+        statusId: product.statusId,
+        updatedAt: new Date(),
+        };
+
+        const updatedStockProduct = await this.db
+        .update(productsTable)
+        .set(updateData)
+        .where(eq(productsTable.id, product.id))
+        .returning()
+        .execute()
+
+        if(!updatedStockProduct){
+        throw new ConflictException('Error al actualizar el stock del producto');
+        }
+        Logger.debug("Stock actualizado en la tabla productos " + JSON.stringify(updatedStockProduct));
+
+        return result; //Retorna el resultado del insert de la asignacion
     }
 
     async getAllEmployees(): Promise<Employee[]> {
