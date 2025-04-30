@@ -15,14 +15,12 @@ import { memoryStorage } from 'multer';
 export class MedicalSuppliesController {
   constructor(private readonly medicalSuppliesService: MedicalSuppliesService) { }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
     @Post('getAll')
     @UsePipes(ValidationPipe)
     getProducts(@Body() body: SearchProductsDto, @Usersesion() user: IJwtPayload): Promise<ProductsGetAll> {
     return this.medicalSuppliesService.getAll(body, user);
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
     @Delete(':id')
     deleteProduct(@Param('id', ParseIntPipe) id: number): Promise<Product> {
         return this.medicalSuppliesService.delete(id);
@@ -31,7 +29,7 @@ export class MedicalSuppliesController {
     @Roles(TypesRoles.admin, TypesRoles.almacen)
     @Post('newProduct')
     @UseInterceptors(FileInterceptor('url_image', {
-      storage: memoryStorage(), // Usa memoryStorage
+      storage: memoryStorage(), 
       limits: { fileSize: 1024 * 1024 * 10 },
     }))
     async createProduct(
@@ -41,7 +39,6 @@ export class MedicalSuppliesController {
       return this.medicalSuppliesService.create(createMedicalSupplyDto, file); // Pasa el objeto 'file' directamente
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
     @Put(':prodId')
     @UseInterceptors(FileInterceptor('url_image', {
         storage: memoryStorage(),
