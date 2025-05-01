@@ -107,4 +107,20 @@ export class RolesService {
 
     return await this.getRoleById(id);
     }
+
+    async getRoles_Actives(): Promise<any> {
+        try{
+
+            const rows = await this.db.select({
+                id: rolesTable.id,
+                name: rolesTable.name
+            }).from(rolesTable).where(eq(rolesTable.isActivate,true));
+        
+            return rows;
+    
+        }catch(err){
+            console.error("Error en la base de datos al buscar los roles activos ", err);
+            throw new Error("Error al obtener los roles activos" + err);
+        }
+    }
 }

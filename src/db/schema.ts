@@ -9,7 +9,8 @@ export const usersTable = table("users", {
     name: t.varchar({ length: 200 }).notNull(),
     email: t.varchar().notNull().unique(),
     password: t.varchar({ length: 255 }).notNull(),
-    role: rolesEnum().notNull(),
+    // role: rolesEnum().notNull(),
+    role: t.integer().notNull().references(() => rolesTable.id),
     isActivate: t.boolean('isActivate').notNull().default(true),
     createdAt: t.timestamp().defaultNow().notNull(),
     updatedAt: t.timestamp().defaultNow()

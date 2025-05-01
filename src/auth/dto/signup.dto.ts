@@ -3,7 +3,8 @@ import {
   IsOptional,
   IsString,
   IsEmail,
-  Matches
+  Matches,
+  IsNumber,
 } from 'class-validator';
 
 export class SignupDto {
@@ -22,5 +23,6 @@ export class SignupDto {
   name: string;
 
   @IsOptional()
-  role: any;
+  @IsNumber()
+  role: number;
 }

@@ -47,7 +47,11 @@ export class AuthService {
           };
         }
 
-        async signUp(signUp:SignupDto): Promise<any> {
+        async signUp(signUp:SignupDto): Promise<{
+          ok: boolean,
+          status: number,
+          description: string,
+        }> {
 
           const userExist = await this.usersService.findOnByEmail(signUp.email);
 

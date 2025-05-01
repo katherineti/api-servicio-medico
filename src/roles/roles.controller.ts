@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Param, ParseIntPipe, Post, Put, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UsePipes, ValidationPipe } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { Roles } from 'src/decorators/role.decorators';
 import { TypesRoles } from 'src/db/enums/types-roles';
@@ -39,5 +39,10 @@ export class RolesController {
     @Delete(':id')
     delete(@Param('id', ParseIntPipe) id: number): Promise<any> {
     return this.rolesService.delete(id);
+    }
+
+    @Get('getRolesActives')
+    getActives(): Promise<any> {
+        return this.rolesService.getRoles_Actives();
     }
 }

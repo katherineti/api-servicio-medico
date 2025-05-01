@@ -18,7 +18,7 @@ import { TypesRoles } from 'src/db/enums/types-roles';
 import { Usersesion } from 'src/auth/strategies/usersesion.decorator';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { SearchUserDto } from './dto/search.user.dto';
-import { ResultGetAll } from './dto/read-user-dto';
+import { IUser, ResultGetAll } from './dto/read-user-dto';
 import { SignupDto } from 'src/auth/dto/signup.dto';
 import { AuthService } from 'src/auth/auth.service';
 
@@ -45,7 +45,6 @@ export class UserController {
   }
 
   @Patch(':userId')
-  // @UseGuards(AuthGuard())
   @Roles(TypesRoles.admin)
   @UsePipes(ValidationPipe)
   updateUser(
@@ -58,12 +57,12 @@ export class UserController {
 
   @Roles(TypesRoles.admin)
   @Delete(':id')
-  deleteUser(@Param('id', ParseIntPipe) id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>> {
+  deleteUser(@Param('id', ParseIntPipe) id: number): Promise<IUser> {
     return this.userService.delete(id);
   }
 
   @Get(':id')
-  getUser(@Param('id', ParseIntPipe) id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>> {
+  getUser(@Param('id', ParseIntPipe) id: number): Promise<IUser> {
     return this.userService.getUserbyId(id);
   }
 }

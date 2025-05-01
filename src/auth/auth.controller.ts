@@ -22,8 +22,11 @@ export class AuthController {
     @Public()
     @Post('signup')
     @UsePipes(ValidationPipe)
-    signUp( @Body() signupDto: SignupDto ): Promise<string> {
+    signUp( @Body() signupDto: SignupDto ): Promise<{
+        ok: boolean,
+        status: number,
+        description: string,
+      }> {
         return this.authService.signUp(signupDto);
     } 
-
 }

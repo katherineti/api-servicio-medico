@@ -7,8 +7,9 @@ import * as argon2 from "argon2";
 import { CreateUser, User } from 'src/db/types/users.types';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
-import { ResultGetAll } from './dto/read-user-dto';
+import { IUser, ResultGetAll } from './dto/read-user-dto';
 import { SearchUserDto } from './dto/search.user.dto';
+import { rolesTable } from '../db/schema';
 
 @Injectable()
 export class UsersService {
@@ -16,32 +17,38 @@ export class UsersService {
 
  constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
 
-  async findOnByEmail(email: string): Promise< Omit<User, 'name'|'createdAt'|'updatedAt'> | undefined> {
+  // async findOnByEmail(email: string): Promise< Omit<User, 'name'|'createdAt'|'updatedAt'> | undefined> {
+  async findOnByEmail(email: string): Promise<IUser> {
     const result = await 
     this.db.select({
         id:  usersTable.id,
         email: usersTable.email,
         password: usersTable.password,
-        role: usersTable.role,
-        isActivate: usersTable.isActivate
+        isActivate: usersTable.isActivate,
+        // role: usersTable.role,
+        role: rolesTable.name,
       })
     .from(usersTable)
+    .leftJoin(rolesTable, eq(usersTable.role, rolesTable.id))
     .where(eq(usersTable.email , email ))
     .limit(1);
     
     return result[0];
   }
 
-  async getUserbyId(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'> | undefined> {
+  // async getUserbyId(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'> | undefined> {
+  async getUserbyId(id: number): Promise<IUser> {
     try{
       const result = await this.db.select({
           id:  usersTable.id,
           name: usersTable.name,
           email: usersTable.email,
-          role: usersTable.role,
+          // role: usersTable.role,
+          role: rolesTable.name,
           isActivate: usersTable.isActivate
         })
         .from(usersTable)
+        .leftJoin(rolesTable, eq(usersTable.id, rolesTable.id))
         .where(eq( usersTable.id, id ))
         .limit(1);
   
@@ -95,7 +102,8 @@ export class UsersService {
     return updatedUser[0];
   }
 
-  async delete(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>>{
+  // async delete(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>>{
+  async delete(id: number): Promise<IUser>{
 
     const user = await this.getUserbyId(id);
 
@@ -107,7 +115,7 @@ export class UsersService {
       updatedAt: new Date()
     };
 
-    const updatedUser = await this.db
+    await this.db
     .update(usersTable)
     .set(updateData)
     .where(eq(usersTable.id, id));
@@ -128,9 +136,18 @@ export class UsersService {
     const whereCondition = searchCondition ? and(statusCondition, searchCondition) : statusCondition
 
     const rows = await 
-    this.db.select()
+    this.db.select({
+      id:  usersTable.id,
+      name: usersTable.name,
+      email: usersTable.email,
+      isActivate: usersTable.isActivate,
+      createdAt: usersTable.createdAt,
+      updatedAt: usersTable.updatedAt,
+      role: rolesTable.name,
+      roleId: rolesTable.id,
+    })
     .from(usersTable)
-    // .where(whereCondition)
+    .leftJoin(rolesTable, eq(usersTable.role, rolesTable.id))
     .where(searchCondition)
     .orderBy(desc(usersTable.id))
     .limit(filter.take)
