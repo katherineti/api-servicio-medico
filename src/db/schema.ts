@@ -1,7 +1,7 @@
 import { pgEnum, pgTable as table } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core";
 
-export const rolesEnum = pgEnum("roles", ["admin", "almacen","medico","auditor"]);
+export const rolesEnum = pgEnum("roles_enum", ["admin", "almacen","medico","auditor"]);
 export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes","Equipos odontologicos"]);
 
 export const usersTable = table("users", {
@@ -9,7 +9,7 @@ export const usersTable = table("users", {
     name: t.varchar({ length: 200 }).notNull(),
     email: t.varchar().notNull().unique(),
     password: t.varchar({ length: 255 }).notNull(),
-    role: rolesEnum(),
+    role: rolesEnum().notNull(),
     isActivate: t.boolean('isActivate').notNull().default(true),
     createdAt: t.timestamp().defaultNow().notNull(),
     updatedAt: t.timestamp().defaultNow()
@@ -97,3 +97,10 @@ export const employeeFamilyTable = table("employeeFamily", {
     t.uniqueIndex("employee_family_unique").on(table.employeeId, table.familyId)
   ]
 );
+
+export const rolesTable = table("roles", {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 40 }).notNull().unique(),
+    description: t.varchar({ length: 50 }).default(null),
+    isActivate: t.boolean().notNull().default(true),
+});

@@ -13,6 +13,7 @@ import { join } from 'path';
 import { AssignmentModule } from './assignment/assignment.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { RolesGuard } from './guards/roles.guard';
+import { RolesModule } from './roles/roles.module';
 @Module({
   imports: [
     DrizzleDbConecctionModule,
@@ -27,6 +28,7 @@ import { RolesGuard } from './guards/roles.guard';
     CategoriesModule,
     AssignmentModule,
     DashboardModule,
+    RolesModule,
   ],
   // controllers: [AppController],
   controllers: [],
