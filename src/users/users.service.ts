@@ -17,24 +17,30 @@ export class UsersService {
  constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
 
   async findOnByEmail(email: string): Promise< Omit<User, 'name'|'createdAt'|'updatedAt'> | undefined> {
-      const result = await 
-      this.db.select({
-              id:  usersTable.id,
-              email: usersTable.email,
-              password: usersTable.password,
-              role: usersTable.role,
-              isActivate: usersTable.isActivate
-        })
-      .from(usersTable)
-      .where(eq(usersTable.email , email ))
-      .limit(1);
-      
-      return result[0];
+    const result = await 
+    this.db.select({
+        id:  usersTable.id,
+        email: usersTable.email,
+        password: usersTable.password,
+        role: usersTable.role,
+        isActivate: usersTable.isActivate
+      })
+    .from(usersTable)
+    .where(eq(usersTable.email , email ))
+    .limit(1);
+    
+    return result[0];
   }
 
-  async getUserbyId(id: number): Promise<User | undefined> {
+  async getUserbyId(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'> | undefined> {
     try{
-      const result = await this.db.select()
+      const result = await this.db.select({
+          id:  usersTable.id,
+          name: usersTable.name,
+          email: usersTable.email,
+          role: usersTable.role,
+          isActivate: usersTable.isActivate
+        })
         .from(usersTable)
         .where(eq( usersTable.id, id ))
         .limit(1);
@@ -64,7 +70,6 @@ export class UsersService {
 
       throw new Error("Error al crear un usuario " + err);
     }
-
   }
 
   async update(id: number, user: Partial<UpdateUserDto>): Promise<User>{
@@ -90,7 +95,7 @@ export class UsersService {
     return updatedUser[0];
   }
 
-  async delete(id: number): Promise<User>{
+  async delete(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>>{
 
     const user = await this.getUserbyId(id);
 

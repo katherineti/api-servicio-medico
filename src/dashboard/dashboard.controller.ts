@@ -15,11 +15,13 @@ export class DashboardController {
     return this.usersService.countAllUsers();
     }
 
+    @Roles(TypesRoles.admin)
     @Get('totalProductsOfTheDay')
     totalProductsOfTheDay(): Promise<{ count: number }> {
-    return this.medicalSuppliesService.totalProductsOfTheDay();
+      return this.medicalSuppliesService.totalProductsOfTheDay();
     }
-
+    
+    @Roles(TypesRoles.admin)
     @Get('totalProductsOfMonth')
     totalProductsOfMonth(): Promise<{ count: number }> {
     return this.medicalSuppliesService.totalProductsOfMonth();
@@ -36,5 +38,11 @@ export class DashboardController {
     @Get('totalAssignmentOfMonth')
     totalAssignmentOfMonth(): Promise<{ count: number }> {
     return this.assignmentService.totalAssignmentOfMonth();
+    }
+
+    @Roles(TypesRoles.almacen)
+    @Get('totalAllProducts')
+    totalAllProducts(): Promise<{ count: number }> {
+      return this.medicalSuppliesService.countAllProducts();
     }
 }

@@ -300,4 +300,13 @@ export class MedicalSuppliesService {
 
     return result || { count: 0 };
   }
+
+  //Para el contador de productos en el dashboard de almacen
+  async countAllProducts(): Promise<{ count: number }> {
+    const [result] = await 
+    this.db.select({ count: count() })
+    .from(productsTable)
+    
+    return result ? result : { count: 0 };
+  }
 }

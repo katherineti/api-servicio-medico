@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   ParseIntPipe,
   Patch,
@@ -57,8 +58,12 @@ export class UserController {
 
   @Roles(TypesRoles.admin)
   @Delete(':id')
-  deleteUser(@Param('id', ParseIntPipe) id: number): Promise<User> {
+  deleteUser(@Param('id', ParseIntPipe) id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>> {
     return this.userService.delete(id);
   }
 
+  @Get(':id')
+  getUser(@Param('id', ParseIntPipe) id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'>> {
+    return this.userService.getUserbyId(id);
+  }
 }
