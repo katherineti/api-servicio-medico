@@ -70,6 +70,7 @@ export class MedicalSuppliesService {
       stock: productsTable.stock,
       name: productsTable.name,
       type: productsTable.type,
+      expirationDate: productsTable.expirationDate,
       createdAt: productsTable.createdAt,
       updatedAt: productsTable.updatedAt,
       categoryId: categoriesTable.id,
@@ -101,7 +102,7 @@ export class MedicalSuppliesService {
   }
 
   async create(createMedicalSupplyDto: any, file?: Express.Multer.File): Promise<any> {
-    console.log('Datos del producto:', createMedicalSupplyDto);
+    //recibo expirationDate: 'Sat May 03 2025 00:00:00 GMT-0400 (hora de Venezuela)'
 
     let imageUrl: string | null = null;
     let category:ICategory;
@@ -136,6 +137,7 @@ export class MedicalSuppliesService {
     }
 
     try {
+     const fechaStringToDate = new Date(createMedicalSupplyDto.expirationDate);
      let obj= {
         name: createMedicalSupplyDto.name,
         description: createMedicalSupplyDto.description,
@@ -144,8 +146,10 @@ export class MedicalSuppliesService {
         stock: Number(createMedicalSupplyDto.stock),
         code: createMedicalSupplyDto.code,
         url_image: imageUrl,
-        statusId: PRODUCT_STATUS_ACTIVO
+        statusId: PRODUCT_STATUS_ACTIVO,
+        expirationDate: fechaStringToDate
       }
+
       const [newMedicalSupply] = await this.db.insert(productsTable).values(obj).returning();
 
       return newMedicalSupply;
@@ -200,6 +204,7 @@ export class MedicalSuppliesService {
     }
 
     try {
+      const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
       const updateData: Partial<Product> = {
         name: updateMedicalSupplyDto.name,
         description: updateMedicalSupplyDto.description,
@@ -208,7 +213,8 @@ export class MedicalSuppliesService {
         stock: updateMedicalSupplyDto.stock,
         statusId: updateMedicalSupplyDto.status,
         updatedAt: new Date(),
-        url_image: imageUrl
+        url_image: imageUrl,
+        expirationDate: fechaStringToDate
       };
   
       const updated = await this.db

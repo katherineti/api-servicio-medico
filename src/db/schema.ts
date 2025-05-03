@@ -36,16 +36,17 @@ export const productsTable = table("products", {
     type: ProductTypeEnum().notNull(),
     categoryId: t.integer().notNull().references(() => categoriesTable.id),
     statusId: t.integer().notNull().references(() => productStatusTable.id),
+    expirationDate: t.timestamp().notNull(),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
-export const expiredProductsTable = table("expiredProducts", {
+/* export const expiredProductsTable = table("expiredProducts", {
     id: t.serial().primaryKey(),
     productId: t.integer().notNull().references(() => productsTable.id),
     expirationDate: t.date("expirationDate", { mode: "date" }),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
-});
+}); */
 export const employeeTable = table("employee", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
