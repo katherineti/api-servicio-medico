@@ -59,6 +59,7 @@ export class RolesService {
     }
 
     async create( newRole: CreateRole): Promise<any>{
+        newRole.name = newRole.name.toLowerCase();
         try {
             await this.db.insert(rolesTable).values(newRole);
 
@@ -76,7 +77,7 @@ export class RolesService {
     }
     
     const updateData: Partial<RoleDto> = {
-        name: roleDto.name,
+        name: roleDto.name? roleDto.name.toLowerCase():'',
         description: roleDto.description,
     };
 
