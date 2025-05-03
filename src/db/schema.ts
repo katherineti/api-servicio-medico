@@ -73,19 +73,19 @@ export const assignmentTable = table("assignment", {
     familyId: t.integer().references(() => familyTable.id),
     type: t.integer().notNull().references(() => typesAssignmentTable.id),
     observation: t.varchar({ length: 200 }).default(""),
-    productId: t.integer().notNull().references(() => productsTable.id),
+    productId: t.integer().notNull().references(() => productsTable.id, { onDelete: 'cascade' } ),
     products: t.integer().notNull().default(0),//numero de productos asignados a un empleado 
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
-export const assignedProductTable = table("assignedProduct", {
+/* export const assignedProductTable = table("assignedProduct", {
     id: t.serial().primaryKey(),
     assignmentId: t.integer().notNull().references(() => assignmentTable.id),
     productId: t.integer().notNull().references(() => productsTable.id),
     quantity: t.integer().notNull().default(0), //resto del producto en almacen
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
-});
+}); */
 
 //uso para listar los familiares del empleado, en el formulario de asignacion de productos
 export const employeeFamilyTable = table("employeeFamily", {

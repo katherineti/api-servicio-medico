@@ -1,21 +1,13 @@
 CREATE TYPE "public"."ProductType" AS ENUM('Medicamentos', 'Uniformes', 'Equipos odontologicos');--> statement-breakpoint
-CREATE TYPE "public"."roles" AS ENUM('admin', 'almacen', 'medico', 'auditor');--> statement-breakpoint
-CREATE TABLE "assignedProduct" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"assignmentId" integer NOT NULL,
-	"productId" integer NOT NULL,
-	"quantity" integer DEFAULT 0,
-	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now()
-);
---> statement-breakpoint
+CREATE TYPE "public"."roles_enum" AS ENUM('admin', 'almacen', 'medico', 'auditor');--> statement-breakpoint
 CREATE TABLE "assignment" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"employeeId" integer NOT NULL,
-	"familyId" integer NOT NULL,
+	"familyId" integer,
 	"type" integer NOT NULL,
-	"observation" varchar(200) NOT NULL,
-	"maxProducts" integer DEFAULT 0,
+	"observation" varchar(200) DEFAULT '',
+	"productId" integer NOT NULL,
+	"products" integer DEFAULT 0 NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()
 );
@@ -28,33 +20,32 @@ CREATE TABLE "categories" (
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "employeeFamily" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"employeeId" integer NOT NULL,
+	"familyId" integer NOT NULL,
+	"createdAt" timestamp DEFAULT now(),
+	"updatedAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "employee" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(200) NOT NULL,
-	"cedula" varchar(30) NOT NULL,
+	"cedula" varchar(10) NOT NULL,
 	"email" varchar(100) NOT NULL,
-	"phone" varchar(255) NOT NULL,
+	"phone" varchar(50) NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now(),
 	CONSTRAINT "employee_cedula_unique" UNIQUE("cedula"),
 	CONSTRAINT "employee_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "expiredProducts" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"productId" integer NOT NULL,
-	"expirationDate" date,
-	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now()
-);
---> statement-breakpoint
 CREATE TABLE "family" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(200) NOT NULL,
-	"cedula" varchar(30) NOT NULL,
+	"cedula" varchar(10) DEFAULT null,
 	"createdAt" timestamp DEFAULT now(),
-	"updatedAt" timestamp DEFAULT now(),
-	CONSTRAINT "family_cedula_unique" UNIQUE("cedula")
+	"updatedAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "productStatus" (
@@ -73,9 +64,18 @@ CREATE TABLE "products" (
 	"type" "ProductType" NOT NULL,
 	"categoryId" integer NOT NULL,
 	"statusId" integer NOT NULL,
+	"expirationDate" timestamp NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now(),
 	CONSTRAINT "products_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
+CREATE TABLE "roles" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" varchar(40) NOT NULL,
+	"description" varchar(50) DEFAULT null,
+	"isActivate" boolean DEFAULT true NOT NULL,
+	CONSTRAINT "roles_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
 CREATE TABLE "typesAssignment" (
@@ -84,30 +84,25 @@ CREATE TABLE "typesAssignment" (
 	CONSTRAINT "typesAssignment_name_unique" UNIQUE("name")
 );
 --> statement-breakpoint
-ALTER TABLE "roles" DISABLE ROW LEVEL SECURITY;--> statement-breakpoint
-DROP TABLE "roles" CASCADE;--> statement-breakpoint
-ALTER TABLE "users" DROP CONSTRAINT "users_username_unique";--> statement-breakpoint
-ALTER TABLE "users" DROP CONSTRAINT "users_roles_id_roles_id_fk";
+CREATE TABLE "users" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "users_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"name" varchar(200) NOT NULL,
+	"email" varchar NOT NULL,
+	"password" varchar(255) NOT NULL,
+	"role" integer NOT NULL,
+	"isActivate" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now(),
+	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
 --> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "name" SET DATA TYPE varchar(200);--> statement-breakpoint
-ALTER TABLE "users" ALTER COLUMN "email" SET DATA TYPE varchar;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "role" "roles";--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "isActivate" boolean DEFAULT true NOT NULL;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "createdAt" timestamp DEFAULT now() NOT NULL;--> statement-breakpoint
-ALTER TABLE "users" ADD COLUMN "updatedAt" timestamp DEFAULT now();--> statement-breakpoint
-ALTER TABLE "assignedProduct" ADD CONSTRAINT "assignedProduct_assignmentId_assignment_id_fk" FOREIGN KEY ("assignmentId") REFERENCES "public"."assignment"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "assignedProduct" ADD CONSTRAINT "assignedProduct_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_employeeId_employee_id_fk" FOREIGN KEY ("employeeId") REFERENCES "public"."employee"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_type_typesAssignment_id_fk" FOREIGN KEY ("type") REFERENCES "public"."typesAssignment"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "expiredProducts" ADD CONSTRAINT "expiredProducts_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "assignment" ADD CONSTRAINT "assignment_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_employeeId_employee_id_fk" FOREIGN KEY ("employeeId") REFERENCES "public"."employee"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_categories_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_statusId_productStatus_id_fk" FOREIGN KEY ("statusId") REFERENCES "public"."productStatus"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "lastname";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "age";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "username";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "url_image";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "id_departamento";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "id_cargo";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "created_at";--> statement-breakpoint
-ALTER TABLE "users" DROP COLUMN "roles_id";
+ALTER TABLE "users" ADD CONSTRAINT "users_role_roles_id_fk" FOREIGN KEY ("role") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "employee_family_unique" ON "employeeFamily" USING btree ("employeeId","familyId");
