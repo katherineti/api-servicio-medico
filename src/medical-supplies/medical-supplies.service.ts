@@ -3,7 +3,7 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { PG_CONNECTION, PRODUCT_STATUS_ACTIVO, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable } from 'src/db/schema';
-import { count, desc, ilike, eq, and, sql } from 'drizzle-orm'
+import { count, desc, ilike, eq, and, sql, ne } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
@@ -58,6 +58,10 @@ export class MedicalSuppliesService {
     if (filter.category) {
       whereConditions.push(ilike(categoriesTable.name, `%${filter.category}%`));
     }
+
+    // Condición para excluir statusId = 4 (productos caducados)
+    whereConditions.push(ne(productsTable.statusId, 4));
+
     // Condición de búsqueda combinada (si hay alguna)
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
