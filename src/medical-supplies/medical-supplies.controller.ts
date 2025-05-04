@@ -19,7 +19,7 @@ export class MedicalSuppliesController {
     @Post('getAll')
     @UsePipes(ValidationPipe)
     getProducts(@Body() body: SearchProductsDto, @Usersesion() user: IJwtPayload): Promise<ProductsGetAll> {
-    return this.medicalSuppliesService.getAll(body, user);
+    return this.medicalSuppliesService.getAll(body);
     }
 
     @Delete(':id')

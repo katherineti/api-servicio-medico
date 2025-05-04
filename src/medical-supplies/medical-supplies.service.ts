@@ -48,7 +48,7 @@ export class MedicalSuppliesService {
       }
   }
 
-  async getAll(filter: SearchProductsDto, user: IJwtPayload): Promise<ProductsGetAll> {
+  async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> {
     const whereConditions = [];
     // Búsqueda por nombre (ilike) si se proporciona
     if (filter.name) {
