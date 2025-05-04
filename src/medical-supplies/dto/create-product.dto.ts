@@ -17,21 +17,24 @@ export class CreateProductDto{
 
     @IsOptional()
     @IsString()
-    code: string;
+    code: string;//es un string numerico ejemplo '000'
 
     @IsNotEmpty()
-    @IsNumber()
-    stock: number;
+    @IsString()
+    stock: string;
 
     @IsNotEmpty()
-    @IsNumber()
-    categoryId: number;
+    @IsString()
+    category: string;//es un string numerico ejemplo '1'
 
     @IsNotEmpty()
     @IsString()
     type: TypesProducts;
 
     @IsNotEmpty()
-    @IsNumber()
-    statusId: number;
+    @IsString()
+    status: string;//es un string numerico ejemplo '1'
+
+    @IsNotEmpty()
+    expirationDate: Date;
 }

@@ -9,6 +9,7 @@ import { Roles } from 'src/decorators/role.decorators';
 import { TypesRoles } from 'src/db/enums/types-roles';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { CreateProductDto } from './dto/create-product.dto';
 
 @Controller('medical-supplies')
 
@@ -32,8 +33,9 @@ export class MedicalSuppliesController {
       storage: memoryStorage(), 
       limits: { fileSize: 1024 * 1024 * 10 },
     }))
+    @UsePipes(ValidationPipe)
     async createProduct(
-      @Body() createMedicalSupplyDto: any,
+      @Body() createMedicalSupplyDto: CreateProductDto,
       @UploadedFile() file: Express.Multer.File,
     ) {
       return this.medicalSuppliesService.create(createMedicalSupplyDto, file); // Pasa el objeto 'file' directamente
@@ -44,9 +46,10 @@ export class MedicalSuppliesController {
         storage: memoryStorage(),
         limits: { fileSize: 1024 * 1024 * 10 },
       }))
+    @UsePipes(ValidationPipe)
     updateProduct(
       @Param('prodId', ParseIntPipe) prodId: number,
-      @Body() product: any,
+      @Body() product: CreateProductDto,
       @UploadedFile() file: Express.Multer.File,
     ){
 

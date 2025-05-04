@@ -11,6 +11,7 @@ import { Product } from 'src/db/types/products.types';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { CategoriesService, ICategory } from 'src/categories/categories.service';
+import { CreateProductDto } from './dto/create-product.dto';
 
 @Injectable()
 export class MedicalSuppliesService {
@@ -105,7 +106,7 @@ export class MedicalSuppliesService {
     return result;
   }
 
-  async create(createMedicalSupplyDto: any, file?: Express.Multer.File): Promise<any> {
+  async create(createMedicalSupplyDto: CreateProductDto, file?: Express.Multer.File): Promise<any> {
     //recibo expirationDate: 'Sat May 03 2025 00:00:00 GMT-0400 (hora de Venezuela)'
 
     let imageUrl: string | null = null;
@@ -113,7 +114,7 @@ export class MedicalSuppliesService {
     
     
     if (file) {
-      category = await this.categoriesService.getById(createMedicalSupplyDto.category);
+      category = await this.categoriesService.getById(Number(createMedicalSupplyDto.category));
       const categoryWithoutSpaces = this.removesSpacesInString(category.name);
 
       const timestamp = Date.now();
@@ -145,12 +146,12 @@ export class MedicalSuppliesService {
      let obj= {
         name: createMedicalSupplyDto.name,
         description: createMedicalSupplyDto.description,
-        categoryId: createMedicalSupplyDto.category,
+        categoryId: Number(createMedicalSupplyDto.category),
         type: createMedicalSupplyDto.type,
         stock: Number(createMedicalSupplyDto.stock),
         code: createMedicalSupplyDto.code,
         url_image: imageUrl,
-        statusId: PRODUCT_STATUS_ACTIVO,
+        statusId: Number(createMedicalSupplyDto.status),
         expirationDate: fechaStringToDate
       }
 
@@ -163,7 +164,7 @@ export class MedicalSuppliesService {
     }
   }
 
-  async update(id:number, updateMedicalSupplyDto: any, file?: Express.Multer.File): Promise<any> {
+  async update(id:number, updateMedicalSupplyDto: CreateProductDto, file?: Express.Multer.File): Promise<any> {
     console.log('Datos del producto:', updateMedicalSupplyDto);
 
     let imageUrl: string | null = null;
@@ -180,7 +181,7 @@ export class MedicalSuppliesService {
     }
     
     if (file) {
-      category = await this.categoriesService.getById(updateMedicalSupplyDto.category);
+      category = await this.categoriesService.getById(Number(updateMedicalSupplyDto.category));
       const categoryWithoutSpaces = this.removesSpacesInString(category.name);
 
       const timestamp = Date.now();
@@ -212,10 +213,10 @@ export class MedicalSuppliesService {
       const updateData: Partial<Product> = {
         name: updateMedicalSupplyDto.name,
         description: updateMedicalSupplyDto.description,
-        categoryId: updateMedicalSupplyDto.category,
+        categoryId: Number(updateMedicalSupplyDto.category),
         type: updateMedicalSupplyDto.type,
-        stock: updateMedicalSupplyDto.stock,
-        statusId: updateMedicalSupplyDto.status,
+        stock: Number(updateMedicalSupplyDto.stock),
+        statusId: Number(updateMedicalSupplyDto.status),
         updatedAt: new Date(),
         url_image: imageUrl,
         expirationDate: fechaStringToDate
@@ -227,19 +228,7 @@ export class MedicalSuppliesService {
       .where(eq(productsTable.id, id))
   
       return updated[0];
-/*      let obj= {
-        name: createMedicalSupplyDto.name,
-        description: createMedicalSupplyDto.description,
-        categoryId: createMedicalSupplyDto.category,
-        type: createMedicalSupplyDto.type,
-        stock: Number(createMedicalSupplyDto.stock),
-        code: createMedicalSupplyDto.code,
-        url_image: imageUrl,
-        statusId: PRODUCT_STATUS_ACTIVO
-      }
-      const [newMedicalSupply] = await this.db.insert(productsTable).values(obj).returning();
 
-      return newMedicalSupply; */
     } catch (error) {
       console.error('Error al actualizar el registro', error);
       return { error: 'Error al actualizar el registro' };
