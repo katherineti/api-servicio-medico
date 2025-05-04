@@ -49,7 +49,6 @@ export class MedicalSuppliesService {
   }
 
   async getAll(filter: SearchProductsDto, user: IJwtPayload): Promise<ProductsGetAll> {
-
     const whereConditions = [];
     // Búsqueda por nombre (ilike) si se proporciona
     if (filter.name) {
@@ -58,6 +57,11 @@ export class MedicalSuppliesService {
     // Búsqueda por categoria (ilike) si se proporciona
     if (filter.category) {
       whereConditions.push(ilike(categoriesTable.name, `%${filter.category}%`));
+    }
+    // Búsqueda por fecha de expiracion seleccionada, si se proporciona
+    if (filter.expirationDate) {
+      const datePart = filter.expirationDate.toString().split('T')[0];
+      whereConditions.push(eq(sql<string>`CAST(${productsTable.expirationDate} AS DATE)`, datePart)); 
     }
 
     // Condición para excluir statusId = 4 (productos caducados)

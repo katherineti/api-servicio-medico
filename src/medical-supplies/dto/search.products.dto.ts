@@ -9,6 +9,9 @@ export class SearchProductsDto {
   @IsOptional()
   @IsString()
   category: string;
+  
+  @IsOptional()
+  expirationDate:Date;
 
   @IsNumber()
   @IsNotEmpty()
