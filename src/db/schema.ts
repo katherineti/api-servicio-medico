@@ -106,3 +106,13 @@ export const rolesTable = table("roles", {
     description: t.varchar({ length: 50 }).default(null),
     isActivate: t.boolean().notNull().default(true),
 });
+
+export const logsTable = table("logs", {
+    id: t.serial().primaryKey(),
+    userId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+    productId: t.integer().default(null).references(() => productsTable.id, { onDelete: 'cascade' } ),
+    action: t.varchar({ length: 100 }).notNull(),
+    ipAddress: t.varchar({ length: 200 }).notNull(), //Direccion IP del usuario conectado
+    hostname: t.varchar({ length: 200 }).notNull(), //Hostname del usuario conectado
+    createdAt: t.timestamp().defaultNow()
+});

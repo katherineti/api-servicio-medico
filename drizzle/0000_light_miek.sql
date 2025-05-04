@@ -48,6 +48,16 @@ CREATE TABLE "family" (
 	"updatedAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "logs" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"userId" integer NOT NULL,
+	"productId" integer DEFAULT null,
+	"action" varchar(100) NOT NULL,
+	"ipAddress" varchar(200) NOT NULL,
+	"hostname" varchar(200) NOT NULL,
+	"createdAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "productStatus" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"status" varchar(30) NOT NULL,
@@ -102,6 +112,8 @@ ALTER TABLE "assignment" ADD CONSTRAINT "assignment_type_typesAssignment_id_fk" 
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_employeeId_employee_id_fk" FOREIGN KEY ("employeeId") REFERENCES "public"."employee"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "logs" ADD CONSTRAINT "logs_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "logs" ADD CONSTRAINT "logs_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_categories_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_statusId_productStatus_id_fk" FOREIGN KEY ("statusId") REFERENCES "public"."productStatus"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_role_roles_id_fk" FOREIGN KEY ("role") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

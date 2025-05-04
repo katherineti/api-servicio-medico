@@ -14,6 +14,7 @@ import { AssignmentModule } from './assignment/assignment.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { RolesGuard } from './guards/roles.guard';
 import { RolesModule } from './roles/roles.module';
+import { LogsModule } from './logs/logs.module';
 @Module({
   imports: [
     DrizzleDbConecctionModule,
@@ -29,6 +30,7 @@ import { RolesModule } from './roles/roles.module';
     AssignmentModule,
     DashboardModule,
     RolesModule,
+    LogsModule,
   ],
   // controllers: [AppController],
   controllers: [],
