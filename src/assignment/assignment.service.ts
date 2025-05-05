@@ -173,7 +173,6 @@ export class AssignmentService {
         }
     }
 
-
     async addEmployee(createEmployeeDto:CreateEmployeeDto): Promise<Employee>{
         try{
             const [resulEmployee] =  await this.db.insert(employeeTable).values(createEmployeeDto).returning();
@@ -185,7 +184,7 @@ export class AssignmentService {
         }
     }
 
-   //Para el contador de asignacion del dia, en el dashboard
+   //Para el contador de asignaciones del dia, en el dashboard
     async totalAssignmentOfTheDay(): Promise<{ count: number }> {
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00.000
@@ -224,6 +223,15 @@ export class AssignmentService {
             sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`
           );
         Logger.debug("Contador asignacion del mes, en el dashboard" , JSON.stringify(result))
+    
+        return result || { count: 0 };
+    }
+
+    //Para el contador de asignaciones en el dashboard de medico
+    async totalAssignments(): Promise<{ count: number }> {
+ 
+        const [result] = await this.db.select({ count: count() }).from(assignmentTable);
+        Logger.debug("Contador asignaciones, para el dashboard" , JSON.stringify(result));
     
         return result || { count: 0 };
     }

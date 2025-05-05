@@ -27,7 +27,6 @@ export class DashboardController {
     return this.medicalSuppliesService.totalProductsOfMonth();
     }
 
-    // Para el dashboard del usuario almacen:
     @Roles(TypesRoles.admin, TypesRoles.almacen)
     @Get('totalAssignmentOfTheDay')
     totalAssignmentOfTheDay(): Promise<{ count: number }> {
@@ -40,9 +39,13 @@ export class DashboardController {
     return this.assignmentService.totalAssignmentOfMonth();
     }
 
-    @Roles(TypesRoles.almacen)
     @Get('totalAllProducts')
     totalAllProducts(): Promise<{ count: number }> {
       return this.medicalSuppliesService.countAllProducts();
+    }
+
+    @Get('totalAssignments')
+    totalAssignments(): Promise<any> {
+      return this.assignmentService.totalAssignments();
     }
 }
