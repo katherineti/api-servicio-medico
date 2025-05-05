@@ -17,12 +17,10 @@ export class AuthController {
         @Ip() clienteIp: string,
         @Req() req: Request
     ): Promise<{ token: string }>{
-        
         let client = {
             ip: clienteIp,
             hostname: req.headers['host']
-        }
-
+        };
         return this.authService.signIn(
             signInDto.email,
             signInDto.password,

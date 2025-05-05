@@ -11,17 +11,19 @@ import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
 import { MedicalSuppliesService } from 'src/medical-supplies/medical-supplies.service';
+import { LogsService } from 'src/logs/logs.service';
+import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 
 @Injectable()
 export class AssignmentService {
 
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private medicalSuppliesService: MedicalSuppliesService) {}
+    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private medicalSuppliesService: MedicalSuppliesService, private logsService: LogsService) {}
 
-    async createAssignment( create: CreateAssignmentDto): Promise<Assignment>{
+    async createAssignment( create: CreateAssignmentDto, userId: number, customerAccessPoint: IcustomerAccessPoint): Promise<Assignment>{
         console.log("Body ", create)
         const product:Product = await this.medicalSuppliesService.getProductbyId(create.productId);
         if (!product) {
-            throw new NotFoundException('El producto no existe');
+            throw new NotFoundException('El producto no existe.');
         }
 
         // Calcula el stock disponible considerando las asignaciones 
@@ -29,19 +31,19 @@ export class AssignmentService {
         
         // Asegura que la cantidad de productos a asignar no exceda el stock disponible.
         if (stockDisponible < create.products) {
-            throw new ConflictException('El stock actual del producto es insuficiente');
+            throw new ConflictException('El stock actual del producto es insuficiente.');
         }
 
         Logger.debug("Producto " , JSON.stringify(product));
-        //Insert de la asignacion
+        //Insert de la asignación
         const insert: CreateAssignment = {
             ...create,
         };
         const [result] =  await this.db.insert(assignmentTable).values(insert).returning();
-        Logger.debug("Insert de la asignacion " ,JSON.stringify(result));
+        Logger.debug("Insert de la asignacion ", JSON.stringify(result));
 
         if(!result){
-            throw new Error('Error al crear la asignación de producto para el empleado');
+            throw new Error('Error al crear la asignación de producto para el empleado.');
         }
 
         //Actualiza el stock en la tabla productos
@@ -63,9 +65,18 @@ export class AssignmentService {
         .execute()
 
         if(!updatedStockProduct){
-        throw new ConflictException('Error al actualizar el stock del producto');
+        throw new ConflictException('Error al actualizar el stock del producto.');
         }
         Logger.debug("Stock actualizado en la tabla productos " + JSON.stringify(updatedStockProduct));
+
+        //Inserta un log 
+        this.logsService.create({
+            action: 'Asignación de insumo médico',
+            userId: userId,
+            productId: create.productId,
+            ipAddress: customerAccessPoint.ip,
+            hostname: customerAccessPoint.hostname
+        });
 
         return result; //Retorna el resultado del insert de la asignacion
     }

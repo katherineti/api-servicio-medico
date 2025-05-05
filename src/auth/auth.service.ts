@@ -7,18 +7,15 @@ import { SignupDto } from './dto/signup.dto';
 import { IJwtPayload } from './dto/jwt-payload.interface';
 import { TypesRoles } from 'src/db/enums/types-roles';
 import { LogsService } from 'src/logs/logs.service';
+import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 
-interface IcustomerAccessPoint{
-  ip: string,
-  hostname: string
-}
 @Injectable()
 export class AuthService {
 
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    public logsService: LogsService
+    private logsService: LogsService
   ) {}
 
     async signIn(email:string, password: string, customerAccessPoint: IcustomerAccessPoint): Promise<{ token: string }> {
@@ -49,6 +46,7 @@ export class AuthService {
       this.logsService.create({
         action: 'Inicio de sesión',
         userId: user.id,
+        productId: null,
         ipAddress:customerAccessPoint.ip,
         hostname:customerAccessPoint.hostname
       });

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Ip, Param, ParseIntPipe, Post, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AssignmentService } from './assignment.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Family } from 'src/db/types/family.types';
@@ -6,6 +6,8 @@ import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
 import { Assignment } from 'src/db/types/assignment.types';
 import { CreateFamilyDto } from './dto/create-family.dto';
+import { Usersesion } from 'src/auth/strategies/usersesion.decorator';
+import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 
 @Controller('assignment')
 export class AssignmentController {
@@ -14,8 +16,15 @@ export class AssignmentController {
     @UsePipes(ValidationPipe)
     async createAssignment(
         @Body() createAssignmentDto: CreateAssignmentDto,
+            @Usersesion() user: IJwtPayload,
+            @Ip() clienteIp: string,
+            @Req() req: Request
     ): Promise<Assignment>{
-        return this.assignmentService.createAssignment(createAssignmentDto);
+        let client = {
+            ip: clienteIp,
+            hostname: req.headers['host']
+        };
+        return this.assignmentService.createAssignment(createAssignmentDto, user.sub, client);
     }
 
     @Get('getAllEmployees')

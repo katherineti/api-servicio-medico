@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Ip, Param, ParseIntPipe, Post, Put, Req, UploadedFile, UseInterceptors, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SearchProductsDto } from './dto/search.products.dto';
 import { Usersesion } from 'src/auth/strategies/usersesion.decorator';
 import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
@@ -37,8 +37,15 @@ export class MedicalSuppliesController {
     async createProduct(
       @Body() createMedicalSupplyDto: CreateProductDto,
       @UploadedFile() file: Express.Multer.File,
-    ) {
-      return this.medicalSuppliesService.create(createMedicalSupplyDto, file); // Pasa el objeto 'file' directamente
+          @Usersesion() user: IJwtPayload,
+          @Ip() clienteIp: string,
+          @Req() req: Request
+    ){
+      let client = {
+        ip: clienteIp,
+        hostname: req.headers['host']
+      };
+      return this.medicalSuppliesService.create(createMedicalSupplyDto, user.sub, client, file); // Pasa el objeto 'file' directamente
     }
 
     @Put(':prodId')

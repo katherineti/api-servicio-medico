@@ -2,13 +2,19 @@ import { Module } from '@nestjs/common';
 import { AssignmentController } from './assignment.controller';
 import { AssignmentService } from './assignment.service';
 import { DrizzleDbConecctionModule } from 'src/db.module';
-import { MedicalSuppliesService } from 'src/medical-supplies/medical-supplies.service';
+import { LogsModule } from 'src/logs/logs.module';
 import { MedicalSuppliesModule } from 'src/medical-supplies/medical-supplies.module';
-import { CategoriesService } from 'src/categories/categories.service';
+import { CategoriesModule } from 'src/categories/categories.module';
 
 @Module({
-  imports: [DrizzleDbConecctionModule],
+  imports: [
+    DrizzleDbConecctionModule, 
+    MedicalSuppliesModule,
+    CategoriesModule,
+    LogsModule
+  ],
   controllers: [AssignmentController],
-  providers: [AssignmentService,MedicalSuppliesService, CategoriesService]
+  providers: [AssignmentService],
+  exports:[AssignmentService]
 })
 export class AssignmentModule {}

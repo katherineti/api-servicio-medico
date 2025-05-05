@@ -1,23 +1,23 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
-import { PG_CONNECTION, PRODUCT_STATUS_ACTIVO, PRODUCT_STATUS_INACTIVO } from 'src/constants';
+import { PG_CONNECTION, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable } from 'src/db/schema';
 import { count, desc, ilike, eq, and, sql, ne } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
-
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { CategoriesService, ICategory } from 'src/categories/categories.service';
 import { CreateProductDto } from './dto/create-product.dto';
+import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
+import { LogsService } from 'src/logs/logs.service';
 
 @Injectable()
 export class MedicalSuppliesService {
   private readonly logger = new Logger(MedicalSuppliesService.name);
 
-  constructor(@Inject(PG_CONNECTION) private db: NeonDatabase , private categoriesService: CategoriesService) {}
+  constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private categoriesService: CategoriesService, private logsService: LogsService) {}
 
   async getProductbyId(id: number): Promise<any> {
       try{
@@ -110,12 +110,11 @@ export class MedicalSuppliesService {
     return result;
   }
 
-  async create(createMedicalSupplyDto: CreateProductDto, file?: Express.Multer.File): Promise<any> {
+  async create(createMedicalSupplyDto: CreateProductDto, userId: number, customerAccessPoint: IcustomerAccessPoint, file?: Express.Multer.File): Promise<any> {
     //recibo expirationDate: 'Sat May 03 2025 00:00:00 GMT-0400 (hora de Venezuela)'
 
     let imageUrl: string | null = null;
     let category:ICategory;
-    
     
     if (file) {
       category = await this.categoriesService.getById(Number(createMedicalSupplyDto.category));
@@ -160,6 +159,15 @@ export class MedicalSuppliesService {
       }
 
       const [newMedicalSupply] = await this.db.insert(productsTable).values(obj).returning();
+
+      //Inserta un log 
+      this.logsService.create({
+        action: 'Insumo médico agregado',
+        userId: userId,
+        productId: newMedicalSupply.id,
+        ipAddress: customerAccessPoint.ip,
+        hostname: customerAccessPoint.hostname
+      });
 
       return newMedicalSupply;
     } catch (error) {

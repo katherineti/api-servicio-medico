@@ -46,6 +46,7 @@ export class LogsService {
             action: body.action,
             ipAddress: body.ipAddress, //Direccion IP del usuario conectado
             hostname: body.hostname, //Hostname del usuario conectado
+            productId: body.productId, //(Opcional) Es Null en el inicio y cierre se sesión
         }
         
         await this.db.insert(logsTable).values(createLog);
