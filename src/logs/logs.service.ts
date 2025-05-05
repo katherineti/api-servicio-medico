@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { count } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
@@ -39,15 +39,21 @@ export class LogsService {
     return result;
     }
 
-    async create(createLog: CreateLog): Promise<any>{
-    
+    async create(body: CreateLog): Promise<any>{
         try {    
+        let createLog:CreateLog= {
+            userId: body.userId,
+            action: body.action,
+            ipAddress: body.ipAddress, //Direccion IP del usuario conectado
+            hostname: body.hostname, //Hostname del usuario conectado
+        }
+        
         await this.db.insert(logsTable).values(createLog);
+        Logger.debug("Log " , JSON.stringify(createLog));
     
         } catch (err) {
     
         throw new Error("Error al registrar el log " + err);
         }
     }
-
 }

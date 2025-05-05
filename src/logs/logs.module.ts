@@ -6,6 +6,7 @@ import { DrizzleDbConecctionModule } from 'src/db.module';
 @Module({
   imports: [DrizzleDbConecctionModule],
   controllers: [LogsController],
-  providers: [LogsService]
+  providers: [LogsService],
+  exports:[LogsService]
 })
 export class LogsModule {}

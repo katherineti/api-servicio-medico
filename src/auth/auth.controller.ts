@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Ip, Post, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signIn.dto';
 import { Public } from 'src/decorators/public.decorator';
@@ -12,10 +12,21 @@ export class AuthController {
     @Public()
     @Post('signin')
     @UsePipes(ValidationPipe)
-    signIn( @Body() signInDto: SignInDto ): Promise<{ token: string }>{
+    signIn( 
+        @Body() signInDto: SignInDto, 
+        @Ip() clienteIp: string,
+        @Req() req: Request
+    ): Promise<{ token: string }>{
+        
+        let client = {
+            ip: clienteIp,
+            hostname: req.headers['host']
+        }
+
         return this.authService.signIn(
             signInDto.email,
-            signInDto.password
+            signInDto.password,
+            client
         );
     }
 

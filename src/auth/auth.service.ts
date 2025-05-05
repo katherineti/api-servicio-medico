@@ -6,67 +6,80 @@ import { JwtService } from '@nestjs/jwt';
 import { SignupDto } from './dto/signup.dto';
 import { IJwtPayload } from './dto/jwt-payload.interface';
 import { TypesRoles } from 'src/db/enums/types-roles';
+import { LogsService } from 'src/logs/logs.service';
 
+interface IcustomerAccessPoint{
+  ip: string,
+  hostname: string
+}
 @Injectable()
 export class AuthService {
 
-     constructor(
-        private usersService: UsersService,
-        private jwtService: JwtService
-    ) {}
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+    public logsService: LogsService
+  ) {}
 
-        async signIn(email:string, password: string): Promise<{ token: string }> {
-            
-          const user = await this.usersService.findOnByEmail(email);
+    async signIn(email:string, password: string, customerAccessPoint: IcustomerAccessPoint): Promise<{ token: string }> {
+        
+      const user = await this.usersService.findOnByEmail(email);
 
-          if(!user){
-              throw new UnauthorizedException("Usuario no encontrado"); 
-          }
+      if(!user){
+          throw new UnauthorizedException("Usuario no encontrado"); 
+      }
 
-          if (user.isActivate === false) {
-            throw new NotFoundException('El usuario esta inactivo');
-          }
+      if (user.isActivate === false) {
+        throw new NotFoundException('El usuario esta inactivo');
+      }
 
-          const authorized = await argon2.verify( user.password , password ); //devuelve true o false
+      const authorized = await argon2.verify( user.password , password ); //devuelve true o false
 
-          if( !authorized ){
-              throw new UnauthorizedException("Contraseña incorrecta");
-          }
+      if( !authorized ){
+          throw new UnauthorizedException("Contraseña incorrecta");
+      }
 
-          const payload: IJwtPayload = { 
-            sub: user.id, 
-            email: user.email,
-            role: user.role as TypesRoles
-          };
-          Logger.debug(JSON.stringify(payload));
+      const payload: IJwtPayload = { 
+        sub: user.id, 
+        email: user.email,
+        role: user.role as TypesRoles
+      };
+      Logger.debug("Payload " ,JSON.stringify(payload));
 
-          return {
-            token: await this.jwtService.signAsync(payload, {
-              secret: jwtConstants.secret
-            }),
-          };
-        }
+      this.logsService.create({
+        action: 'Inicio de sesión',
+        userId: user.id,
+        ipAddress:customerAccessPoint.ip,
+        hostname:customerAccessPoint.hostname
+      });
 
-        async signUp(signUp:SignupDto): Promise<{
-          ok: boolean,
-          status: number,
-          description: string,
-        }> {
+      return {
+        token: await this.jwtService.signAsync(payload, {
+          secret: jwtConstants.secret
+        }),
+      };
+    }
 
-          const userExist = await this.usersService.findOnByEmail(signUp.email);
+    async signUp(signUp:SignupDto): Promise<{
+      ok: boolean,
+      status: number,
+      description: string,
+    }> {
 
-          if (userExist) {
-            throw new ConflictException('El correo ya existe.');
-          }
-              
-          await this.usersService.createUser(signUp);
+      const userExist = await this.usersService.findOnByEmail(signUp.email);
 
-          const objSaved = {
-            ok: true,
-            status: 201,
-            description: 'Usuario registrado',
-          };
-      
-          return objSaved;
-        }
+      if (userExist) {
+        throw new ConflictException('El correo ya existe.');
+      }
+          
+      await this.usersService.createUser(signUp);
+
+      const objSaved = {
+        ok: true,
+        status: 201,
+        description: 'Usuario registrado',
+      };
+  
+      return objSaved;
+    }
 }
