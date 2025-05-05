@@ -74,7 +74,7 @@ CREATE TABLE "products" (
 	"type" "ProductType" NOT NULL,
 	"categoryId" integer NOT NULL,
 	"statusId" integer NOT NULL,
-	"expirationDate" timestamp NOT NULL,
+	"expirationDate" date NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now(),
 	CONSTRAINT "products_code_unique" UNIQUE("code")

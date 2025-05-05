@@ -36,7 +36,7 @@ export const productsTable = table("products", {
     type: ProductTypeEnum().notNull(),
     categoryId: t.integer().notNull().references(() => categoriesTable.id),
     statusId: t.integer().notNull().references(() => productStatusTable.id),
-    expirationDate: t.timestamp().notNull(),
+    expirationDate: t.date().notNull(),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });

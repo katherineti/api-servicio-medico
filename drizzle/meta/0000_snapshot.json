@@ -1,5 +1,5 @@
 {
-  "id": "dc827b1c-2fdd-4fdd-baea-87cfa1e9cc9b",
+  "id": "28a8bdbe-add1-4636-ad58-1484be34f0de",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -566,7 +566,7 @@
         },
         "expirationDate": {
           "name": "expirationDate",
-          "type": "timestamp",
+          "type": "date",
           "primaryKey": false,
           "notNull": true
         },

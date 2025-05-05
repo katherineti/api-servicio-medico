@@ -48,7 +48,7 @@ export class MedicalSuppliesService {
       }
   }
 
-  async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> {
+  async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> { console.log("filter " , filter)
     const whereConditions = [];
     // Búsqueda por nombre (ilike) si se proporciona
     if (filter.name) {
@@ -58,10 +58,11 @@ export class MedicalSuppliesService {
     if (filter.category) {
       whereConditions.push(ilike(categoriesTable.name, `%${filter.category}%`));
     }
+
     // Búsqueda por fecha de expiracion seleccionada, si se proporciona
     if (filter.expirationDate) {
       const datePart = filter.expirationDate.toString().split('T')[0];
-      whereConditions.push(eq(sql<string>`CAST(${productsTable.expirationDate} AS DATE)`, datePart)); 
+      whereConditions.push(eq(productsTable.expirationDate, datePart));
     }
 
     // Condición para excluir statusId = 4 (productos caducados)
@@ -79,7 +80,7 @@ export class MedicalSuppliesService {
       stock: productsTable.stock,
       name: productsTable.name,
       type: productsTable.type,
-      expirationDate: productsTable.expirationDate,
+      expirationDate: sql<string>`TO_CHAR(${productsTable.expirationDate}, 'YYYY-MM-DD')`,
       createdAt: productsTable.createdAt,
       updatedAt: productsTable.updatedAt,
       categoryId: categoriesTable.id,
@@ -145,7 +146,10 @@ export class MedicalSuppliesService {
     }
 
     try {
+    //  const fechaStringToDate = new Date(createMedicalSupplyDto.expirationDate);
      const fechaStringToDate = new Date(createMedicalSupplyDto.expirationDate);
+     const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
+
      let obj= {
         name: createMedicalSupplyDto.name,
         description: createMedicalSupplyDto.description,
@@ -155,7 +159,7 @@ export class MedicalSuppliesService {
         code: createMedicalSupplyDto.code,
         url_image: imageUrl,
         statusId: Number(createMedicalSupplyDto.status),
-        expirationDate: fechaStringToDate
+        expirationDate: expirationDateString
       }
 
       const [newMedicalSupply] = await this.db.insert(productsTable).values(obj).returning();
@@ -221,7 +225,10 @@ export class MedicalSuppliesService {
     }
 
     try {
+      // const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
       const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
+      const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
+
       const updateData: Partial<Product> = {
         name: updateMedicalSupplyDto.name,
         description: updateMedicalSupplyDto.description,
@@ -231,7 +238,7 @@ export class MedicalSuppliesService {
         statusId: Number(updateMedicalSupplyDto.status),
         updatedAt: new Date(),
         url_image: imageUrl,
-        expirationDate: fechaStringToDate
+        expirationDate: expirationDateString
       };
   
       const updated = await this.db
