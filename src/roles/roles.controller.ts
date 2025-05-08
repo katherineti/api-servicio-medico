@@ -10,7 +10,7 @@ import { RoleDto } from './dto/role.dto';
 export class RolesController {
   constructor(private readonly rolesService: RolesService) { }
 
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.auditor)
     @Post('getAll')
     @UsePipes(ValidationPipe)
     get(@Body() body: SearchRolesDto): Promise<ResultGetAllRoles> {
