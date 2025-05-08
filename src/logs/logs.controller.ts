@@ -21,7 +21,7 @@ export class LogsController {
         @Req() req: Request,
         @Usersesion() user: IJwtPayload
     ): Promise<any> {
-        //log de cierre de sesion
+        //para el log de cierre de sesion
         const _body ={
             action: body.action,
             userId: user.sub,

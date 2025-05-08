@@ -9,31 +9,31 @@ import { UsersService } from 'src/users/users.service';
 export class DashboardController {
   constructor(private readonly usersService: UsersService , private readonly medicalSuppliesService: MedicalSuppliesService, private readonly assignmentService: AssignmentService) { }
 
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.auditor)
     @Get('totalUsers')
     totalUsers(): Promise<{ count: number }> {
     return this.usersService.countAllUsers();
     }
 
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.auditor)
     @Get('totalProductsOfTheDay')
     totalProductsOfTheDay(): Promise<{ count: number }> {
       return this.medicalSuppliesService.totalProductsOfTheDay();
     }
     
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.auditor)
     @Get('totalProductsOfMonth')
     totalProductsOfMonth(): Promise<{ count: number }> {
     return this.medicalSuppliesService.totalProductsOfMonth();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Roles(TypesRoles.admin, TypesRoles.almacen, TypesRoles.auditor)
     @Get('totalAssignmentOfTheDay')
     totalAssignmentOfTheDay(): Promise<{ count: number }> {
     return this.assignmentService.totalAssignmentOfTheDay();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Roles(TypesRoles.admin, TypesRoles.almacen, TypesRoles.auditor)
     @Get('totalAssignmentOfMonth')
     totalAssignmentOfMonth(): Promise<{ count: number }> {
     return this.assignmentService.totalAssignmentOfMonth();
