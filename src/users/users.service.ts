@@ -23,6 +23,7 @@ export class UsersService {
     this.db.select({
         id:  usersTable.id,
         email: usersTable.email,
+        name: usersTable.name,
         password: usersTable.password,
         isActivate: usersTable.isActivate,
         // role: usersTable.role,

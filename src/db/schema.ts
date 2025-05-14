@@ -87,7 +87,7 @@ export const assignmentTable = table("assignment", {
     updatedAt: t.timestamp().defaultNow()
 }); */
 
-//uso para listar los familiares del empleado, en el formulario de asignacion de productos
+//Uso para listar los familiares del empleado, en el formulario de asignacion de productos
 export const employeeFamilyTable = table("employeeFamily", {
     id: t.serial().primaryKey(),
     employeeId: t.integer().notNull().references(() => employeeTable.id, { onDelete: 'cascade' }),
@@ -116,3 +116,30 @@ export const logsTable = table("logs", {
     hostname: t.varchar({ length: 200 }).notNull(), //Hostname del usuario conectado
     createdAt: t.timestamp().defaultNow()
 });
+
+export const auditReportsTable = table("auditReports", {
+    id: t.serial().primaryKey(),
+    code: t.varchar().notNull(),
+    title: t.varchar({ length: 50 }).notNull().unique(),
+    addressee: t.varchar({ length: 50 }).notNull(),
+    auditorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+    summary_objective: t.varchar({ length: 50 }),
+    summary_scope: t.varchar({ length: 50 }),//Alcance
+    summary_methodology: t.varchar({ length: 50 }),
+    summary_conclusionAndObservation: t.varchar({ length: 50 }),
+    introduction: t.varchar({ length: 200 }),
+    detailed_methodology: t.varchar({ length: 150 }),
+    findings: t.varchar({ length: 150 }),//Hallazgos
+    conclusions: t.varchar({ length: 200 }),
+    images: t.varchar({ length: 250 }),
+    statusId: t.integer().notNull().references(() => reportStatusTable.id),
+    idDuplicate: t.integer().default(null),
+    startDate: t.timestamp().notNull(),
+    endDate: t.timestamp(),
+    updatedAt: t.timestamp().default(null)
+});
+
+export const reportStatusTable = table("reportStatus",{
+    id: t.serial().primaryKey(),
+    status: t.varchar({ length: 30 }).notNull().unique(),
+})
