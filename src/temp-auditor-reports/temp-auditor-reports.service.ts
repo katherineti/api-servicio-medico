@@ -2,15 +2,15 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO } from 'src/constants';
-import { auditReportsTable } from 'src/db/schema';
+import { auditReportsTable_temp } from 'src/db/schema';
 import { CreateReport, Reports } from 'src/db/types/reports.types';
 import { v4 as uuidv4 } from 'uuid';
 import { ReportCreateDto } from './dto/reports.dto';
 import { ReportUpdateDto } from './dto/report-update.dto';
 
 @Injectable()
-export class AuditorReportsService {
-    private readonly logger = new Logger(AuditorReportsService.name);
+export class TempAuditorReportsService {
+    private readonly logger = new Logger(TempAuditorReportsService.name);
    
     constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
     
@@ -27,7 +27,7 @@ export class AuditorReportsService {
 
         console.log("body",body);
 
-        let newReport = await this.db.insert(auditReportsTable).values(reportToCreate).returning();
+        let newReport = await this.db.insert(auditReportsTable_temp).values(reportToCreate).returning();
 
         if (!newReport || !newReport[0].id) {
             throw new Error('Error al crear el reporte de auditoría.');
@@ -43,9 +43,9 @@ export class AuditorReportsService {
         }
 
         const updated = await this.db
-        .update(auditReportsTable)
+        .update(auditReportsTable_temp)
         .set(updateData)
-        .where(eq(auditReportsTable.id, newReportId))
+        .where(eq(auditReportsTable_temp.id, newReportId))
         .returning();
     
         this.logger.debug(`Informe de auditoría creado exitosamente con ID: ${newReportId}`);
@@ -61,8 +61,8 @@ export class AuditorReportsService {
     async getById(id: number): Promise<Reports | null> {
         try{
             const result = await this.db.select()
-            .from(auditReportsTable)
-            .where(eq( auditReportsTable.id, id ))
+            .from(auditReportsTable_temp)
+            .where(eq( auditReportsTable_temp.id, id ))
             .limit(1);
         
             return result[0] || null;
@@ -81,14 +81,14 @@ export class AuditorReportsService {
             throw new NotFoundException('El reporte no existe');
         }
 
-        const { title, addressee, auditorId, statusId,
+        const { title, receiver, auditorId, statusId,
                 summary_objective,summary_scope,summary_methodology,summary_conclusionAndObservation,
                 introduction, detailed_methodology, findings, conclusions
               } = body
         
         const updateData: Partial<CreateReport> = {
             title: title,
-            addressee: addressee,
+            receiver: receiver,
             auditorId: auditorId,
             statusId: statusId,
             summary_objective: summary_objective,
@@ -107,9 +107,9 @@ export class AuditorReportsService {
         }
         console.log("objeto para actualizar " , updateData);
         const updated = await this.db
-        .update(auditReportsTable)
+        .update(auditReportsTable_temp)
         .set(updateData)
-        .where(eq(auditReportsTable.id, id));
+        .where(eq(auditReportsTable_temp.id, id));
 
         return updated[0];
     }

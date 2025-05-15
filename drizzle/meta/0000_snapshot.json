@@ -1,5 +1,5 @@
 {
-  "id": "7f606381-f528-4006-8ae8-ab4e0422e97a",
+  "id": "3fcd09d0-8c62-4da1-b3ab-c3e8b14c1a15",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -128,8 +128,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.auditReports": {
-      "name": "auditReports",
+    "public.auditReports_temp": {
+      "name": "auditReports_temp",
       "schema": "",
       "columns": {
         "id": {
@@ -150,8 +150,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "addressee": {
-          "name": "addressee",
+        "receiver": {
+          "name": "receiver",
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
@@ -251,9 +251,9 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "auditReports_auditorId_users_id_fk": {
-          "name": "auditReports_auditorId_users_id_fk",
-          "tableFrom": "auditReports",
+        "auditReports_temp_auditorId_users_id_fk": {
+          "name": "auditReports_temp_auditorId_users_id_fk",
+          "tableFrom": "auditReports_temp",
           "tableTo": "users",
           "columnsFrom": [
             "auditorId"
@@ -264,9 +264,9 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "auditReports_statusId_reportStatus_id_fk": {
-          "name": "auditReports_statusId_reportStatus_id_fk",
-          "tableFrom": "auditReports",
+        "auditReports_temp_statusId_reportStatus_id_fk": {
+          "name": "auditReports_temp_statusId_reportStatus_id_fk",
+          "tableFrom": "auditReports_temp",
           "tableTo": "reportStatus",
           "columnsFrom": [
             "statusId"
@@ -280,8 +280,8 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "auditReports_title_unique": {
-          "name": "auditReports_title_unique",
+        "auditReports_temp_title_unique": {
+          "name": "auditReports_temp_title_unique",
           "nullsNotDistinct": false,
           "columns": [
             "title"

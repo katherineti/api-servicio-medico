@@ -15,7 +15,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
 import { RolesGuard } from './guards/roles.guard';
 import { RolesModule } from './roles/roles.module';
 import { LogsModule } from './logs/logs.module';
-import { AuditorReportsModule } from './auditor-reports/auditor-reports.module';
+import { TempAuditorReportsModule } from './temp-auditor-reports/temp-auditor-reports.module';
 @Module({
   imports: [
     DrizzleDbConecctionModule,
@@ -32,7 +32,7 @@ import { AuditorReportsModule } from './auditor-reports/auditor-reports.module';
     DashboardModule,
     RolesModule,
     LogsModule,
-    AuditorReportsModule,
+    TempAuditorReportsModule,
   ],
   // controllers: [AppController],
   controllers: [],

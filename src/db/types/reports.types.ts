@@ -1,6 +1,6 @@
-import { auditReportsTable } from "../schema";
+import { auditReportsTable_temp } from "../schema";
 
-export type Reports = typeof auditReportsTable.$inferSelect;
+export type Reports = typeof auditReportsTable_temp.$inferSelect;
 
- type InsertReport = typeof auditReportsTable.$inferInsert;
+ type InsertReport = typeof auditReportsTable_temp.$inferInsert;
 export type CreateReport = Omit<Reports, 'id'  >;

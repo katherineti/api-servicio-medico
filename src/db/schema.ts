@@ -117,11 +117,11 @@ export const logsTable = table("logs", {
     createdAt: t.timestamp().defaultNow()
 });
 
-export const auditReportsTable = table("auditReports", {
+export const auditReportsTable_temp = table("auditReports_temp", {
     id: t.serial().primaryKey(),
     code: t.varchar().notNull(),
     title: t.varchar({ length: 50 }).notNull().unique(),
-    addressee: t.varchar({ length: 50 }).notNull(),
+    receiver: t.varchar({ length: 50 }).notNull(),
     auditorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
     summary_objective: t.varchar({ length: 50 }),
     summary_scope: t.varchar({ length: 50 }),//Alcance

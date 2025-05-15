@@ -12,7 +12,7 @@ export class ReportCreateDto {
 
   @IsNotEmpty()
   @IsString()
-  addressee: string;
+  receiver: string;
 
   @IsNotEmpty()
   @IsNumber()

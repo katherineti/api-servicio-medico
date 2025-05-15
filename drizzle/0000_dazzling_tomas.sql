@@ -12,11 +12,11 @@ CREATE TABLE "assignment" (
 	"updatedAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
-CREATE TABLE "auditReports" (
+CREATE TABLE "auditReports_temp" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"code" varchar NOT NULL,
 	"title" varchar(50) NOT NULL,
-	"addressee" varchar(50) NOT NULL,
+	"receiver" varchar(50) NOT NULL,
 	"auditorId" integer NOT NULL,
 	"summary_objective" varchar(50),
 	"summary_scope" varchar(50),
@@ -32,7 +32,7 @@ CREATE TABLE "auditReports" (
 	"startDate" timestamp NOT NULL,
 	"endDate" timestamp,
 	"updatedAt" timestamp DEFAULT null,
-	CONSTRAINT "auditReports_title_unique" UNIQUE("title")
+	CONSTRAINT "auditReports_temp_title_unique" UNIQUE("title")
 );
 --> statement-breakpoint
 CREATE TABLE "categories" (
@@ -139,8 +139,8 @@ ALTER TABLE "assignment" ADD CONSTRAINT "assignment_employeeId_employee_id_fk" F
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_type_typesAssignment_id_fk" FOREIGN KEY ("type") REFERENCES "public"."typesAssignment"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "auditReports" ADD CONSTRAINT "auditReports_auditorId_users_id_fk" FOREIGN KEY ("auditorId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "auditReports" ADD CONSTRAINT "auditReports_statusId_reportStatus_id_fk" FOREIGN KEY ("statusId") REFERENCES "public"."reportStatus"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "auditReports_temp" ADD CONSTRAINT "auditReports_temp_auditorId_users_id_fk" FOREIGN KEY ("auditorId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "auditReports_temp" ADD CONSTRAINT "auditReports_temp_statusId_reportStatus_id_fk" FOREIGN KEY ("statusId") REFERENCES "public"."reportStatus"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_employeeId_employee_id_fk" FOREIGN KEY ("employeeId") REFERENCES "public"."employee"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
