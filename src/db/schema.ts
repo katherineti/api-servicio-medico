@@ -1,4 +1,4 @@
-import { pgEnum, pgTable as table } from "drizzle-orm/pg-core";
+import { json, pgEnum, pgTable as table } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core";
 
 export const rolesEnum = pgEnum("roles_enum", ["admin", "almacen","medico","auditor"]);
@@ -131,7 +131,7 @@ export const auditReportsTable_temp = table("auditReports_temp", {
     detailed_methodology: t.varchar({ length: 150 }),
     findings: t.varchar({ length: 150 }),//Hallazgos
     conclusions: t.varchar({ length: 200 }),
-    images: t.varchar({ length: 250 }),
+    images: json('images').$type<string>(),
     statusId: t.integer().notNull().references(() => reportStatusTable.id),
     idDuplicate: t.integer().default(null),
     startDate: t.timestamp().notNull(),

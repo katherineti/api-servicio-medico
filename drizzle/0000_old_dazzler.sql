@@ -26,7 +26,7 @@ CREATE TABLE "auditReports_temp" (
 	"detailed_methodology" varchar(150),
 	"findings" varchar(150),
 	"conclusions" varchar(200),
-	"images" varchar(250),
+	"images" json,
 	"statusId" integer NOT NULL,
 	"idDuplicate" integer DEFAULT null,
 	"startDate" timestamp NOT NULL,

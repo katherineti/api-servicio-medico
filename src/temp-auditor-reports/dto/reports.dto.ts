@@ -3,6 +3,10 @@ import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 export class ReportCreateDto {
   
   @IsOptional()
+  @IsNumber()
+  id?:number;
+  
+  @IsOptional()
   @IsString()
   code: string;
 
@@ -28,7 +32,7 @@ export class ReportCreateDto {
   @IsOptional()
   @IsNumber()
   idDuplicate?: number | null;
-
+  
   @IsOptional()
   updatedAt?: Date;
 }

@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { MulterModule } from '@nestjs/platform-express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,6 +11,11 @@ async function bootstrap() {
     credentials: false, // Si necesitas manejar cookies o autenticación
     allowedHeaders: 'Content-Type, Authorization', // Cabeceras permitidas
   });
+
+  const multerConfig = app.get(MulterModule)['options']; // Acceder a la configuración de Multer
+  if (multerConfig?.storage?.options?.destination) {
+    console.log(`[NestApp] Configuración de Multer: los archivos se guardarán en ${multerConfig.storage.options.destination}`);
+  }
 
   await app.listen(3000);
   console.log("escuchando en el puerto 3000")

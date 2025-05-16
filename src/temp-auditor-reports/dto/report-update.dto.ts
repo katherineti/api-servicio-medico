@@ -50,17 +50,20 @@ export class ReportUpdateDto {
 
   @IsOptional()
   @IsString()
-  introduction: string;
+  introduction?: string;
 
   @IsOptional()
   @IsString()
-  detailed_methodology: string;
+  detailed_methodology?: string;
 
   @IsOptional()
   @IsString()
-  findings: string;
+  findings?: string;
 
   @IsOptional()
   @IsString()
-  conclusions: string;
+  conclusions?: string;
+
+  @IsOptional()
+  images?: any;
 }
