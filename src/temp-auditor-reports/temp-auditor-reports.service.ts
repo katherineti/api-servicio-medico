@@ -1,13 +1,15 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, lte, ne, sql } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { PG_CONNECTION, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO } from 'src/constants';
-import { auditReportsTable_temp } from 'src/db/schema';
+import { PG_CONNECTION, REPORT_STATUS_ELIMINADO, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO } from 'src/constants';
+import { auditReportsTable_temp, reportStatusTable, usersTable } from 'src/db/schema';
 import { CreateReport, Reports } from 'src/db/types/reports.types';
 import { v4 as uuidv4 } from 'uuid';
 import { ReportCreateDto } from './dto/reports.dto';
 import { ReportUpdateDto } from './dto/report-update.dto';
 import { FilesService } from 'src/files/files.service';
+import { SearchReportsDto } from './dto/search.reports.dto';
+import { ReportsGetAll } from './dto/read-reports-dto';
 
 @Injectable()
 export class TempAuditorReportsService {
@@ -34,7 +36,7 @@ export class TempAuditorReportsService {
             .set(update)
             .where(eq(auditReportsTable_temp.id, body.id))
             .returning();
-
+            this.logger.debug(`Reporte actualizado: ${body.id}`);
             return updated_[0];
         }
 
@@ -114,6 +116,80 @@ export class TempAuditorReportsService {
         }
     }
 
+    async getAll(filter: SearchReportsDto): Promise<ReportsGetAll> { 
+    const whereConditions = [];
+
+    if (filter.receiver) {
+        whereConditions.push(ilike(auditReportsTable_temp.receiver, `%${filter.receiver}%`));
+    }
+    if (filter.endDate) {
+        const parsedEndDate = new Date(filter.endDate);
+        const startOfDay = new Date(parsedEndDate);
+        startOfDay.setHours(0, 0, 0, 0); // Establece la hora al inicio del día
+
+        const endOfDay = new Date(parsedEndDate);
+        endOfDay.setHours(23, 59, 59, 999); // Establece la hora al final del día
+
+        whereConditions.push(
+            and(
+            gte(auditReportsTable_temp.endDate, startOfDay),
+            lte(auditReportsTable_temp.endDate, endOfDay)
+            )
+        );
+    }
+
+    // Condición de búsqueda combinada (si hay alguna)
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+    const rows = await
+    this.db.select({
+        id: auditReportsTable_temp.id,
+        code: auditReportsTable_temp.code,
+        title: auditReportsTable_temp.title,
+        receiver: auditReportsTable_temp.receiver,
+        auditorId: auditReportsTable_temp.auditorId,
+        auditor: usersTable.name,
+
+        summary_objective: auditReportsTable_temp.summary_objective,
+        summary_scope: auditReportsTable_temp.summary_scope,
+        summary_methodology: auditReportsTable_temp.summary_methodology,
+        summary_conclusionAndObservation: auditReportsTable_temp.summary_conclusionAndObservation,
+
+        introduction: auditReportsTable_temp.introduction,
+        detailed_methodology: auditReportsTable_temp.detailed_methodology,
+        findings: auditReportsTable_temp.findings,
+        conclusions: auditReportsTable_temp.conclusions,
+
+        statusId: auditReportsTable_temp.statusId,
+        status: reportStatusTable.status,
+        idDuplicate: auditReportsTable_temp.idDuplicate,
+        startDate: auditReportsTable_temp.startDate,
+        endDate: auditReportsTable_temp.endDate,
+        images: auditReportsTable_temp.images
+    })
+    .from(auditReportsTable_temp)
+    .leftJoin(usersTable, eq(auditReportsTable_temp.auditorId, usersTable.id))
+    .leftJoin(reportStatusTable, eq(auditReportsTable_temp.statusId, reportStatusTable.id ) )
+    .where(whereClause)
+    .orderBy(desc(auditReportsTable_temp.id))
+    .limit(filter.take)
+    .offset((filter.page - 1) * filter.take);
+
+    const [{ value: total }] = await 
+    this.db.select({ value: count() })
+    .from(auditReportsTable_temp)
+    .leftJoin(usersTable, eq(auditReportsTable_temp.auditorId, usersTable.id))
+    .leftJoin(reportStatusTable, eq(auditReportsTable_temp.statusId, reportStatusTable.id ) )
+    .where(whereClause);
+
+    const result = new ReportsGetAll();
+    result.total = total;
+    result.page = filter.page;
+    result.list = rows;
+
+    return result;
+    }
+
     async update(id: number, body: Partial<ReportUpdateDto>): Promise<Reports>{
 
         const Report = await this.getById(id);
@@ -150,7 +226,8 @@ export class TempAuditorReportsService {
         const updated = await this.db
         .update(auditReportsTable_temp)
         .set(updateData)
-        .where(eq(auditReportsTable_temp.id, id));
+        .where(eq(auditReportsTable_temp.id, id))
+        .returning();
 
         return updated[0];
     }
@@ -255,5 +332,25 @@ export class TempAuditorReportsService {
         }
 
         return updatedReport;
+    }
+
+    async delete(id: number): Promise<Reports>{
+
+    const report = await this.getById(id);
+
+    if (!report) {
+        throw new NotFoundException('El reporte no existe');
+    }
+    const updateData: Partial<Reports> = {
+        statusId: REPORT_STATUS_ELIMINADO,
+        // updatedAt: new Date()
+    };
+
+    await this.db
+    .update(auditReportsTable_temp)
+    .set(updateData)
+    .where(eq(auditReportsTable_temp.id, id));
+
+    return await this.getById(id);
     }
 }
