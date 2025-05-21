@@ -8,6 +8,7 @@ import { diskStorage } from 'multer';
 import { join } from 'path';
 import * as fsPromises from 'node:fs/promises';
 import * as path from 'path';
+import { PdfGeneratorService } from './pdf-generator.service';
 
 @Module({
   imports: [
@@ -41,6 +42,8 @@ import * as path from 'path';
     }),
   ],
   controllers: [TempAuditorReportsController],
-  providers: [TempAuditorReportsService],
+  providers: [
+    TempAuditorReportsService, 
+    PdfGeneratorService],
 })
 export class TempAuditorReportsModule {}

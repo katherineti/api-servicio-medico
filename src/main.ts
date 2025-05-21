@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { MulterModule } from '@nestjs/platform-express';
+import { PORT_API } from './constants';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -17,7 +18,7 @@ async function bootstrap() {
     console.log(`[NestApp] Configuración de Multer: los archivos se guardarán en ${multerConfig.storage.options.destination}`);
   }
 
-  await app.listen(3000);
+  await app.listen(PORT_API);
   console.log("escuchando en el puerto 3000")
 }
 bootstrap();
