@@ -79,6 +79,7 @@ export class RolesService {
     const updateData: Partial<RoleDto> = {
         name: roleDto.name? roleDto.name.toLowerCase():'',
         description: roleDto.description,
+        isActivate: roleDto.isActivate
     };
 
     const updated = await this.db
