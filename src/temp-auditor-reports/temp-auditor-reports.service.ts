@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { and, count, desc, eq, gte, ilike, inArray, lte } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, REPORT_STATUS_ELIMINADO, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO } from 'src/constants';
@@ -10,23 +10,28 @@ import { ReportUpdateDto } from './dto/report-update.dto';
 import { FilesService } from 'src/files/files.service';
 import { SearchReportsDto } from './dto/search.reports.dto';
 import { ReportsGetAll } from './dto/read-reports-dto';
-export class ListAuditoresDto {
-  name: string;
-}
 
-export class ResultGetAll{
+export class ResultGetAllAuditores{
   total: number;
-//   list: Omit<IUser, 'password'>[];
-  list: any[];
+  list: {
+        id: number,
+        name: string,
+        email: string,
+        isActivate: boolean,
+        role: number
+    }[];
 }
 @Injectable()
 export class TempAuditorReportsService {
     private readonly logger = new Logger(TempAuditorReportsService.name);
    
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private filesService: FilesService) {}
+    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private filesService: FilesService ) {}
     
     async create(body: ReportCreateDto): Promise<Reports>{ 
         try {
+        //6. Validar y limpiar el array de auditores adicionales
+        body.additionalAuditorIds = await this.validateArrayadditionalAuditor(body);
+
         //5.Actualiza si ya esta creado el reporte
         const id_report = body.id;
         if(id_report){
@@ -71,7 +76,6 @@ export class TempAuditorReportsService {
             updatedAt: null,
           };
 
-        console.log("body",body);
         // 3. Inserta el nuevo reporte y obtener el ID
         let newReport = await this.db.insert(auditReportsTable_temp).values(reportToCreate).returning({ id: auditReportsTable_temp.id });
 
@@ -209,7 +213,10 @@ export class TempAuditorReportsService {
         const { title, receiver, auditorId, statusId,
                 summary_objective,summary_scope,summary_methodology,summary_conclusionAndObservation,
                 introduction, detailed_methodology, findings, conclusions
-              } = body
+              } = body;
+        
+        // Validar y limpiar el array de auditores adicionales
+        body.additionalAuditorIds = await this.validateArrayadditionalAuditor(body);
         
         const updateData: Partial<CreateReport> = {
             title: title,
@@ -220,6 +227,7 @@ export class TempAuditorReportsService {
             summary_scope: summary_scope,
             summary_methodology: summary_methodology,
             summary_conclusionAndObservation: summary_conclusionAndObservation,
+            additionalAuditorIds: body.additionalAuditorIds
         };
 
         if(statusId===REPORT_STATUS_FINALIZADO){
@@ -265,7 +273,10 @@ export class TempAuditorReportsService {
         detailed_methodology,
         findings,
         conclusions,
+        // additionalAuditorIds
         } = body;
+
+        const additionalAuditorIds = await this.validateArrayadditionalAuditor(body);
 
         const updateData: Partial<CreateReport> = {
         title,
@@ -276,8 +287,9 @@ export class TempAuditorReportsService {
         summary_scope,
         summary_methodology,
         summary_conclusionAndObservation,
+        additionalAuditorIds
         };
-
+console.log("updateData " , updateData)
         if (Number(statusId) === REPORT_STATUS_FINALIZADO) {
         updateData.introduction = introduction ?? null;
         updateData.detailed_methodology = detailed_methodology ?? null;
@@ -362,7 +374,7 @@ export class TempAuditorReportsService {
     return await this.getById(id);
     }
 
-    async getAllAuditores(): Promise<ResultGetAll> {
+    async getAllAuditores(): Promise<ResultGetAllAuditores> {
 
     const statusCondition = eq(usersTable.isActivate , true);
 
@@ -387,10 +399,67 @@ export class TempAuditorReportsService {
     // Consulta para obtener el total de usuarios (para metadata)
     const [{ value: total }] = await this.db.select({ value: count() }).from(usersTable).where(whereCondition);
 
-    const result = new ResultGetAll();
+    const result = new ResultGetAllAuditores();
     result.total = total;
     result.list = rows;
 
     return result;
+    }
+
+    async validateArrayadditionalAuditor(body){
+        //6. Validar y limpiar el array de auditores adicionales
+        if (body.additionalAuditorIds) {
+            // 6.1. Validar que sea un array
+            if (!Array.isArray(body.additionalAuditorIds)) {
+                throw new BadRequestException("El campo additionalAuditorIds debe ser un array")
+            }
+
+            // 6.2. Validar que todos los elementos sean números válidos
+                //Convertir a números si vienen como strings
+                body.additionalAuditorIds = body.additionalAuditorIds.map(id => 
+                    typeof id === 'string' ? Number(id) : id
+                );
+            const invalidIds = body.additionalAuditorIds.filter((id) => !Number.isInteger(id) || id <= 0)
+
+            if (invalidIds.length > 0) {
+                throw new BadRequestException(`Los siguientes IDs de auditores adicionales no son válidos: ${invalidIds.join(", ")}`)
+            }
+
+            // 6.3. Remover duplicados del array
+            body.additionalAuditorIds = [...new Set(body.additionalAuditorIds)]
+
+            // 6.4. Validar que el auditor principal no esté en los auditores adicionales
+            const originalLength = body.additionalAuditorIds.length
+            body.additionalAuditorIds = body.additionalAuditorIds.filter((id) => id !== body.auditorId)
+
+            // Logger si se removió el auditor principal
+            if (originalLength > body.additionalAuditorIds.length) {
+                this.logger.warn(
+                    `Se removió el auditor principal (ID: ${body.auditorId}) de la lista de auditores adicionales`,
+                )
+            }
+
+            // 6.5. Validar que los auditores adicionales existan en la base de datos
+            if (body.additionalAuditorIds.length > 0) {
+                const existingAuditors = await this.db
+                .select({ id: usersTable.id })
+                .from(usersTable)
+                .where(inArray(usersTable.id, body.additionalAuditorIds))
+
+                const existingIds = existingAuditors.map((auditor) => auditor.id)
+                const nonExistentIds = body.additionalAuditorIds.filter((id) => !existingIds.includes(id))
+
+                if (nonExistentIds.length > 0) {
+                    throw new BadRequestException(`Los siguientes auditores adicionales no existen en la Base de Datos: ${nonExistentIds.join(", ")}`)
+                }
+            }
+
+            this.logger.debug(`Auditores adicionales validados: ${body.additionalAuditorIds}`)
+        } else {
+        // 6.6. Si no se proporciona el array, establecer como array vacío
+        body.additionalAuditorIds = [];
+        }
+
+        return body.additionalAuditorIds;
     }
 }

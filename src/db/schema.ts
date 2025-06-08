@@ -1,4 +1,4 @@
-import { json, pgEnum, pgTable as table } from "drizzle-orm/pg-core";
+import { json, pgEnum, pgTable as table, unique } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core";
 
 export const rolesEnum = pgEnum("roles_enum", ["admin", "almacen","medico","auditor"]);
@@ -15,6 +15,7 @@ export const usersTable = table("users", {
     createdAt: t.timestamp().defaultNow().notNull(),
     updatedAt: t.timestamp().defaultNow()
 });
+
 export const categoriesTable = table("categories", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 30 }).notNull(),
@@ -22,10 +23,12 @@ export const categoriesTable = table("categories", {
     created_at: t.timestamp().defaultNow(),
     updated_at: t.timestamp().defaultNow()
 });
+
 export const productStatusTable = table("productStatus",{
   id: t.serial().primaryKey(),
   status: t.varchar({ length: 30 }).notNull().unique(),
 })
+
 export const productsTable = table("products", {
     id: t.serial().primaryKey(),
     code: t.varchar({ length: 50 }).notNull().unique(),
@@ -40,13 +43,7 @@ export const productsTable = table("products", {
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
-/* export const expiredProductsTable = table("expiredProducts", {
-    id: t.serial().primaryKey(),
-    productId: t.integer().notNull().references(() => productsTable.id),
-    expirationDate: t.date("expirationDate", { mode: "date" }),
-    createdAt: t.timestamp().defaultNow(),
-    updatedAt: t.timestamp().defaultNow()
-}); */
+
 export const employeeTable = table("employee", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
@@ -56,6 +53,7 @@ export const employeeTable = table("employee", {
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
+
 export const familyTable = table("family", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
@@ -63,10 +61,12 @@ export const familyTable = table("family", {
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
+
 export const typesAssignmentTable = table("typesAssignment" , {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 30 }).notNull().unique(),
 });
+
 export const assignmentTable = table("assignment", {
     id: t.serial().primaryKey(),
     employeeId: t.integer().notNull().references(() => employeeTable.id),
@@ -122,7 +122,8 @@ export const auditReportsTable_temp = table("auditReports_temp", {
     code: t.varchar().notNull(),
     title: t.varchar({ length: 50 }).notNull().unique(),
     receiver: t.varchar({ length: 50 }).notNull(),
-    auditorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }),
+    auditorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }), //Auditor principal del reporte
+    additionalAuditorIds: json().$type<number[]>().default([]),
     summary_objective: t.varchar({ length: 50 }),
     summary_scope: t.varchar({ length: 50 }),//Alcance
     summary_methodology: t.varchar({ length: 50 }),

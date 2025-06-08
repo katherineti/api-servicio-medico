@@ -1,5 +1,5 @@
 {
-  "id": "e3b5d369-c1bd-46ec-acf2-2c5eec0723c2",
+  "id": "78dc7e2c-1517-4375-bd1a-193e29e88089",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -161,6 +161,13 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true
+        },
+        "additionalAuditorIds": {
+          "name": "additionalAuditorIds",
+          "type": "json",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::json"
         },
         "summary_objective": {
           "name": "summary_objective",

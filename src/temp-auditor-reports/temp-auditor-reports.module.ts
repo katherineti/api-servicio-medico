@@ -7,7 +7,6 @@ import { MulterModule } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { join } from 'path';
 import * as fsPromises from 'node:fs/promises';
-import * as path from 'path';
 import { PdfGeneratorService } from './pdf-generator.service';
 
 @Module({
@@ -44,6 +43,7 @@ import { PdfGeneratorService } from './pdf-generator.service';
   controllers: [TempAuditorReportsController],
   providers: [
     TempAuditorReportsService, 
-    PdfGeneratorService],
+    PdfGeneratorService
+  ],
 })
 export class TempAuditorReportsModule {}

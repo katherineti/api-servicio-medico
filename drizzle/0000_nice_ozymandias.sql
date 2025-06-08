@@ -18,6 +18,7 @@ CREATE TABLE "auditReports_temp" (
 	"title" varchar(50) NOT NULL,
 	"receiver" varchar(50) NOT NULL,
 	"auditorId" integer NOT NULL,
+	"additionalAuditorIds" json DEFAULT '[]'::json,
 	"summary_objective" varchar(50),
 	"summary_scope" varchar(50),
 	"summary_methodology" varchar(50),

@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
 
 export class ReportCreateDto {
@@ -35,4 +36,18 @@ export class ReportCreateDto {
   
   @IsOptional()
   updatedAt?: Date;
+
+  @IsOptional()
+  @Transform(({ value }) => {
+      if (!Array.isArray(value)) return value
+  
+      return value.map((id) => {
+        if (typeof id === "string") {
+          const numericId = Number(id.trim())
+          return !isNaN(numericId) && Number.isInteger(numericId) ? numericId : id
+        }
+        return id
+      })
+  })
+  additionalAuditorIds: number[];
 }
