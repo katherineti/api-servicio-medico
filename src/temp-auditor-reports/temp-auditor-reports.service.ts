@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq, gte, ilike, lte, ne, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, inArray, lte } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, REPORT_STATUS_ELIMINADO, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO } from 'src/constants';
 import { auditReportsTable_temp, reportStatusTable, usersTable } from 'src/db/schema';
@@ -10,7 +10,15 @@ import { ReportUpdateDto } from './dto/report-update.dto';
 import { FilesService } from 'src/files/files.service';
 import { SearchReportsDto } from './dto/search.reports.dto';
 import { ReportsGetAll } from './dto/read-reports-dto';
+export class ListAuditoresDto {
+  name: string;
+}
 
+export class ResultGetAll{
+  total: number;
+//   list: Omit<IUser, 'password'>[];
+  list: any[];
+}
 @Injectable()
 export class TempAuditorReportsService {
     private readonly logger = new Logger(TempAuditorReportsService.name);
@@ -352,5 +360,37 @@ export class TempAuditorReportsService {
     .where(eq(auditReportsTable_temp.id, id));
 
     return await this.getById(id);
+    }
+
+    async getAllAuditores(): Promise<ResultGetAll> {
+
+    const statusCondition = eq(usersTable.isActivate , true);
+
+    // Condición para filtrar por roles 1(admin) y 4(auditor)
+    const roleCondition = inArray(usersTable.role, [1, 4]);
+
+    //Combinamos las condiciones con AND
+    const whereCondition = and(statusCondition, roleCondition) 
+
+    const rows = await 
+    this.db.select( {
+        id:  usersTable.id,
+        name: usersTable.name,
+        email: usersTable.email,
+        isActivate: usersTable.isActivate,
+        role: usersTable.role
+    })
+    .from(usersTable)
+    .where(whereCondition)
+    .orderBy(desc(usersTable.id))//orden desde el más reciente
+
+    // Consulta para obtener el total de usuarios (para metadata)
+    const [{ value: total }] = await this.db.select({ value: count() }).from(usersTable).where(whereCondition);
+
+    const result = new ResultGetAll();
+    result.total = total;
+    result.list = rows;
+
+    return result;
     }
 }

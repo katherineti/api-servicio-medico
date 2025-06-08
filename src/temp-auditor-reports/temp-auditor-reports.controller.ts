@@ -10,13 +10,13 @@ import { SearchReportsDto } from './dto/search.reports.dto';
 import { ReportsGetAll } from './dto/read-reports-dto';
 import { Response } from 'express';
 import { PdfGeneratorService } from './pdf-generator.service';
+
 @Controller('temp-auditor-reports')
 export class TempAuditorReportsController {
     private readonly logger = new Logger(TempAuditorReportsController.name);
 
     constructor(
       private readonly tempAuditorReportsService: TempAuditorReportsService,  
-      // private readonly pdfGeneratorReportService: PdfGeneratorReportService, 
       private readonly pdfGeneratorService: PdfGeneratorService
     ) { }
     @Post()
@@ -28,6 +28,12 @@ export class TempAuditorReportsController {
   
       return this.tempAuditorReportsService.create(reportDto);
     }
+        @Roles(TypesRoles.admin, TypesRoles.auditor)
+        @Get('getAllAuditores')
+        @UsePipes(ValidationPipe)
+        getAllAuditores(): Promise<any> {
+          return this.tempAuditorReportsService.getAllAuditores();
+        }
 
     @Post('getAll')
     @UsePipes(ValidationPipe)
@@ -110,4 +116,5 @@ export class TempAuditorReportsController {
       
     }
   }
+
 }

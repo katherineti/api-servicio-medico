@@ -20,7 +20,7 @@ export class ReportCreateDto {
 
   @IsNotEmpty()
   @IsNumber()
-  auditorId: number;
+  auditorId: number; //puede ser un usuario de rol auditor o de rol admin
 
   @IsOptional()
   @IsNumber()
