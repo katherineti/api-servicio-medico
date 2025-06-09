@@ -1,5 +1,4 @@
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
-import { TypesProducts } from 'src/db/enums/types-products';
 
 export class CreateProductDto{
 
@@ -29,12 +28,14 @@ export class CreateProductDto{
 
     @IsNotEmpty()
     @IsString()
-    type: TypesProducts;
+    type: number;
+    // type: TypesProducts;
 
     @IsNotEmpty()
     @IsString()
     status: string;//es un string numerico ejemplo '1'
 
-    @IsNotEmpty()
+    // @IsNotEmpty()
+    @IsOptional()
     expirationDate: Date;
 }

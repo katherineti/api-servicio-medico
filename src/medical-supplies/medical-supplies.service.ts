@@ -48,7 +48,7 @@ export class MedicalSuppliesService {
       }
   }
 
-  async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> { console.log("filter " , filter)
+  async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> {
     const whereConditions = [];
     // Búsqueda por nombre (ilike) si se proporciona
     if (filter.name) {
@@ -113,7 +113,6 @@ export class MedicalSuppliesService {
 
   async create(createMedicalSupplyDto: CreateProductDto, userId: number, customerAccessPoint: IcustomerAccessPoint, file?: Express.Multer.File): Promise<any> {
     //recibo expirationDate: 'Sat May 03 2025 00:00:00 GMT-0400 (hora de Venezuela)'
-
     let imageUrl: string | null = null;
     let category:ICategory;
     
@@ -146,20 +145,23 @@ export class MedicalSuppliesService {
     }
 
     try {
-    //  const fechaStringToDate = new Date(createMedicalSupplyDto.expirationDate);
-     const fechaStringToDate = new Date(createMedicalSupplyDto.expirationDate);
-     const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
 
-     let obj= {
+      let obj= {
         name: createMedicalSupplyDto.name,
         description: createMedicalSupplyDto.description,
         categoryId: Number(createMedicalSupplyDto.category),
-        type: createMedicalSupplyDto.type,
+        type: Number(createMedicalSupplyDto.type),
         stock: Number(createMedicalSupplyDto.stock),
         code: createMedicalSupplyDto.code,
         url_image: imageUrl,
         statusId: Number(createMedicalSupplyDto.status),
-        expirationDate: expirationDateString
+        // expirationDate: expirationDateString
+      }
+      
+      if(createMedicalSupplyDto.expirationDate && obj.type!=2 && obj.type!=3 ){//si el tipo de prod es medicamento si puede ingresar la fecha expiracion
+          const fechaStringToDate = new Date(createMedicalSupplyDto.expirationDate);
+          const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
+          obj['expirationDate']= createMedicalSupplyDto.expirationDate? expirationDateString : null;
       }
 
       const [newMedicalSupply] = await this.db.insert(productsTable).values(obj).returning();
@@ -181,8 +183,6 @@ export class MedicalSuppliesService {
   }
 
   async update(id:number, updateMedicalSupplyDto: CreateProductDto, file?: Express.Multer.File): Promise<any> {
-    console.log('Datos del producto:', updateMedicalSupplyDto);
-
     let imageUrl: string | null = null;
     let category:ICategory;
 
@@ -225,21 +225,23 @@ export class MedicalSuppliesService {
     }
 
     try {
-      // const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
-      const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
-      const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
-
       const updateData: Partial<Product> = {
         name: updateMedicalSupplyDto.name,
         description: updateMedicalSupplyDto.description,
         categoryId: Number(updateMedicalSupplyDto.category),
-        type: updateMedicalSupplyDto.type,
+        type: Number(updateMedicalSupplyDto.type),
         stock: Number(updateMedicalSupplyDto.stock),
         statusId: Number(updateMedicalSupplyDto.status),
         updatedAt: new Date(),
         url_image: imageUrl,
-        expirationDate: expirationDateString
+        // expirationDate: expirationDateString
       };
+
+      if(updateMedicalSupplyDto.expirationDate && updateData.type!=2 && updateData.type!=3 ){//si el tipo de prod es medicamento si puede ingresar la fecha expiracion
+        const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
+        const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
+        updateData['expirationDate']= updateMedicalSupplyDto.expirationDate? expirationDateString : null;
+      }
   
       const updated = await this.db
       .update(productsTable)

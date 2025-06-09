@@ -29,6 +29,11 @@ export const productStatusTable = table("productStatus",{
   status: t.varchar({ length: 30 }).notNull().unique(),
 })
 
+export const typesOfProductsTable = table("typesProducts",{
+  id: t.serial().primaryKey(),
+  type: ProductTypeEnum().notNull().unique(),
+})
+
 export const productsTable = table("products", {
     id: t.serial().primaryKey(),
     code: t.varchar({ length: 50 }).notNull().unique(),
@@ -36,10 +41,12 @@ export const productsTable = table("products", {
     name: t.varchar({ length: 100 }).notNull(),
     description: t.varchar({ length: 255 }).notNull(),
     url_image: t.varchar({ length: 255 }).default(''),
-    type: ProductTypeEnum().notNull(),
+    // type: ProductTypeEnum().notNull(),
+    type: t.integer().notNull().references(() => typesOfProductsTable.id),
     categoryId: t.integer().notNull().references(() => categoriesTable.id),
     statusId: t.integer().notNull().references(() => productStatusTable.id),
-    expirationDate: t.date().notNull(),
+    // expirationDate: t.date().notNull(),
+    expirationDate: t.date().default(null),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
@@ -117,6 +124,11 @@ export const logsTable = table("logs", {
     createdAt: t.timestamp().defaultNow()
 });
 
+export const reportStatusTable = table("reportStatus",{
+    id: t.serial().primaryKey(),
+    status: t.varchar({ length: 30 }).notNull().unique(),
+})
+
 export const auditReportsTable_temp = table("auditReports_temp", {
     id: t.serial().primaryKey(),
     code: t.varchar().notNull(),
@@ -140,7 +152,3 @@ export const auditReportsTable_temp = table("auditReports_temp", {
     updatedAt: t.timestamp().default(null)
 });
 
-export const reportStatusTable = table("reportStatus",{
-    id: t.serial().primaryKey(),
-    status: t.varchar({ length: 30 }).notNull().unique(),
-})

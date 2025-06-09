@@ -161,7 +161,7 @@ export class TempAuditorReportsService {
         receiver: auditReportsTable_temp.receiver,
         auditorId: auditReportsTable_temp.auditorId,
         auditor: usersTable.name,
-
+        additionalAuditorIds: auditReportsTable_temp.additionalAuditorIds,
         summary_objective: auditReportsTable_temp.summary_objective,
         summary_scope: auditReportsTable_temp.summary_scope,
         summary_methodology: auditReportsTable_temp.summary_methodology,
@@ -238,7 +238,7 @@ export class TempAuditorReportsService {
             updateData.images= null,
             updateData.endDate = new Date();
         }
-        console.log("objeto para actualizar " , updateData);
+
         const updated = await this.db
         .update(auditReportsTable_temp)
         .set(updateData)
@@ -289,7 +289,7 @@ export class TempAuditorReportsService {
         summary_conclusionAndObservation,
         additionalAuditorIds
         };
-console.log("updateData " , updateData)
+
         if (Number(statusId) === REPORT_STATUS_FINALIZADO) {
         updateData.introduction = introduction ?? null;
         updateData.detailed_methodology = detailed_methodology ?? null;
