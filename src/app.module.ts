@@ -17,6 +17,7 @@ import { RolesModule } from './roles/roles.module';
 import { LogsModule } from './logs/logs.module';
 import { TempAuditorReportsModule } from './temp-auditor-reports/temp-auditor-reports.module';
 import { FilesModule } from './files/files.module';
+import { MedicalSuppliesExpiredModule } from './medical-supplies-expired/medical-supplies-expired.module';
 @Module({
   imports: [
     DrizzleDbConecctionModule,
@@ -35,6 +36,7 @@ import { FilesModule } from './files/files.module';
     LogsModule,
     TempAuditorReportsModule,
     FilesModule,
+    MedicalSuppliesExpiredModule,
   ],
   // controllers: [AppController],
   controllers: [],
