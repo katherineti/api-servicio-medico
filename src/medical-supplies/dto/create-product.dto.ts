@@ -37,5 +37,5 @@ export class CreateProductDto{
 
     // @IsNotEmpty()
     @IsOptional()
-    expirationDate: Date;
+    expirationDate: Date | 'null' | null;
 }

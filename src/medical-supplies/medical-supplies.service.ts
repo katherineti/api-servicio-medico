@@ -236,13 +236,17 @@ export class MedicalSuppliesService {
         url_image: imageUrl,
         // expirationDate: expirationDateString
       };
-
+      
       if(updateMedicalSupplyDto.expirationDate && updateData.type!=2 && updateData.type!=3 ){//si el tipo de prod es medicamento si puede ingresar la fecha expiracion
         const fechaStringToDate = new Date(updateMedicalSupplyDto.expirationDate);
         const expirationDateString = fechaStringToDate.toISOString().split('T')[0]; // Obtiene 'YYYY-MM-DD'
         updateData['expirationDate']= updateMedicalSupplyDto.expirationDate? expirationDateString : null;
       }
-  
+      if(updateMedicalSupplyDto.expirationDate==='null'){
+         updateData['expirationDate']= null;
+      }
+    console.log("updateData " , updateData)
+      
       const updated = await this.db
       .update(productsTable)
       .set(updateData)
