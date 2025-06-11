@@ -7,11 +7,13 @@ import { ResultGetAllRoles } from './dto/read-role-dto';
 import { count, ilike, eq } from 'drizzle-orm';
 import { CreateRole, RolesSelect } from 'src/db/types/roles.types';
 import { RoleDto } from './dto/role.dto';
-
+//inyeccion para driver coneccion a BD local
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema'
 @Injectable()
 export class RolesService {
 
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
+    constructor(@Inject(PG_CONNECTION) private db:  NodePgDatabase<typeof schema>) {}
 
     async get(filter: SearchRolesDto): Promise<ResultGetAllRoles> {
         try{

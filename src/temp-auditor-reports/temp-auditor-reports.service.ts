@@ -10,6 +10,9 @@ import { ReportUpdateDto } from './dto/report-update.dto';
 import { FilesService } from 'src/files/files.service';
 import { SearchReportsDto } from './dto/search.reports.dto';
 import { ReportsGetAll } from './dto/read-reports-dto';
+//inyeccion para driver coneccion a BD local
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema'
 
 export class ResultGetAllAuditores{
   total: number;
@@ -25,7 +28,7 @@ export class ResultGetAllAuditores{
 export class TempAuditorReportsService {
     private readonly logger = new Logger(TempAuditorReportsService.name);
    
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private filesService: FilesService ) {}
+    constructor(@Inject(PG_CONNECTION) private db: NodePgDatabase<typeof schema>, private filesService: FilesService ) {}
     
     async create(body: ReportCreateDto): Promise<Reports>{ 
         try {

@@ -3,7 +3,9 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { categoriesTable } from 'src/db/schema';
 import { eq } from 'drizzle-orm'
-
+//inyeccion para driver coneccion a BD local
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema'
 export interface ICategory{
     id:number, 
     name:string, 
@@ -14,7 +16,7 @@ export interface ICategory{
 
 @Injectable()
 export class CategoriesService {
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
+    constructor(@Inject(PG_CONNECTION) private db: NodePgDatabase<typeof schema>) {}
     
     async getAll(): Promise<ICategory[]> {
         try{

@@ -12,12 +12,16 @@ import { CategoriesService, ICategory } from 'src/categories/categories.service'
 import { CreateProductDto } from './dto/create-product.dto';
 import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 import { LogsService } from 'src/logs/logs.service';
+//inyeccion para driver coneccion a BD local
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema'
 
 @Injectable()
 export class MedicalSuppliesService {
   private readonly logger = new Logger(MedicalSuppliesService.name);
 
-  constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private categoriesService: CategoriesService, private logsService: LogsService) {}
+  // constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private categoriesService: CategoriesService, private logsService: LogsService) {}
+  constructor(@Inject(PG_CONNECTION) private db:  NodePgDatabase<typeof schema>, private categoriesService: CategoriesService, private logsService: LogsService) {}
 
   async getProductbyId(id: number): Promise<any> {
       try{

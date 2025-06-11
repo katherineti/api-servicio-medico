@@ -13,11 +13,14 @@ import { Product } from 'src/db/types/products.types';
 import { MedicalSuppliesService } from 'src/medical-supplies/medical-supplies.service';
 import { LogsService } from 'src/logs/logs.service';
 import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
-
+//inyeccion para driver coneccion a BD local
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema'
 @Injectable()
 export class AssignmentService {
 
-    constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private medicalSuppliesService: MedicalSuppliesService, private logsService: LogsService) {}
+    // constructor(@Inject(PG_CONNECTION) private db: NeonDatabase, private medicalSuppliesService: MedicalSuppliesService, private logsService: LogsService) {}
+    constructor(@Inject(PG_CONNECTION) private db: NodePgDatabase<typeof schema>, private medicalSuppliesService: MedicalSuppliesService, private logsService: LogsService) {}
 
     async createAssignment( create: CreateAssignmentDto, userId: number, customerAccessPoint: IcustomerAccessPoint): Promise<Assignment>{
         console.log("Body ", create)

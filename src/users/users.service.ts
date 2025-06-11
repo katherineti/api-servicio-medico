@@ -10,12 +10,15 @@ import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
 import { IUser, ResultGetAll } from './dto/read-user-dto';
 import { SearchUserDto } from './dto/search.user.dto';
 import { rolesTable } from '../db/schema';
+//inyeccion para driver coneccion a BD local
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from 'src/db/schema'
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
- constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {}
+ constructor(@Inject(PG_CONNECTION) private db: NodePgDatabase<typeof schema>) {}
 
   // async findOnByEmail(email: string): Promise< Omit<User, 'name'|'createdAt'|'updatedAt'> | undefined> {
   async findOnByEmail(email: string): Promise<IUser> {
