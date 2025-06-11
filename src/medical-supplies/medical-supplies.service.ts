@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable } from 'src/db/schema';
-import { count, desc, ilike, eq, and, sql, ne } from 'drizzle-orm'
+import { count, desc, ilike, eq, and, sql, ne, sum } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
@@ -331,5 +331,23 @@ export class MedicalSuppliesService {
     this.db.select({ count: count() }).from(productsTable);
     
     return result ? result : { count: 0 };
+  }
+
+  /*
+  Nuevos 
+  getAccumulatedStockByType: Uniformes Disponibles, Equipos Odontológicos Disponibles, Total Medicamentos Disponibles
+  Consulta que devuelva el acomulado de los stocks de los productos que son de tipo 1,2 o 3.
+  */
+  public async getAccumulatedStockByType(): Promise<any> {
+    const result = await this.db
+      .select({
+        sum_medicamentos: sum(sql`CASE WHEN ${productsTable.type} = 1 THEN ${productsTable.stock} ELSE 0 END`).as('sum_medicamentos'),
+        sum_uniformes: sum(sql`CASE WHEN ${productsTable.type} = 2 THEN ${productsTable.stock} ELSE 0 END`).as('sum_uniformes'),
+        'sum_equiposOdontologicos': sum(sql`CASE WHEN ${productsTable.type} = 3 THEN ${productsTable.stock} ELSE 0 END`).as('sum_equiposOdontologicos'),
+      })
+      .from(productsTable)
+      .where(sql`${productsTable.type} IN (1, 2, 3)`);
+
+    return result[0];
   }
 }

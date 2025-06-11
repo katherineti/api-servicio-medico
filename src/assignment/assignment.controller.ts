@@ -1,7 +1,6 @@
 import { Body, Controller, Get, Ip, Param, ParseIntPipe, Post, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AssignmentService } from './assignment.service';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
-import { Family } from 'src/db/types/family.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
 import { Assignment } from 'src/db/types/assignment.types';

@@ -6,7 +6,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq, and, count, sql, gte, lt } from 'drizzle-orm'
+import { eq, and, count, sql, gte, lt, inArray } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
@@ -235,4 +235,19 @@ export class AssignmentService {
     
         return result || { count: 0 };
     }
+
+    //Nuevo
+    async getAccumulatedAssignmentProductsByType() {
+    const result = await this.db
+      .select({
+        sumAsig_medicamentos: sql<number>`SUM(CASE WHEN ${productsTable.type} = 1 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_medicamentos'),
+        sumAsig_uniformes: sql<number>`SUM(CASE WHEN ${productsTable.type} = 2 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_uniformes'),
+        sumAsig_equiposOdontologicos: sql<number>`SUM(CASE WHEN ${productsTable.type} = 3 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_equiposOdontologicos'),
+      })
+      .from(assignmentTable)
+      .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+      .where(inArray(productsTable.type, [1, 2, 3]));
+
+    return result[0];
+  }
 }

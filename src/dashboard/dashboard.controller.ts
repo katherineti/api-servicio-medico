@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { AssignmentService } from 'src/assignment/assignment.service';
 import { TypesRoles } from 'src/db/enums/types-roles';
 import { Roles } from 'src/decorators/role.decorators';
@@ -47,5 +47,18 @@ export class DashboardController {
     @Get('totalAssignments')
     totalAssignments(): Promise<any> {
       return this.assignmentService.totalAssignments();
+    }
+
+    // Nuevos
+    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Get('totalAvailableProductsByType')
+    TotalAvailableProductsByType(): Promise<any> {
+    return this.medicalSuppliesService.getAccumulatedStockByType();
+    }
+
+    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Get('totalOfProductAssignmentsByType')
+    totalOfProductAssignmentsByType(): Promise<any> {
+    return this.assignmentService.getAccumulatedAssignmentProductsByType();
     }
 }
