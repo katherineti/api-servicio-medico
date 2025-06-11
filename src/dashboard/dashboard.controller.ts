@@ -1,13 +1,14 @@
-import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { AssignmentService } from 'src/assignment/assignment.service';
 import { TypesRoles } from 'src/db/enums/types-roles';
 import { Roles } from 'src/decorators/role.decorators';
+import { MedicalSuppliesExpiredService } from 'src/medical-supplies-expired/medical-supplies-expired.service';
 import { MedicalSuppliesService } from 'src/medical-supplies/medical-supplies.service';
 import { UsersService } from 'src/users/users.service';
 
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly usersService: UsersService , private readonly medicalSuppliesService: MedicalSuppliesService, private readonly assignmentService: AssignmentService) { }
+  constructor(private readonly usersService: UsersService , private readonly medicalSuppliesService: MedicalSuppliesService, private readonly assignmentService: AssignmentService, private readonly medicalSuppliesExpiredService: MedicalSuppliesExpiredService) { }
 
     @Roles(TypesRoles.admin, TypesRoles.auditor)
     @Get('totalUsers')
@@ -60,5 +61,10 @@ export class DashboardController {
     @Get('totalOfProductAssignmentsByType')
     totalOfProductAssignmentsByType(): Promise<any> {
     return this.assignmentService.getAccumulatedAssignmentProductsByType();
+    }
+
+    @Get('expiredProductsCount')
+    expiredProductsCount(): Promise<any> {
+    return this.medicalSuppliesExpiredService.expiredProductsCount();
     }
 }

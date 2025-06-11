@@ -104,4 +104,32 @@ export class MedicalSuppliesExpiredService {
     
         return result;
       }
+
+      async expiredProductsCount(): Promise<number> {
+        const [{ value: total }] = await 
+        this.db.select({ value: count() })
+        .from(productsTable)
+        .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+        .where(  
+        or(
+            or(
+                eq(productsTable.statusId, 3),
+                and(
+                isNotNull(productsTable.expirationDate),
+                sql`(${productsTable.expirationDate} - CURRENT_DATE) < 90`
+                )
+            ),
+
+            or(
+                eq(productsTable.statusId, 4),
+                and(
+                isNotNull(productsTable.expirationDate),
+                sql`${productsTable.expirationDate} <= CURRENT_DATE`
+                )
+            )
+        ));
+        this.logger.debug(`Número de productos proximos a vencer y caducados: ${total}`);
+    
+        return total;
+      }
 }

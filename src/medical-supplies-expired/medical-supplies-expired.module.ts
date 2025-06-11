@@ -6,6 +6,7 @@ import { DrizzleDbConecctionModule } from 'src/db.module';
 @Module({
   imports:[DrizzleDbConecctionModule],
   controllers: [MedicalSuppliesExpiredController],
-  providers: [MedicalSuppliesExpiredService]
+  providers: [MedicalSuppliesExpiredService],
+  exports:[MedicalSuppliesExpiredService]
 })
 export class MedicalSuppliesExpiredModule {}

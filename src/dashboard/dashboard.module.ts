@@ -5,6 +5,7 @@ import { UsersModule } from 'src/users/users.module';
 import { MedicalSuppliesModule } from 'src/medical-supplies/medical-supplies.module';
 import { CategoriesModule } from 'src/categories/categories.module';
 import { AssignmentModule } from 'src/assignment/assignment.module';
+import { MedicalSuppliesExpiredModule } from 'src/medical-supplies-expired/medical-supplies-expired.module';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { AssignmentModule } from 'src/assignment/assignment.module';
     UsersModule,
     MedicalSuppliesModule,
     CategoriesModule,
-    AssignmentModule
+    AssignmentModule,
+    MedicalSuppliesExpiredModule
   ],
   controllers: [DashboardController],
 })
