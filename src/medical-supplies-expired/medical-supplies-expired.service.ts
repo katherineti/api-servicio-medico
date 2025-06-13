@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
-import { categoriesTable, productsTable, productStatusTable } from 'src/db/schema';
+import { categoriesTable, productsTable, productStatusTable, providersTable } from 'src/db/schema';
 import { count, desc, ilike, eq, and, sql, or, isNotNull } from 'drizzle-orm'
 import { ProductsExpiredGetAll } from './dto/products-expired-dto';
 import { SearchProductsExpiredDto } from './dto/search-products-expired.dto';
@@ -63,6 +63,7 @@ export class MedicalSuppliesExpiredService {
           code: productsTable.code,
           stock: productsTable.stock,
           name: productsTable.name,
+          providerId: providersTable.id, provider: providersTable.name, //nuevo
           type: productsTable.type,
           expirationDate: sql<string>`TO_CHAR(${productsTable.expirationDate}, 'YYYY-MM-DD')`,
           createdAt: productsTable.createdAt,
@@ -84,6 +85,7 @@ export class MedicalSuppliesExpiredService {
         .from(productsTable)
         .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
         .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id ) )
+        .leftJoin(providersTable, eq(productsTable.providerId, providersTable.id ) )
         .where(whereClause)
         .orderBy(desc(productsTable.id))
         .limit(filter.take)

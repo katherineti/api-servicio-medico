@@ -1,5 +1,5 @@
 {
-  "id": "7d9a75c7-266e-492d-9b63-3aafc5ab5913",
+  "id": "3b2ee4c9-1819-440a-89a6-232e97088570",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -703,6 +703,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "providerId": {
+          "name": "providerId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
         "description": {
           "name": "description",
           "type": "varchar(255)",
@@ -758,6 +764,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "products_providerId_providers_id_fk": {
+          "name": "products_providerId_providers_id_fk",
+          "tableFrom": "products",
+          "tableTo": "providers",
+          "columnsFrom": [
+            "providerId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "products_type_typesProducts_id_fk": {
           "name": "products_type_typesProducts_id_fk",
           "tableFrom": "products",
@@ -805,6 +824,65 @@
           "nullsNotDistinct": false,
           "columns": [
             "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.providers": {
+      "name": "providers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "providers_email_unique": {
+          "name": "providers_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
           ]
         }
       },

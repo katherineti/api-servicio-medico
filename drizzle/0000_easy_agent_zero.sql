@@ -93,6 +93,7 @@ CREATE TABLE "products" (
 	"code" varchar(50) NOT NULL,
 	"stock" integer DEFAULT 0 NOT NULL,
 	"name" varchar(100) NOT NULL,
+	"providerId" integer NOT NULL,
 	"description" varchar(255) NOT NULL,
 	"url_image" varchar(255) DEFAULT '',
 	"type" integer NOT NULL,
@@ -102,6 +103,16 @@ CREATE TABLE "products" (
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now(),
 	CONSTRAINT "products_code_unique" UNIQUE("code")
+);
+--> statement-breakpoint
+CREATE TABLE "providers" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" varchar(200) NOT NULL,
+	"email" varchar(100) NOT NULL,
+	"phone" varchar(50) NOT NULL,
+	"createdAt" timestamp DEFAULT now(),
+	"updatedAt" timestamp DEFAULT now(),
+	CONSTRAINT "providers_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "reportStatus" (
@@ -152,6 +163,7 @@ ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_employeeId_employee_
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "products_providerId_providers_id_fk" FOREIGN KEY ("providerId") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_type_typesProducts_id_fk" FOREIGN KEY ("type") REFERENCES "public"."typesProducts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_categories_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_statusId_productStatus_id_fk" FOREIGN KEY ("statusId") REFERENCES "public"."productStatus"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateProductDto{
 
@@ -34,8 +34,12 @@ export class CreateProductDto{
     @IsNotEmpty()
     @IsString()
     status: string;//es un string numerico ejemplo '1'
-
+    
     // @IsNotEmpty()
     @IsOptional()
     expirationDate: Date | 'null' | null;
+
+    @IsNotEmpty()
+    @IsNumber()
+    providerId: number;//es un string numerico ejemplo '1'
 }

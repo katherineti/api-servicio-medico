@@ -9,7 +9,6 @@ export const usersTable = table("users", {
     name: t.varchar({ length: 200 }).notNull(),
     email: t.varchar().notNull().unique(),
     password: t.varchar({ length: 255 }).notNull(),
-    // role: rolesEnum().notNull(),
     role: t.integer().notNull().references(() => rolesTable.id),
     isActivate: t.boolean('isActivate').notNull().default(true),
     createdAt: t.timestamp().defaultNow().notNull(),
@@ -34,7 +33,7 @@ export const typesOfProductsTable = table("typesProducts",{
   type: ProductTypeEnum().notNull().unique(),
 })
 
-export const productsTable = table("products", {
+/* export const productsTable = table("products", {
     id: t.serial().primaryKey(),
     code: t.varchar({ length: 50 }).notNull().unique(),
     stock: t.integer().notNull().default(0),
@@ -47,6 +46,30 @@ export const productsTable = table("products", {
     statusId: t.integer().notNull().references(() => productStatusTable.id),
     // expirationDate: t.date().notNull(),
     expirationDate: t.date().default(null),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
+}); */
+export const productsTable = table("products", {
+    id: t.serial().primaryKey(),
+    code: t.varchar({ length: 50 }).notNull().unique(),
+    stock: t.integer().notNull().default(0),
+    name: t.varchar({ length: 100 }).notNull(),
+    providerId: t.integer().notNull().references(() => providersTable.id),
+    description: t.varchar({ length: 255 }).notNull(),
+    url_image: t.varchar({ length: 255 }).default(''),
+    type: t.integer().notNull().references(() => typesOfProductsTable.id),
+    categoryId: t.integer().notNull().references(() => categoriesTable.id),
+    statusId: t.integer().notNull().references(() => productStatusTable.id),
+    expirationDate: t.date().default(null),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
+});
+
+export const providersTable = table("providers", {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 200 }).notNull(),
+    email: t.varchar({ length: 100 }).notNull().unique(),
+    phone: t.varchar({ length: 50 }).notNull(),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
@@ -151,4 +174,3 @@ export const auditReportsTable_temp = table("auditReports_temp", {
     endDate: t.timestamp(),
     updatedAt: t.timestamp().default(null)
 });
-
