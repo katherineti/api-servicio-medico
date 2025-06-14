@@ -31,9 +31,11 @@ export class ProvidersService {
     return result;
     }
 
-    async create( createProvider: CreateProvider): Promise<any>{
+    async create(createProvider: CreateProvider): Promise<any>{
         try {
+            console.log("createProvider" , createProvider)
             const [result] = await this.db.insert(providersTable).values(createProvider).returning();
+            this.logger.debug(`Proveedor creado: ${JSON.stringify(result)}`);
             return result;
 
         } catch (error) {

@@ -40,6 +40,6 @@ export class CreateProductDto{
     expirationDate: Date | 'null' | null;
 
     @IsNotEmpty()
-    @IsNumber()
-    providerId: number;//es un string numerico ejemplo '1'
+    @IsString()
+    providerId: string;//es un string numerico ejemplo '1'
 }
