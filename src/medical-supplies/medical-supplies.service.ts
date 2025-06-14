@@ -236,7 +236,7 @@ export class MedicalSuppliesService {
         statusId: Number(updateMedicalSupplyDto.status),
         updatedAt: new Date(),
         url_image: imageUrl,
-        // expirationDate: expirationDateString
+        providerId: Number(updateMedicalSupplyDto.providerId)
       };
       
       if(updateMedicalSupplyDto.expirationDate && updateData.type!=2 && updateData.type!=3 ){//si el tipo de prod es medicamento si puede ingresar la fecha expiracion
