@@ -300,7 +300,11 @@ export class MedicalSuppliesService {
       .select({ count: count() })
       .from(productsTable)
       .where(
-        sql`${productsTable.createdAt} >= ${startOfDayCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfDayCaracas.toISOString()}`
+        and(
+          sql`${productsTable.createdAt} >= ${startOfDayCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfDayCaracas.toISOString()}`,
+          // Condición para excluir statusId = 4 (productos caducados)
+          ne(productsTable.statusId, 4)
+        )
       );
 
     return result || { count: 0 };
@@ -321,7 +325,11 @@ export class MedicalSuppliesService {
       .select({ count: count() })
       .from(productsTable)
       .where(
-        sql`${productsTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`
+        and(
+          sql`${productsTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
+          // Condición para excluir statusId = 4 (productos caducados)
+          ne(productsTable.statusId, 4)
+        )
       );
 
     return result || { count: 0 };
@@ -330,7 +338,7 @@ export class MedicalSuppliesService {
   //Para el contador de productos en el dashboard de almacen
   async countAllProducts(): Promise<{ count: number }> {
     const [result] = await 
-    this.db.select({ count: count() }).from(productsTable);
+    this.db.select({ count: count() }).from(productsTable).where(ne(productsTable.statusId, 4));
     
     return result ? result : { count: 0 };
   }
@@ -339,6 +347,7 @@ export class MedicalSuppliesService {
   Nuevos 
   getAccumulatedStockByType: Uniformes Disponibles, Equipos Odontológicos Disponibles, Total Medicamentos Disponibles
   Consulta que devuelva el acomulado de los stocks de los productos que son de tipo 1,2 o 3.
+  Y que son productos no caducados.
   */
   public async getAccumulatedStockByType(): Promise<any> {
     const result = await this.db
@@ -348,7 +357,13 @@ export class MedicalSuppliesService {
         'sum_equiposOdontologicos': sum(sql`CASE WHEN ${productsTable.type} = 3 THEN ${productsTable.stock} ELSE 0 END`).as('sum_equiposOdontologicos'),
       })
       .from(productsTable)
-      .where(sql`${productsTable.type} IN (1, 2, 3)`);
+      .where(
+        and(
+          sql`${productsTable.type} IN (1, 2, 3)`,
+          ne(productsTable.statusId, 4)
+        )
+
+      );
 
     return result[0];
   }

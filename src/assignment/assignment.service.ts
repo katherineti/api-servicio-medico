@@ -6,7 +6,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq, and, count, sql, gte, lt, inArray } from 'drizzle-orm'
+import { eq, and, count, sql, gte, lt, inArray, ne } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
@@ -32,6 +32,10 @@ export class AssignmentService {
         // Asegura que la cantidad de productos a asignar no exceda el stock disponible.
         if (stockDisponible < create.products) {
             throw new ConflictException('El stock actual del producto es insuficiente.');
+        }
+
+        if(product.statusId===4){
+            throw new ConflictException('El producto ha caducado. No puede asignar un producto en este estado.');
         }
 
         Logger.debug("Producto " , JSON.stringify(product));
@@ -194,11 +198,15 @@ export class AssignmentService {
         let whereConditions = and(
             gte(assignmentTable.createdAt, today),
             lt(assignmentTable.createdAt, endOfDay),
+           // Nnuevas condiciones
+            inArray(productsTable.type, [1, 2, 3]),
+            ne(productsTable.statusId, 4)
         );
     
         const [assignmentsCount] = await this.db
           .select({ count: count() })
           .from(assignmentTable)
+          .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
           .where(whereConditions);
         
         Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
@@ -219,10 +227,15 @@ export class AssignmentService {
         const [result] = await this.db
           .select({ count: count() })
           .from(assignmentTable)
+          .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
           .where(
-            sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`
-          );
-        Logger.debug("Contador asignacion del mes, en el dashboard" , JSON.stringify(result))
+            and(
+                sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
+                inArray(productsTable.type, [1, 2, 3]),
+                ne(productsTable.statusId, 4)
+            )
+           );
+        Logger.debug("Contador registros de asignaciones del mes, en el dashboard" , JSON.stringify(result))
     
         return result || { count: 0 };
     }
@@ -230,13 +243,22 @@ export class AssignmentService {
     //Para el contador de asignaciones en el dashboard de medico
     async totalAssignments(): Promise<{ count: number }> {
  
-        const [result] = await this.db.select({ count: count() }).from(assignmentTable);
-        Logger.debug("Contador asignaciones, para el dashboard" , JSON.stringify(result));
+        const [result] = await this
+        .db.select({ count: count() })
+        .from(assignmentTable)
+        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+        .where(
+            and(
+                inArray(productsTable.type, [1, 2, 3]),
+                ne(productsTable.statusId, 4)
+            )
+        );
+        Logger.debug("Contador registros de asignaciones, para el dashboard" , JSON.stringify(result));
     
         return result || { count: 0 };
     }
 
-    //Nuevo
+    //Nuevo. Incluye asignaciones de productos que ya no existen
     async getAccumulatedAssignmentProductsByType() {
     const result = await this.db
       .select({
@@ -246,7 +268,12 @@ export class AssignmentService {
       })
       .from(assignmentTable)
       .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
-      .where(inArray(productsTable.type, [1, 2, 3]));
+      .where(
+        and(
+            inArray(productsTable.type, [1, 2, 3]),
+            ne(productsTable.statusId, 4)
+        )
+    );
 
     return result[0];
   }
