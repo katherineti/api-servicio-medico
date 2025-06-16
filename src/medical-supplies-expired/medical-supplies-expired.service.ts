@@ -107,6 +107,35 @@ export class MedicalSuppliesExpiredService {
         return result;
       }
 
+      async getbyId(id: number): Promise<any> {
+      try{
+          const result = await this.db.select({
+            id: productsTable.id,
+            url_image: productsTable.url_image,
+            description: productsTable.description,
+            code: productsTable.code,
+            stock: productsTable.stock,
+            name: productsTable.name,
+            type: productsTable.type,
+            createdAt: productsTable.createdAt,
+            updatedAt: productsTable.updatedAt,
+            categoryId: categoriesTable.id,
+            category: categoriesTable.name,
+            statusId: productsTable.statusId,
+          })
+          .from(productsTable)
+          .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+          .where(eq( productsTable.id, id ))
+          .limit(1);
+
+          return result[0] || null;
+
+      }catch(err){
+          console.error("Error en la base de datos al buscar el producto " + id + ": ", err);
+          throw new Error("Error al obtener el producto " + id + " " + err);
+      }
+    }
+
       async expiredProductsCount(): Promise<number> {
         const [{ value: total }] = await 
         this.db.select({ value: count() })

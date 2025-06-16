@@ -1,5 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and,desc, count } from 'drizzle-orm';
+import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
+import { and,desc, count, eq } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { providersTable } from 'src/db/schema';
@@ -11,6 +11,36 @@ export class ProvidersService {
     private readonly logger = new Logger(ProvidersService.name);
     
     constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) { }
+
+    async getByEmail(email: string): Promise<any> {
+        try{
+            const result = await this.db.select()
+            .from(providersTable)
+            .where(eq( providersTable.email, email ))
+            .limit(1);
+
+            return result[0] || null;
+
+        }catch(err){
+            console.error("Error en la base de datos al buscar el proveedor con el email " + email + ": ", err);
+            throw new Error("Error al obtener el proveedor con el email " + email + " " + err);
+        }
+    }
+
+    async getByName(name: string): Promise<any> {
+        try{
+            const result = await this.db.select()
+            .from(providersTable)
+            .where(eq( providersTable.name, name ))
+            .limit(1);
+
+            return result[0] || null;
+
+        }catch(err){
+            console.error("Error en la base de datos al buscar el proveedor con el nombre " + name + ": ", err);
+            throw new Error("Error al obtener el proveedor con el nombre " + name + " " + err);
+        }
+    }
 
     async getAll(): Promise<ProvidersGetAll> {
 
@@ -32,6 +62,16 @@ export class ProvidersService {
     }
 
     async create(createProvider: CreateProvider): Promise<any>{
+        const emailExist = await this.getByEmail(createProvider.email);
+        if (emailExist) {
+            throw new ConflictException('El correo del proveedor ya existe.');
+        }
+
+        const nameExist = await this.getByName(createProvider.name);
+        if (nameExist) {
+            throw new ConflictException('El nombre del proveedor ya existe.');
+        }
+
         try {
             console.log("createProvider" , createProvider)
             const [result] = await this.db.insert(providersTable).values(createProvider).returning();
