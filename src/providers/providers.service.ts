@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import { and,desc, count, eq } from 'drizzle-orm';
+import { and,desc, count, eq, sql } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { providersTable } from 'src/db/schema';
@@ -31,7 +31,7 @@ export class ProvidersService {
         try{
             const result = await this.db.select()
             .from(providersTable)
-            .where(eq( providersTable.name, name ))
+            .where(eq( sql`lower(${providersTable.name})`, name.toLowerCase() ))
             .limit(1);
 
             return result[0] || null;

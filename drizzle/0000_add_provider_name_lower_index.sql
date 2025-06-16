@@ -168,4 +168,5 @@ ALTER TABLE "products" ADD CONSTRAINT "products_type_typesProducts_id_fk" FOREIG
 ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_categories_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_statusId_productStatus_id_fk" FOREIGN KEY ("statusId") REFERENCES "public"."productStatus"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "users" ADD CONSTRAINT "users_role_roles_id_fk" FOREIGN KEY ("role") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "employee_family_unique" ON "employeeFamily" USING btree ("employeeId","familyId");
+CREATE UNIQUE INDEX "employee_family_unique" ON "employeeFamily" USING btree ("employeeId","familyId");--> statement-breakpoint
+CREATE INDEX "idx_providers_name_lower" ON "providers" USING btree (lower("name"));

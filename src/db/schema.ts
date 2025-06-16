@@ -1,4 +1,5 @@
-import { json, pgEnum, pgTable as table, unique } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { index, json, pgEnum, pgTable as table, unique } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core";
 
 export const rolesEnum = pgEnum("roles_enum", ["admin", "almacen","medico","auditor"]);
@@ -72,7 +73,13 @@ export const providersTable = table("providers", {
     phone: t.varchar({ length: 50 }).notNull(),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
-});
+},
+(table) => [
+    // t.index('idx_providers_name_lower').on(sql`lower(${table.name})`)
+    index('idx_providers_name_lower')
+    .using('btree', sql`lower(${table.name})`)
+]
+);
 
 export const employeeTable = table("employee", {
     id: t.serial().primaryKey(),
