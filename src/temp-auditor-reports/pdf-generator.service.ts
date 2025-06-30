@@ -546,10 +546,21 @@ private async createDocumentDefinition_(
       // --- Contenido del reporte ---
 
       // Título Principal del Reporte (si no hay portada, esto sería la primera página)
-      content.push(
+/*       content.push(
          logoData ? { image: `data:image/png;base64,${logoData.toString('base64')}`, width: 180, ...styles.coverImage } : {},
         { text: 'INFORME FINAL DE AUDITORÍA', style: 'reportTitle' }
-    );
+      ); */
+      content.push(
+        //  logoData ? { image: `data:image/png;base64,${logoData.toString('base64')}`, width: 180, ...styles.coverImage } : {},
+        logoData ? { 
+          image: `data:image/jpeg;base64,${logoData.toString('base64')}`, 
+          maxWidth: 515,
+          maxHeight: 150,
+          alignment: 'center',
+          margin: [0, 0, 0, 20]
+        } : {},
+        { text: 'INFORME FINAL DE AUDITORÍA', style: 'reportTitle' }
+      );
 
       // Tabla de Información General (similar a la de la imagen)
 /*       content.push(
@@ -813,11 +824,17 @@ private async createDocumentDefinition_(
    * @returns Buffer del logo o null si no se puede cargar
    */
   private async loadLogoWithRetry(): Promise<Buffer | null> {
-    const possibleLogoPaths = [
+/*     const possibleLogoPaths = [
       path.join(process.cwd(), 'src', 'logo-ciip.png'),
       path.join(process.cwd(), 'src', 'assets', 'logo-ciip.png'),
       path.join(process.cwd(), 'assets', 'logo-ciip.png'),
       path.join(process.cwd(), 'logo-ciip.png')
+    ]; */
+    const possibleLogoPaths = [
+      path.join(process.cwd(), 'src', 'membreteCIIP.jpeg'),
+      // path.join(process.cwd(), 'src', 'assets', 'membreteCIIP.jpeg'),
+      // path.join(process.cwd(), 'assets', 'membreteCIIP.jpeg'),
+      // path.join(process.cwd(), 'membreteCIIP.jpeg')
     ];
     
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
