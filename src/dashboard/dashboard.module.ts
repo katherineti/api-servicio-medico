@@ -16,6 +16,7 @@ import { MedicalSuppliesExpiredModule } from 'src/medical-supplies-expired/medic
     AssignmentModule,
     MedicalSuppliesExpiredModule
   ],
+  
   controllers: [DashboardController],
 })
 export class DashboardModule {}

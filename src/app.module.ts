@@ -19,6 +19,7 @@ import { TempAuditorReportsModule } from './temp-auditor-reports/temp-auditor-re
 import { FilesModule } from './files/files.module';
 import { MedicalSuppliesExpiredModule } from './medical-supplies-expired/medical-supplies-expired.module';
 import { ProvidersModule } from './providers/providers.module';
+import { DashboardReportModule } from './dashboard-report/dashboard-report.module';
 
 @Module({
   imports: [
@@ -39,7 +40,8 @@ import { ProvidersModule } from './providers/providers.module';
     TempAuditorReportsModule,
     FilesModule,
     MedicalSuppliesExpiredModule,
-    ProvidersModule
+    ProvidersModule,
+    DashboardReportModule
   ],
   // controllers: [AppController],
   controllers: [],
