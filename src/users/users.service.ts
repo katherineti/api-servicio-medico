@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { usersTable } from 'src/db/schema';
-import { and, count, desc, eq, ilike } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, ne, sql } from 'drizzle-orm'
 import * as argon2 from "argon2";
 import { CreateUser, User } from 'src/db/types/users.types';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -195,4 +195,46 @@ export class UsersService {
     
     return result ? result : { count: 0 };
   }
+
+  async totalUsersOfTheDay(): Promise<{ count: number }> {
+    const nowCaracas = new Date();
+
+    const startOfDayCaracas = new Date(nowCaracas);
+    startOfDayCaracas.setHours(0, 0, 0, 0);
+
+    const endOfDayCaracas = new Date(nowCaracas);
+    endOfDayCaracas.setHours(23, 59, 59, 999);
+
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(usersTable)
+      .where(
+          sql`${usersTable.createdAt} >= ${startOfDayCaracas.toISOString()} AND ${usersTable.createdAt} <= ${endOfDayCaracas.toISOString()}`,
+      );
+
+    return result || { count: 0 };
+  }
+
+  async totalUsersOfMonth(): Promise<{ count: number }> {
+    const nowCaracas = new Date();
+    const year = nowCaracas.getFullYear();
+    const month = nowCaracas.getMonth();
+
+    // Obtener el primer día del mes actual en Caracas
+    const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
+
+    // Obtener el último día del mes actual en Caracas
+    const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+    const [result] = await this.db
+      .select({ count: count() })
+      .from(usersTable)
+      .where(
+          sql`${usersTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${usersTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
+      );
+
+    return result || { count: 0 };
+  }
+
+  
 }

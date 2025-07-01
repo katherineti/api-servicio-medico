@@ -4,12 +4,18 @@ import {
   NotFoundException,
   InternalServerErrorException,
   BadRequestException,
+  Inject,
 } from "@nestjs/common"
 import type { Response } from "express"
 import PdfPrinter from "pdfmake"
 import * as fs from "fs"
 import * as path from "path"
 import type { Style, StyleDictionary, TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces"
+//NUEVO
+import { and, count, desc, eq, gte, lte, ilike } from "drizzle-orm"
+import { rolesTable, usersTable } from "src/db/schema"
+import { PG_CONNECTION } from "src/constants"
+import { NeonDatabase } from "drizzle-orm/neon-serverless"
 
 export interface DashboardReportDto {
   title: string
@@ -18,6 +24,28 @@ export interface DashboardReportDto {
   date: string
   role: string
   additionalInfo?: any
+}
+///NUEVO:
+export interface UserRegistrationByDay {
+  day: number
+  count: number
+  date: string
+}
+
+export interface UsersByRole {
+  roleId: number
+  roleName: string
+  userCount: number
+}
+
+export interface CompleteUserStats {
+  totalUsers: number
+  usersToday: number
+  usersThisMonth: number
+  activeUsers: number
+  inactiveUsers: number
+  usersByRole: UsersByRole[]
+  registrationsByDay: UserRegistrationByDay[]
 }
 
 type CustomHeader = (currentPage: number, pageCount: number, pageSize: any) => any
@@ -32,6 +60,7 @@ export class DashboardReportService {
   private readonly fonts: TFontDictionary
 
   constructor(
+    @Inject(PG_CONNECTION) private db: NeonDatabase
     // Inyecta los repositorios que necesites según tu estructura de base de datos
     // @InjectRepository(DashboardReport)
     // private readonly dashboardReportRepository: Repository<DashboardReport>,
@@ -755,5 +784,123 @@ export class DashboardReportService {
   private getReportCategoryById(id: number): string {
     const categories = ["usuarios", "productos", "asignaciones", "inventario", "alertas"]
     return categories[id % categories.length] || "general"
+  }
+
+                                                    //////// NUEVO
+ /**
+ * 🚀 MÉTODO ÚNICO: Obtiene TODAS las estadísticas usando SOLO Drizzle ORM
+ */
+  async getCompleteUserStats(): Promise<CompleteUserStats> {
+    try {
+      this.logger.log("Ejecutando consultas con solo Drizzle ORM")
+
+      const now = new Date()
+      const startOfDay = new Date(now)
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date(now)
+      endOfDay.setHours(23, 59, 59, 999)
+
+      const currentYear = now.getFullYear()
+      const currentMonth = now.getMonth()
+      const startOfMonth = new Date(currentYear, currentMonth, 1)
+      startOfMonth.setHours(0, 0, 0, 0)
+      const endOfMonth = new Date(currentYear, currentMonth + 1, 0)
+      endOfMonth.setHours(23, 59, 59, 999)
+
+      // 1. Estadísticas generales usando solo Drizzle
+      const [generalStats] = await this.db
+        .select({
+          totalUsers: count(),
+          usersToday: count(
+            and(
+              gte(usersTable.createdAt, startOfDay),
+              lte(usersTable.createdAt, endOfDay)
+            )
+          ),
+          usersThisMonth: count(
+            and(
+              gte(usersTable.createdAt, startOfMonth),
+              lte(usersTable.createdAt, endOfMonth)
+            )
+          ),
+          activeUsers: count(eq(usersTable.isActivate, true)),
+          inactiveUsers: count(eq(usersTable.isActivate, false)),
+        })
+        .from(usersTable)
+
+      // 2. Usuarios por rol
+      const usersByRoleResult = await this.db
+        .select({
+          roleId: usersTable.role,
+          roleName: rolesTable.name,
+          userCount: count(),
+        })
+        .from(usersTable)
+        .innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
+        .groupBy(usersTable.role, rolesTable.name)
+        .orderBy(usersTable.role)
+
+      // 3. Registros por día del mes actual
+      const registrationsByDayResult = await this.db
+        .select({
+          createdAt: usersTable.createdAt,
+          userCount: count(),
+        })
+        .from(usersTable)
+        .where(
+          and(
+            gte(usersTable.createdAt, startOfMonth),
+            lte(usersTable.createdAt, endOfMonth)
+          )
+        )
+        .groupBy(usersTable.createdAt)
+        .orderBy(usersTable.createdAt)
+
+      // Procesar resultados
+      const usersByRole: UsersByRole[] = usersByRoleResult.map((row) => ({
+        roleId: row.roleId,
+        roleName: row.roleName,
+        userCount: Number(row.userCount),
+      }))
+
+      // Procesar registros por día (agrupar por fecha)
+      const registrationsByDay: UserRegistrationByDay[] = []
+      const dayMap = new Map<string, number>()
+
+      registrationsByDayResult.forEach((row) => {
+        const date = new Date(row.createdAt).toISOString().split('T')[0]
+        const day = new Date(row.createdAt).getDate()
+        const currentCount = dayMap.get(date) || 0
+        dayMap.set(date, currentCount + Number(row.userCount))
+      })
+
+      dayMap.forEach((count, date) => {
+        const day = new Date(date).getDate()
+        registrationsByDay.push({
+          day,
+          count,
+          date,
+        })
+      })
+
+      registrationsByDay.sort((a, b) => a.day - b.day)
+
+      const completeStats: CompleteUserStats = {
+        totalUsers: Number(generalStats.totalUsers),
+        usersToday: Number(generalStats.usersToday),
+        usersThisMonth: Number(generalStats.usersThisMonth),
+        activeUsers: Number(generalStats.activeUsers),
+        inactiveUsers: Number(generalStats.inactiveUsers),
+        usersByRole,
+        registrationsByDay,
+      }
+
+      this.logger.log("Estadísticas completas con Drizzle puro:", JSON.stringify(completeStats, null, 2))
+      return completeStats
+
+    } catch (error) {
+      this.logger.error("Error al obtener estadísticas con Drizzle:", error)
+      throw new Error("Error al obtener estadísticas completas de usuarios")
+    }
   }
 }
