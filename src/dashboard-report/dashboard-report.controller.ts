@@ -2,6 +2,8 @@ import { Controller, Post, Body, Res, Query, Logger, Get, Param, ParseIntPipe } 
 import type { Response } from "express"
 import { PdfDashboardService } from "./pdf-dasboard.service"
 import { DashboardReportService } from "./dashboard-report.service";
+import { Usersesion } from "src/auth/strategies/usersesion.decorator";
+import { IJwtPayload } from "src/auth/dto/jwt-payload.interface";
 
 @Controller("dashboard-reports")
 export class DashboardReportController {
@@ -12,8 +14,15 @@ export class DashboardReportController {
     private readonly pdfGeneratorDashboardService: PdfDashboardService
   ) {}
 
-  @Post("pdf/:id")
-  async generatePdf(id: number, @Body() reportDto: any, @Res() res: Response, @Query('download') download?: string) {
+  // @Post("pdf/:id")
+  @Post("pdf")
+  async generatePdf(
+    // id: number, 
+    // @Body() reportDto: any, 
+    @Res() res: Response, 
+    @Usersesion() user: IJwtPayload,
+    @Query('download') download?: string,
+  ) {
     this.logger.log(`Solicitud de generación de PDF para el reporte de estadísticas de usuarios`);
 
     try {
@@ -39,7 +48,8 @@ export class DashboardReportController {
       )
 
       // Generar PDF con las estadísticas
-      await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, reportDto, res)
+      // await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, reportDto, res)
+      await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, res, user)
 
       this.logger.log(`PDF de estadísticas generado exitosamente`);
     } catch (error) {

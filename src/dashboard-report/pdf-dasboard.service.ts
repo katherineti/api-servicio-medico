@@ -7,6 +7,7 @@ import type { StyleDictionary, TDocumentDefinitions, TFontDictionary } from "pdf
 import type { CompleteUserStats } from "./dashboard-report.service"
 import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 import type { ChartConfiguration } from "chart.js"
+import { IJwtPayload } from "src/auth/dto/jwt-payload.interface"
 
 type CustomHeader = (currentPage: number, pageCount: number, pageSize: any) => any
 interface CustomDocumentDefinitions extends Omit<TDocumentDefinitions, "header"> {
@@ -61,7 +62,8 @@ export class PdfDashboardService {
   /**
    * Genera un PDF específico para estadísticas de usuarios
    */
-  async generateUserStatsPdf(userStats: CompleteUserStats, reportDto: any, res: Response): Promise<void> {
+  // async generateUserStatsPdf(userStats: CompleteUserStats, reportDto: any, res: Response): Promise<void> {
+  async generateUserStatsPdf(userStats: CompleteUserStats, res: Response, user: IJwtPayload): Promise<void> {
     try {
       this.logger.log("Generando PDF de estadísticas de usuarios")
 
@@ -69,7 +71,8 @@ export class PdfDashboardService {
       this.validateUserStats(userStats)
 
       // Crear definición del documento
-      const docDefinition = await this.createUserStatsDocumentDefinition(userStats, reportDto)
+      // const docDefinition = await this.createUserStatsDocumentDefinition(userStats, reportDto)
+      const docDefinition = await this.createUserStatsDocumentDefinition(userStats, user)
 
       // Crear instancia de PdfPrinter
       const printer = new PdfPrinter(this.fonts)
@@ -301,9 +304,13 @@ export class PdfDashboardService {
   /**
    * Crea la definición del documento PDF para estadísticas de usuarios
    */
+  // private async createUserStatsDocumentDefinition(
+  //   userStats: CompleteUserStats,
+  //   reportDto: any,
+  // ): Promise<CustomDocumentDefinitions> {
   private async createUserStatsDocumentDefinition(
     userStats: CompleteUserStats,
-    reportDto: any,
+    user: IJwtPayload
   ): Promise<CustomDocumentDefinitions> {
     try {
       // Cargar logo
@@ -404,7 +411,8 @@ export class PdfDashboardService {
       })
 
       // Información general del reporte
-      this.addGeneralInfoTable(content, reportDto, styles)
+      // this.addGeneralInfoTable(content, reportDto, styles)
+      this.addGeneralInfoTable(content, styles, user)
 
       // Estadísticas generales
       this.addGeneralStatsSection(content, userStats, styles)
@@ -426,7 +434,8 @@ export class PdfDashboardService {
       this.addRegistrationsByDaySection(content, userStats, styles)
 
       // Información del sistema
-      this.addSystemInfoSection(content, reportDto, styles)
+      // this.addSystemInfoSection(content, reportDto, styles)
+      this.addSystemInfoSection(content, styles, user)
 
       // Crear definición del documento
       return {
@@ -494,7 +503,8 @@ export class PdfDashboardService {
   /**
    * Agrega la tabla de información general
    */
-  private addGeneralInfoTable(content: any[], reportDto: any, styles: StyleDictionary): void {
+  // private addGeneralInfoTable(content: any[], reportDto: any, styles: StyleDictionary): void {
+  private addGeneralInfoTable(content: any[], styles: StyleDictionary, user: IJwtPayload): void {
     const currentDate = new Date().toLocaleDateString("es-ES", {
       year: "numeric",
       month: "long",
@@ -525,7 +535,9 @@ export class PdfDashboardService {
           ],
           [
             { text: "Estadísticas de Usuarios", style: "tableCellValue" },
-            { text: reportDto?.role || "Sistema", style: "tableCellValue" },
+            // { text: reportDto?.role || "Sistema", style: "tableCellValue" },
+            { text: "Sistema", style: "tableCellValue" },
+            // { text: user?.role || "Sistema", style: "tableCellValue" },
             { text: currentDate, style: "tableCellValue" },
           ],
         ],
@@ -667,7 +679,8 @@ export class PdfDashboardService {
   /**
    * Agrega la sección de información del sistema
    */
-  private addSystemInfoSection(content: any[], reportDto: any, styles: StyleDictionary): void {
+  // private addSystemInfoSection(content: any[], reportDto: any, styles: StyleDictionary): void {
+  private addSystemInfoSection(content: any[], styles: StyleDictionary, user: IJwtPayload): void {
     const currentDate = new Date().toLocaleDateString("es-ES", {
       year: "numeric",
       month: "long",
@@ -678,7 +691,9 @@ export class PdfDashboardService {
 
     content.push(
       { text: "\n\n" },
-      { text: `Generado por: ${reportDto?.role || "Sistema"}`, style: "paragraph" },
+      // { text: `Generado por: ${reportDto?.role || "Sistema"}`, style: "paragraph" },
+      { text: `Generado por: ${"Sistema"}`, style: "paragraph" },
+      // { text: `Generado por: ${user?.role || "Sistema"}`, style: "paragraph" },
       { text: `Fecha y hora de generación: ${currentDate}`, style: "paragraph" },
       { text: "Tipo de reporte: Estadísticas de Usuarios", style: "paragraph" },
       { text: "\n" },
