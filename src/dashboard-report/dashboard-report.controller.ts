@@ -22,8 +22,14 @@ export class DashboardReportController {
       this.logger.log(`Estadísticas obtenidas:`, userStats)
 
       // Determinar si el PDF debe descargarse o mostrarse en el navegador
-      const isDownload = download === "true" || download === "1"
-      const filename = `reporte-estadisticas-usuarios-${new Date().toISOString().split("T")[0]}.pdf`
+      const isDownload = download === "true" || download === "1";
+
+      let today = new Date();
+      let year = today.getFullYear();
+      let month = (today.getMonth() + 1).toString().padStart(2, '0');
+      let day = today.getDate().toString().padStart(2, '0');
+      // const filename = `reporte-estadisticas-usuarios-${new Date().toISOString().split("T")[0]}.pdf`
+      let filename = `reporte-estadistico-de-usuarios-${year}-${month}-${day}.pdf`;
 
       // Configurar encabezados de respuesta
       res.setHeader("Content-Type", "application/pdf")

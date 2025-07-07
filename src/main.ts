@@ -11,6 +11,7 @@ async function bootstrap() {
     methods: "GET,PUT,PATCH,POST,DELETE", // Métodos HTTP permitidos
     credentials: false, // Si necesitas manejar cookies o autenticación
     allowedHeaders: 'Content-Type, Authorization', // Cabeceras permitidas
+    exposedHeaders: 'Content-Disposition' //para la disponibilidad del encabezado content-disposition
   });
 
   const multerConfig = app.get(MulterModule)['options']; // Acceder a la configuración de Multer
