@@ -12,7 +12,7 @@ import * as fs from "fs"
 import * as path from "path"
 import type { Style, StyleDictionary, TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces"
 //NUEVO
-import { and, count, desc, eq, gte, lte, ilike } from "drizzle-orm"
+import { and, count, desc, eq, gte, lte, ilike, sql } from "drizzle-orm"
 import { rolesTable, usersTable } from "src/db/schema"
 import { PG_CONNECTION } from "src/constants"
 import { NeonDatabase } from "drizzle-orm/neon-serverless"
@@ -25,11 +25,10 @@ export interface DashboardReportDto {
   role: string
   additionalInfo?: any
 }
-///NUEVO:
 export interface UserRegistrationByDay {
   day: number
-  count: number
-  date: string
+  date: string // Fecha en formato YYYY-MM-DD
+  count: number // Cantidad de usuarios registrados
 }
 
 export interface UsersByRole {
@@ -59,14 +58,9 @@ export class DashboardReportService {
   private readonly MAX_RETRIES = 3
   private readonly fonts: TFontDictionary
 
-  constructor(
-    @Inject(PG_CONNECTION) private db: NeonDatabase
-    // Inyecta los repositorios que necesites según tu estructura de base de datos
-    // @InjectRepository(DashboardReport)
-    // private readonly dashboardReportRepository: Repository<DashboardReport>,
-  ) {
+  constructor(  @Inject(PG_CONNECTION) private db: NeonDatabase  ) {
     try {
-      // Definir fuentes
+      // Define fuentes
       this.fonts = {
         Roboto: {
           normal: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Regular.ttf"),
@@ -75,11 +69,11 @@ export class DashboardReportService {
           bolditalics: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-MediumItalic.ttf"),
         },
       }
+      // Verifica que las fuentes existen
+      this.verifyFonts();
 
-      // Verificar que las fuentes existen
-      this.verifyFonts()
     } catch (error) {
-      this.logger.error("Error al inicializar fuentes:", error)
+      this.logger.error("Error al inicializar fuentes:", error);
       // Usar fuentes de respaldo si las personalizadas fallan
       this.fonts = {
         Roboto: {
@@ -89,54 +83,11 @@ export class DashboardReportService {
           bolditalics: "Helvetica-BoldOblique",
         },
       }
-      this.logger.warn("Usando fuentes de respaldo")
+      this.logger.warn("Usando fuentes de respaldo");
     }
   }
 
   // ==================== MÉTODOS DE GESTIÓN DE REPORTES ====================
-
-  /**
-   * Obtiene un reporte del dashboard por ID
-   */
-  async getById(id: number): Promise<DashboardReportDto> {
-    try {
-      this.logger.log(`Obteniendo reporte del dashboard con ID: ${id}`)
-
-      // Aquí implementarías la lógica para obtener el reporte de la base de datos
-      // const report = await this.dashboardReportRepository.findOne({
-      //   where: { id }
-      // });
-
-      // if (!report) {
-      //   throw new NotFoundException(`Reporte del dashboard con ID ${id} no encontrado`);
-      // }
-
-      // Por ahora, devolvemos datos de ejemplo basados en el ID
-      const mockReport: DashboardReportDto = {
-        title: this.getReportTitleById(id),
-        value: this.getReportValueById(id),
-        type: this.getReportTypeById(id),
-        date: new Date().toISOString(),
-        role: "admin", // Esto debería venir de la sesión del usuario
-        additionalInfo: {
-          reportId: id,
-          generatedAt: new Date().toISOString(),
-          status: "active",
-          category: this.getReportCategoryById(id),
-        },
-      }
-
-      this.logger.log(`Reporte del dashboard obtenido exitosamente: ${mockReport.title}`)
-      return mockReport
-    } catch (error) {
-      this.logger.error(`Error al obtener reporte del dashboard con ID ${id}:`, error)
-      if (error instanceof NotFoundException) {
-        throw error
-      }
-      throw new Error(`Error al obtener el reporte del dashboard con ID ${id}`)
-    }
-  }
-
   /**
    * Crea un nuevo reporte del dashboard
    */
@@ -173,7 +124,7 @@ export class DashboardReportService {
    */
   async findAll(page = 1, limit = 10): Promise<{ reports: DashboardReportDto[]; total: number }> {
     try {
-      this.logger.log(`Obteniendo reportes del dashboard - Página: ${page}, Límite: ${limit}`)
+      this.logger.log(`Obteniendo reportes del dashboard - Página: ${page}, Límite: ${limit}`);
 
       // Por ahora, devolvemos datos simulados
       const mockReports: DashboardReportDto[] = Array.from({ length: Math.min(limit, 5) }, (_, index) => ({
@@ -198,19 +149,19 @@ export class DashboardReportService {
     }
   }
 
-  // ==================== MÉTODOS DE GENERACIÓN DE PDF ====================
+  // ==================== MÉTODO DE GENERACIÓN DE PDF ====================
 
   /**
    * Genera un PDF para un reporte del dashboard y lo envía como respuesta HTTP
    */
   async generatePdf(reportData: DashboardReportDto, res: Response): Promise<void> {
     try {
-      // Validar los datos del reporte
+      // Valida los datos del reporte
       this.validateReportData(reportData)
 
       this.logger.log(`Generando PDF para el reporte del dashboard: ${reportData.title}`)
 
-      // Crear definición del documento
+      // Crea definición del documento
       let docDefinition: TDocumentDefinitions
       try {
         docDefinition = await this.createDashboardDocumentDefinition(reportData)
@@ -218,10 +169,10 @@ export class DashboardReportService {
         throw new InternalServerErrorException(`Error al crear la definición del documento: ${error.message}`)
       }
 
-      // Crear instancia de PdfPrinter
+      // Crea instancia de PdfPrinter
       const printer = new PdfPrinter(this.fonts)
 
-      // Crear documento PDF
+      // Crea documento PDF
       let pdfDoc
       try {
         pdfDoc = printer.createPdfKitDocument(docDefinition)
@@ -229,7 +180,7 @@ export class DashboardReportService {
         throw new InternalServerErrorException(`Error al crear el documento PDF: ${error.message}`)
       }
 
-      // Manejar errores en la generación del PDF
+      // Maneja errores en la generación del PDF
       pdfDoc.on("error", (error) => {
         this.logger.error(`Error durante la generación del PDF: ${error.message}`)
         if (!res.headersSent) {
@@ -240,7 +191,7 @@ export class DashboardReportService {
         }
       })
 
-      // Enviar el PDF como respuesta
+      // Envia el PDF como respuesta
       try {
         pdfDoc.pipe(res)
         pdfDoc.end()
@@ -265,8 +216,6 @@ export class DashboardReportService {
       })
     }
   }
-
-  // ==================== MÉTODOS PRIVADOS ====================
 
   /**
    * Verifica que las fuentes existen
@@ -736,111 +685,50 @@ export class DashboardReportService {
     return keyMappings[key] || key.charAt(0).toUpperCase() + key.slice(1)
   }
 
-  // ==================== MÉTODOS AUXILIARES ====================
-
-  private getReportTitleById(id: number): string {
-    const titles = [
-      "Total Usuarios",
-      "Registros de Insumos Médicos (Hoy)",
-      "Registros de Insumos Médicos (Mes)",
-      "Registros de Asignaciones (Hoy)",
-      "Registros de Asignaciones (Mes)",
-      "Total Medicamentos Disponibles",
-      "Total Medicamentos Asignados",
-      "Total Uniformes Disponibles",
-      "Total Uniformes Asignados",
-      "Total Equipos Odontológicos Disponibles",
-      "Total Equipos Odontológicos Asignados",
-      "Insumos Médicos Próximos a Vencer",
-    ]
-
-    return titles[id % titles.length] || `Reporte ${id}`
-  }
-
-  private getReportValueById(id: number): number {
-    const baseValue = id * 10
-    return Math.floor(Math.random() * 100) + baseValue
-  }
-
-  private getReportTypeById(id: number): string {
-    const types = [
-      "users",
-      "products_day",
-      "products_month",
-      "assignments_day",
-      "assignments_month",
-      "available_medicines",
-      "assigned_medicines",
-      "available_uniforms",
-      "assigned_uniforms",
-      "available_equipment",
-      "assigned_equipment",
-      "expired",
-    ]
-
-    return types[id % types.length] || "general"
-  }
-
-  private getReportCategoryById(id: number): string {
-    const categories = ["usuarios", "productos", "asignaciones", "inventario", "alertas"]
-    return categories[id % categories.length] || "general"
-  }
-
-                                                    //////// NUEVO
- /**
- * 🚀 MÉTODO ÚNICO: Obtiene TODAS las estadísticas usando SOLO Drizzle ORM
- */
+  /**
+   * Obtiene TODAS las estadísticas de los usuarios
+   */
   async getCompleteUserStats(): Promise<CompleteUserStats> {
     try {
-      this.logger.log("Ejecutando consultas con solo Drizzle ORM")
+      const now = new Date();
+      const nowUtc = new Date(now.toISOString());
 
-      const now = new Date()
-      const startOfDay = new Date(now)
-      startOfDay.setHours(0, 0, 0, 0)
-      const endOfDay = new Date(now)
-      endOfDay.setHours(23, 59, 59, 999)
+      const startOfDay = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate(), 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate(), 23, 59, 59, 999));
 
-      const currentYear = now.getFullYear()
-      const currentMonth = now.getMonth()
-      const startOfMonth = new Date(currentYear, currentMonth, 1)
-      startOfMonth.setHours(0, 0, 0, 0)
-      const endOfMonth = new Date(currentYear, currentMonth + 1, 0)
-      endOfMonth.setHours(23, 59, 59, 999)
+      const currentYear = nowUtc.getUTCFullYear();
+      const currentMonth = nowUtc.getUTCMonth();
+      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0));
+      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
 
-      // 1. Estadísticas generales usando solo Drizzle
+      // console.log("PROBANDO. INICIO DEL DÍA ACTUAL (UTC): ", startOfDay.toISOString(), " , FIN DEL DÍA (UTC): ", endOfDay.toISOString());
+      // console.log("PROBANDO. INICIO DEL MES ACTUAL (UTC): ", startOfMonth.toISOString(), " , FIN DE MES (UTC): ", endOfMonth.toISOString());
+
+      // --- CAMBIO CLAVE: Se reemplazo count(condition) por count(sql`CASE WHEN ... THEN 1 ELSE NULL END`) ---
       const [generalStats] = await this.db
         .select({
-          totalUsers: count(),
-          usersToday: count(
-            and(
-              gte(usersTable.createdAt, startOfDay),
-              lte(usersTable.createdAt, endOfDay)
-            )
-          ),
-          usersThisMonth: count(
-            and(
-              gte(usersTable.createdAt, startOfMonth),
-              lte(usersTable.createdAt, endOfMonth)
-            )
-          ),
-          activeUsers: count(eq(usersTable.isActivate, true)),
-          inactiveUsers: count(eq(usersTable.isActivate, false)),
+          totalUsers: count(), // Este sigue siendo el conteo total sin condiciones
+          usersToday: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfDay} AND ${usersTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
+          usersThisMonth: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfMonth} AND ${usersTable.createdAt} <= ${endOfMonth} THEN 1 ELSE NULL END)`,
+          activeUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = TRUE THEN 1 ELSE NULL END)`,
+          inactiveUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = FALSE THEN 1 ELSE NULL END)`,
         })
-        .from(usersTable)
+        .from(usersTable);
+      // --- FIN CAMBIO CLAVE ---
 
       // 2. Usuarios por rol
       const usersByRoleResult = await this.db
         .select({
-          roleId: usersTable.role,
+          roleId: rolesTable.id,
           roleName: rolesTable.name,
-          userCount: count(),
+          userCount: count(usersTable.id), // Contar usuarios, si no hay se devolverá 0 por el LEFT JOIN
         })
-        .from(usersTable)
-        .innerJoin(rolesTable, eq(usersTable.role, rolesTable.id))
-        .groupBy(usersTable.role, rolesTable.name)
-        .orderBy(usersTable.role)
+        .from(rolesTable) 
+        .leftJoin(usersTable, eq(usersTable.role, rolesTable.id)) 
+        .groupBy(rolesTable.id, rolesTable.name) 
+        .orderBy(rolesTable.id); // Ordenar por el ID del rol para consistencia
 
-      // 3. Registros por día del mes actual
+      // 3. Registros por día del mes actual 
       const registrationsByDayResult = await this.db
         .select({
           createdAt: usersTable.createdAt,
@@ -854,36 +742,36 @@ export class DashboardReportService {
           )
         )
         .groupBy(usersTable.createdAt)
-        .orderBy(usersTable.createdAt)
+        .orderBy(usersTable.createdAt);
 
-      // Procesar resultados
+      // Procesar resultados 
       const usersByRole: UsersByRole[] = usersByRoleResult.map((row) => ({
         roleId: row.roleId,
-        roleName: row.roleName,
+        roleName: this.capitalizeFirstLetter(row.roleName),
         userCount: Number(row.userCount),
-      }))
+      }));
 
-      // Procesar registros por día (agrupar por fecha)
-      const registrationsByDay: UserRegistrationByDay[] = []
-      const dayMap = new Map<string, number>()
+      const registrationsByDay: UserRegistrationByDay[] = [];
+      const dayMap = new Map<string, number>();
 
       registrationsByDayResult.forEach((row) => {
-        const date = new Date(row.createdAt).toISOString().split('T')[0]
-        const day = new Date(row.createdAt).getDate()
-        const currentCount = dayMap.get(date) || 0
-        dayMap.set(date, currentCount + Number(row.userCount))
-      })
+        const date = new Date(row.createdAt).toISOString().split('T')[0];
+        const day = new Date(row.createdAt).getUTCDate();
+
+        const currentCount = dayMap.get(date) || 0;
+        dayMap.set(date, currentCount + Number(row.userCount));
+      });
 
       dayMap.forEach((count, date) => {
-        const day = new Date(date).getDate()
+        const day = new Date(date).getUTCDate();
         registrationsByDay.push({
           day,
           count,
           date,
-        })
-      })
+        });
+      });
 
-      registrationsByDay.sort((a, b) => a.day - b.day)
+      registrationsByDay.sort((a, b) => a.day - b.day);
 
       const completeStats: CompleteUserStats = {
         totalUsers: Number(generalStats.totalUsers),
@@ -893,14 +781,20 @@ export class DashboardReportService {
         inactiveUsers: Number(generalStats.inactiveUsers),
         usersByRole,
         registrationsByDay,
-      }
+      };
 
-      this.logger.log("Estadísticas completas con Drizzle puro:", JSON.stringify(completeStats, null, 2))
-      return completeStats
+      this.logger.log("Estadísticas completas de usuarios:", JSON.stringify(completeStats, null, 2));
+      return completeStats;
 
     } catch (error) {
-      this.logger.error("Error al obtener estadísticas con Drizzle:", error)
-      throw new Error("Error al obtener estadísticas completas de usuarios")
+      this.logger.error("Error al obtener estadísticas de usuarios:", error);
+      throw new Error("Error al obtener estadísticas completas de usuarios");
     }
   }
+
+  private capitalizeFirstLetter(string: string): string {
+    if (!string) return ''; // Manejar casos de string vacío o null/undefined
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+
 }
