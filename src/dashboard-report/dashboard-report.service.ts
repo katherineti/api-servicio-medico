@@ -1,7 +1,6 @@
 import {
   Injectable,
   Logger,
-  NotFoundException,
   InternalServerErrorException,
   BadRequestException,
   Inject,
@@ -11,8 +10,7 @@ import PdfPrinter from "pdfmake"
 import * as fs from "fs"
 import * as path from "path"
 import type { Style, StyleDictionary, TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces"
-//NUEVO
-import { and, count, desc, eq, gte, lte, ilike, sql } from "drizzle-orm"
+import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
 import { rolesTable, usersTable } from "src/db/schema"
 import { PG_CONNECTION } from "src/constants"
 import { NeonDatabase } from "drizzle-orm/neon-serverless"
@@ -220,7 +218,7 @@ export class DashboardReportService {
   /**
    * Verifica que las fuentes existen
    */
-  private verifyFonts(): void {
+ verifyFonts(): void {
     try {
       const fontPaths = [
         this.fonts.Roboto.normal,
@@ -571,7 +569,7 @@ export class DashboardReportService {
   /**
    * Carga el logo con reintentos
    */
-  private async loadLogoWithRetry(): Promise<Buffer | null> {
+  async loadLogoWithRetry(): Promise<Buffer | null> {
     const possibleLogoPaths = [
       path.join(process.cwd(), "src", "membreteCIIP.jpeg"),
       path.join(process.cwd(), "src", "assets", "membreteCIIP.jpeg"),
@@ -607,7 +605,7 @@ export class DashboardReportService {
   /**
    * Formatea una fecha en formato legible
    */
-  private formatDate(date: Date | string): string {
+  formatDate(date: Date | string): string {
     try {
       if (!date) return "N/A"
 
@@ -630,7 +628,7 @@ export class DashboardReportService {
   /**
    * Valida y procesa el contenido de texto
    */
-  private getValidContent(content: any): string {
+  getValidContent(content: any): string {
     try {
       if (content === null || content === undefined) {
         return "No disponible"
@@ -792,7 +790,7 @@ export class DashboardReportService {
     }
   }
 
-  private capitalizeFirstLetter(string: string): string {
+  capitalizeFirstLetter(string: string): string {
     if (!string) return ''; // Manejar casos de string vacío o null/undefined
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
