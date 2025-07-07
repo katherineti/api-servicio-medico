@@ -4,7 +4,7 @@ import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
 import { productsTable, categoriesTable, productStatusTable, typesOfProductsTable, providersTable } from "src/db/schema"
 import  { NeonDatabase } from "drizzle-orm/neon-serverless"
-import  { DashboardReportService, DashboardReportDto } from "../dashboard-report/dashboard-report.service"
+import  { DashboardReportService, DashboardReportDto } from "./dashboard-report.service"
 import { PG_CONNECTION } from "src/constants"
 
 export interface MedicalSupplyReportDto extends Omit<DashboardReportDto, "role"> {
@@ -42,12 +42,12 @@ export interface CompleteMedicalSupplyStats {
   productsByStatus: ProductsByStatus[]
   productsByType: ProductsByType[]
   registrationsByDay: ProductRegistrationByDay[]
-  todayProducts: any[] // Productos específicos creados hoy
+  todayProducts: any[] // Productos específicos creados en el mes
 }
 
 @Injectable()
-export class MedicalSuppliesReportService {
-  private readonly logger = new Logger(MedicalSuppliesReportService.name)
+export class MedicalSuppliesReportMonthService {
+  private readonly logger = new Logger(MedicalSuppliesReportMonthService.name)
 
   constructor(
     @Inject(PG_CONNECTION) private db: NeonDatabase,
@@ -82,9 +82,9 @@ export class MedicalSuppliesReportService {
       // Usar el método generatePdf del DashboardReportService
       await this.dashboardReportService.generatePdf(extendedReportData, res)
 
-      this.logger.log(`PDF de inventario almacén de hoy generado exitosamente`)
+      this.logger.log(`PDF de inventario almacén del mes generado exitosamente`)
     } catch (error) {
-      this.logger.error(`Error al generar PDF de inventario almacén de hoy:`, error)
+      this.logger.error(`Error al generar PDF de inventario almacén del mes:`, error)
 
       if (res.headersSent) {
         return
@@ -102,7 +102,7 @@ export class MedicalSuppliesReportService {
    */
   async generateCustomMedicalSuppliesPdf(reportData: MedicalSupplyReportDto, res: Response): Promise<void> {
     try {
-      this.logger.log(`Generando PDF personalizado para inventario almacén(hoy): ${reportData.title}`)
+      this.logger.log(`Generando PDF personalizado para inventario almacén(mes): ${reportData.title}`)
 
       // Obtener estadísticas completas
       const medicalSupplyStats = await this.getCompleteMedicalSupplyStats()
@@ -144,7 +144,7 @@ export class MedicalSuppliesReportService {
       pdfDoc.pipe(res)
       pdfDoc.end()
 
-      this.logger.log(`PDF personalizado de inventario almacén(hoy) generado exitosamente`)
+      this.logger.log(`PDF personalizado de inventario almacén(mes) generado exitosamente`)
     } catch (error) {
       this.logger.error(`Error al generar PDF personalizado:`, error)
 
@@ -183,7 +183,7 @@ export class MedicalSuppliesReportService {
       const [generalStats] = await this.db
         .select({
           totalProducts: count(),
-          productsToday: sql<number>`count(CASE WHEN ${productsTable.createdAt} >= ${startOfDay} AND ${productsTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
+          productsToday: sql<number>`count(CASE WHEN ${productsTable.createdAt} >= ${startOfMonth} AND ${productsTable.createdAt} <= ${endOfMonth} THEN 1 ELSE NULL END)`,
         })
         .from(productsTable)
         // .where(eq(productsTable.type, 1)) // Filtrar solo medicamentos
@@ -196,8 +196,8 @@ export class MedicalSuppliesReportService {
           productCount: count(productsTable.id),
         })
         .from(categoriesTable)
-        // .leftJoin(productsTable, and(eq(productsTable.categoryId, categoriesTable.id), eq(productsTable.type, 1)))
-        .leftJoin(productsTable, 
+        .leftJoin(productsTable, eq(productsTable.categoryId, categoriesTable.id))
+       /*  .leftJoin(productsTable, 
             and(
                 eq(productsTable.categoryId, categoriesTable.id),
                 and(
@@ -205,7 +205,7 @@ export class MedicalSuppliesReportService {
                     lte(productsTable.createdAt, endOfMonth)
                 )
             )
-    )
+           ) */
         .groupBy(categoriesTable.id, categoriesTable.name)
         .orderBy(categoriesTable.id)
 
@@ -217,8 +217,8 @@ export class MedicalSuppliesReportService {
           productCount: count(productsTable.id),
         })
         .from(productStatusTable)
-        // .leftJoin(productsTable, and(eq(productsTable.statusId, productStatusTable.id), eq(productsTable.type, 1)))
-        .leftJoin(productsTable,
+        .leftJoin(productsTable, eq(productsTable.statusId, productStatusTable.id))
+      /*   .leftJoin(productsTable,
             and(
                 eq(productsTable.statusId, productStatusTable.id) ,
                   and(
@@ -226,7 +226,7 @@ export class MedicalSuppliesReportService {
                     lte(productsTable.createdAt, endOfMonth)
                   )
             )
-        )
+        ) */
         .groupBy(productStatusTable.id, productStatusTable.status)
         .orderBy(productStatusTable.id)
 
@@ -238,8 +238,8 @@ export class MedicalSuppliesReportService {
           productCount: count(productsTable.id),
         })
         .from(typesOfProductsTable)
-        // .leftJoin(productsTable, and(eq(productsTable.type, typesOfProductsTable.id), eq(productsTable.type, 1)))
-        .leftJoin(
+        .leftJoin(productsTable, eq(productsTable.type, typesOfProductsTable.id))
+       /*  .leftJoin(
             productsTable, 
             // eq(productsTable.type, typesOfProductsTable.id)
              and(
@@ -249,7 +249,7 @@ export class MedicalSuppliesReportService {
                     lte(productsTable.createdAt, endOfMonth)
                   )
             )
-    )
+    ) */
         // .where(eq(typesOfProductsTable.id, 1))
         
         // .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
@@ -273,7 +273,7 @@ export class MedicalSuppliesReportService {
         .groupBy(productsTable.createdAt)
         .orderBy(productsTable.createdAt)
 
-      // 6. Productos específicos creados hoy (solo medicamentos)
+      // 6. Productos específicos creados mes 
       const todayProductsResult = await this.db
         .select({
           id: productsTable.id,
@@ -295,8 +295,8 @@ export class MedicalSuppliesReportService {
         .leftJoin(providersTable, eq(productsTable.providerId, providersTable.id))
         .where(
           and(
-            gte(productsTable.createdAt, startOfDay),
-            lte(productsTable.createdAt, endOfDay),
+            gte(productsTable.createdAt, startOfMonth),
+            lte(productsTable.createdAt, endOfMonth),
             // eq(productsTable.type, 1),
           ),
         )
@@ -353,11 +353,11 @@ export class MedicalSuppliesReportService {
         todayProducts: todayProductsResult,
       }
 
-      this.logger.log("Estadísticas completas de inventario almacén(hoy):", JSON.stringify(completeStats, null, 2))
+      this.logger.log("Estadísticas completas de inventario almacén(mes):", JSON.stringify(completeStats, null, 2))
       return completeStats
     } catch (error) {
-      this.logger.error("Error al obtener estadísticas de inventario almacén(hoy):", error)
-      throw new Error("Error al obtener estadísticas completas de inventario almacén(hoy)")
+      this.logger.error("Error al obtener estadísticas de inventario almacén(mes):", error)
+      throw new Error("Error al obtener estadísticas completas de inventario almacén(mes)")
     }
   }
 
@@ -454,7 +454,7 @@ export class MedicalSuppliesReportService {
       }
 
       content.push({
-        text: "REPORTE DE INVENTARIO ALMACÉN REGISTRADOS HOY",
+        text: "REPORTE DE INVENTARIO ALMACÉN REGISTRADOS EN EL MES",
         style: "reportTitle",
       })
 
@@ -464,10 +464,10 @@ export class MedicalSuppliesReportService {
       // Estadísticas generales
       this.addGeneralStatsSection(content, medicalSupplyStats, styles)
 
-      // Gráfico de registros de hoy - AGREGADO AQUÍ
+      // Gráfico de registros del mes - AGREGADO AQUÍ
     //   this.addTodayRegistrationsChart(content, medicalSupplyStats, styles)
 
-      // Productos registrados hoy (tabla detallada)
+      // Productos registrados mes (tabla detallada)
       this.addTodayProductsSection(content, medicalSupplyStats, styles)
 
       // Distribución por categoría
@@ -489,7 +489,7 @@ export class MedicalSuppliesReportService {
         pageSize: "A4",
         pageMargins: [40, 60, 40, 60],
         footer: (currentPage, pageCount) => ({
-          text: `Reporte de inventario almacén(hoy) - Página ${currentPage} de ${pageCount}`,
+          text: `Reporte de inventario almacén(mes) - Página ${currentPage} de ${pageCount}`,
           style: "footer",
         }),
       }
@@ -551,7 +551,7 @@ export class MedicalSuppliesReportService {
               { text: medicalSupplyStats.totalProducts.toString(), style: "tableCellValue" },
             ],
             [
-              { text: "Registrados Hoy:", style: "tableCellLabel" },
+              { text: "Registros del Mes:", style: "tableCellLabel" },
               { text: medicalSupplyStats.productsToday.toString(), style: "metricValue" },
             ],
           ],
@@ -726,7 +726,7 @@ private addTodayRegistrationsChart(
                 margin: [10, 2, 10, 2],
               },
               {
-                text: `• Total de inventario almacén registrados hoy: ${medicalSupplyStats.productsToday}`,
+                text: `• Total de inventario almacén registrados en el mes: ${medicalSupplyStats.productsToday}`,
                 fontSize: 10,
                 bold: true,
                 color: "#4A90E2", // Color de la barra
@@ -755,7 +755,7 @@ private addTodayRegistrationsChart(
 
 
   /**
-   * Agrega la sección de productos registrados hoy
+   * Agrega la sección de productos registrados inventario almacén
    */
   private addTodayProductsSection(
     content: any[],
@@ -763,7 +763,7 @@ private addTodayRegistrationsChart(
     styles: StyleDictionary,
   ): void {
     if (medicalSupplyStats.todayProducts && medicalSupplyStats.todayProducts.length > 0) {
-      content.push({ text: "Inventario Almacén Registrados Hoy - Detalle", style: "sectionTitle" })
+      content.push({ text: "Inventario Almacén Registrados en el Mes - Detalle", style: "sectionTitle" })
 
       const productTableBody = [
         [
@@ -806,9 +806,9 @@ private addTodayRegistrationsChart(
       })
     } else {
       content.push(
-        { text: "Inventario Almacén(Hoy) Registrados Hoy", style: "sectionTitle" },
+        { text: "Inventario Almacén Registros del Mes", style: "sectionTitle" },
         {
-          text: "No se registró inventario almacén nuevos el día de hoy.",
+          text: "No se registró inventario almacén nuevos el día del mes.",
           style: "paragraph",
           alignment: "center",
           color: "#666666",
@@ -831,7 +831,7 @@ private addTodayRegistrationsChart(
     const categoryTableBody = [
       [
         { text: "Categoría", style: "tableHeader" },
-        { text: "Cantidad de Inventario Almacén(Hoy)", style: "tableHeader" },
+        { text: "Cantidad de Inventario Almacén(Mes)", style: "tableHeader" },
         { text: "Porcentaje", style: "tableHeader" },
       ],
     ]
@@ -881,7 +881,7 @@ private addTodayRegistrationsChart(
     const statusTableBody = [
       [
         { text: "Estado", style: "tableHeader" },
-        { text: "Cantidad de Inventario Almacén(Hoy)", style: "tableHeader" },
+        { text: "Cantidad de Inventario Almacén(Mes)", style: "tableHeader" },
         { text: "Porcentaje", style: "tableHeader" },
       ],
     ]
