@@ -188,7 +188,17 @@ export class AssignmentService {
         }
     }
 
-   //Para el contador de asignaciones del dia, en el dashboard
+   //Para el contador de registros de asignaciones de insumos medicos al empleado, del dia, en el dashboard. Excepto insumos medicos caducados
+   /**
+    * 
+    * @description inArray(productsTable.type, [1, 2, 3]) :
+    * select * from public."typesProducts" :
+    *  id    type
+       1	"Medicamentos"
+       2	"Uniformes"
+       3	"Equipos odontologicos"
+       @description ne(productsTable.statusId, 4) : debe omitir los insumos medicos caducados, porque no se deben realizar asignaciones de productos caducados
+    */
     async totalAssignmentOfTheDay(): Promise<{ count: number }> {
         const today = new Date();
         today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00.000
@@ -198,7 +208,7 @@ export class AssignmentService {
         let whereConditions = and(
             gte(assignmentTable.createdAt, today),
             lt(assignmentTable.createdAt, endOfDay),
-           // Nnuevas condiciones
+           // Nuevas condiciones
             inArray(productsTable.type, [1, 2, 3]),
             ne(productsTable.statusId, 4)
         );
@@ -213,6 +223,7 @@ export class AssignmentService {
         return assignmentsCount;
       }
 
+   //Para el contador de registros de asignaciones de insumos medicos al empleado,en el mes. Excepto insumos medicos caducados
     async totalAssignmentOfMonth(): Promise<{ count: number }> {
         const nowCaracas = new Date();
         const year = nowCaracas.getFullYear();
@@ -240,7 +251,7 @@ export class AssignmentService {
         return result || { count: 0 };
     }
 
-    //Para el contador de asignaciones en el dashboard de medico
+    //Para el contador de registros de asignaciones de insumos medicos al empleado, en el dashboard de medico. Excepto insumos medicos caducados
     async totalAssignments(): Promise<{ count: number }> {
  
         const [result] = await this

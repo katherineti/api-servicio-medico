@@ -3,17 +3,18 @@ import { DrizzleDbConecctionModule } from 'src/db.module';
 import { DashboardReportService } from './dashboard-report.service';
 import { DashboardReportController } from './dashboard-report.controller';
 import { PdfDashboardService } from './pdf-dasboard.service';
-import { MedicalSuppliesReportService } from './medical-supplies-report.service';
-import { MedicalSuppliesReportMonthService } from './medical-supplies-report-month.service';
+import { MedicalSuppliesReportTodayService } from './medical-supplies-registered/medical-supplies-report-today.service';
+import { MedicalSuppliesReportMonthService } from './medical-supplies-registered/medical-supplies-report-month.service';
+
 
 @Module({
     imports: [ DrizzleDbConecctionModule ],
     controllers: [DashboardReportController],
     providers: [
         DashboardReportService, PdfDashboardService,
-        MedicalSuppliesReportService,
+        MedicalSuppliesReportTodayService,
         MedicalSuppliesReportMonthService
     ],
-    exports:[DashboardReportService,MedicalSuppliesReportService, MedicalSuppliesReportMonthService]
+    exports:[DashboardReportService,MedicalSuppliesReportTodayService, MedicalSuppliesReportMonthService]
 })
 export class DashboardReportModule {}

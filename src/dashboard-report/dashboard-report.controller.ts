@@ -4,8 +4,8 @@ import { PdfDashboardService } from "./pdf-dasboard.service"
 import { DashboardReportService } from "./dashboard-report.service";
 import { Usersesion } from "src/auth/strategies/usersesion.decorator";
 import { IJwtPayload } from "src/auth/dto/jwt-payload.interface";
-import { MedicalSuppliesReportService } from "./medical-supplies-report.service";
-import { MedicalSuppliesReportMonthService } from "./medical-supplies-report-month.service";
+import { MedicalSuppliesReportTodayService } from "./medical-supplies-registered/medical-supplies-report-today.service";
+import { MedicalSuppliesReportMonthService } from "./medical-supplies-registered/medical-supplies-report-month.service";
 
 @Controller("dashboard-reports")
 export class DashboardReportController {
@@ -14,7 +14,7 @@ export class DashboardReportController {
   constructor(
     private readonly dashboardReportService: DashboardReportService,
     private readonly pdfGeneratorDashboardService: PdfDashboardService,
-    private readonly medicalSuppliesReportService: MedicalSuppliesReportService,
+    private readonly medicalSuppliesReportTodayService: MedicalSuppliesReportTodayService,
     private readonly medicalSuppliesReportMonthService: MedicalSuppliesReportMonthService
   ) {}
 
@@ -90,7 +90,7 @@ export class DashboardReportController {
 
     try {
       // Obtener las estadísticas completas de medicamentos
-      const medicalSupplyStats = await this.medicalSuppliesReportService.getCompleteMedicalSupplyStats()
+      const medicalSupplyStats = await this.medicalSuppliesReportTodayService.getCompleteMedicalSupplyStats()
       this.logger.log(`Estadísticas de Inventario Almacén obtenidas:`, medicalSupplyStats)
 
       // Determinar si el PDF debe descargarse o mostrarse en el navegador
@@ -123,7 +123,7 @@ export class DashboardReportController {
       }
 
       // Generar PDF personalizado para Inventario Almacén
-      await this.medicalSuppliesReportService.generateCustomMedicalSuppliesPdf(reportData, res)
+      await this.medicalSuppliesReportTodayService.generateCustomMedicalSuppliesPdf(reportData, res)
 
       this.logger.log(`PDF de Inventario Almacén generado exitosamente`)
     } catch (error) {

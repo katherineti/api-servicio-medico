@@ -4,8 +4,9 @@ import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
 import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
 import { productsTable, categoriesTable, productStatusTable, typesOfProductsTable, providersTable } from "src/db/schema"
 import  { NeonDatabase } from "drizzle-orm/neon-serverless"
-import  { DashboardReportService, DashboardReportDto } from "./dashboard-report.service"
+// import  { DashboardReportService, DashboardReportDto } from "./dashboard-report.service"
 import { PG_CONNECTION } from "src/constants"
+import { DashboardReportDto, DashboardReportService } from "../dashboard-report.service"
 
 export interface MedicalSupplyReportDto extends Omit<DashboardReportDto, "role"> {
   // Extender la interfaz base removiendo 'role' que no es necesario para medicamentos
