@@ -7,6 +7,7 @@ import { MedicalSuppliesReportTodayService } from './medical-supplies-registered
 import { MedicalSuppliesReportMonthService } from './medical-supplies-registered/medical-supplies-report-month.service';
 import { AssignmentReportMonthService } from './assignment-registered/assignment-report-month.service';
 import { AssignmentModule } from 'src/assignment/assignment.module';
+import { MedicalSuppliesReportService } from './medical-supplies-available/medical-supplies-report.service';
 
 @Module({
     imports: [ DrizzleDbConecctionModule, AssignmentModule ],
@@ -15,8 +16,12 @@ import { AssignmentModule } from 'src/assignment/assignment.module';
         DashboardReportService, PdfDashboardService,
         MedicalSuppliesReportTodayService,
         MedicalSuppliesReportMonthService,
-        AssignmentReportMonthService
+        AssignmentReportMonthService,
+        //insumos medicos disponibles
+        MedicalSuppliesReportService
     ],
-    exports:[DashboardReportService,MedicalSuppliesReportTodayService, MedicalSuppliesReportMonthService, AssignmentReportMonthService]
+    exports:[DashboardReportService,MedicalSuppliesReportTodayService, MedicalSuppliesReportMonthService, AssignmentReportMonthService,
+        MedicalSuppliesReportService
+    ]
 })
 export class DashboardReportModule {}
