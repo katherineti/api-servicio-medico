@@ -6,7 +6,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq, and, count, sql, gte, lt, inArray, ne } from 'drizzle-orm'
+import { eq, and, count, sql, gte, lt, inArray, ne, sum } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
@@ -222,6 +222,60 @@ export class AssignmentService {
         Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
         return assignmentsCount;
       }
+
+          async countProductsAssignmentOfTheDay(): Promise<{ count: number }> {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00.000
+            const endOfDay = new Date(today);
+            endOfDay.setHours(23, 59, 59, 999);
+        
+            let whereConditions = and(
+                gte(assignmentTable.createdAt, today),
+                lt(assignmentTable.createdAt, endOfDay),
+            // Nuevas condiciones
+                inArray(productsTable.type, [1, 2, 3]),
+                ne(productsTable.statusId, 4)
+            );
+        
+            const [assignmentsCount] = await this.db
+            .select({
+                count: sql<number>`sum(${assignmentTable.products})`.as('count'),
+            })
+            .from(assignmentTable)
+            .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+            .where(whereConditions);
+            
+            Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
+            return assignmentsCount;
+        }
+          async countProductsAssignmentOfMonth(): Promise<{ count: number }> {
+            const nowCaracas = new Date();
+            const year = nowCaracas.getFullYear();
+            const month = nowCaracas.getMonth();
+        
+            // Obtener el primer día del mes actual en Caracas
+            const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
+        
+            // Obtener el último día del mes actual en Caracas
+            const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
+        
+            const [assignmentsCount] = await this.db
+            .select({
+                count: sql<number>`sum(${assignmentTable.products})`.as('count'),
+            })
+            .from(assignmentTable)
+            .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+            .where(
+                and(
+                    sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
+                    inArray(productsTable.type, [1, 2, 3]),
+                    ne(productsTable.statusId, 4)
+                )
+            );
+            
+            Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
+            return assignmentsCount;
+        }
 
    //Para el contador de registros de asignaciones de insumos medicos al empleado,en el mes. Excepto insumos medicos caducados
     async totalAssignmentOfMonth(): Promise<{ count: number }> {
