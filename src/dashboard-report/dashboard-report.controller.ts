@@ -428,7 +428,7 @@ export class DashboardReportController {
   } */
 
 
-  @Post("generate/:supplyType")
+  @Post("generate/:supplyType") //ejemplo "dashboard-reports/generate/1"
 /*   @ApiOperation({ summary: "Generate conditional medical supplies report PDF" })
   @ApiParam({
     name: "supplyType",

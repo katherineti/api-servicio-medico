@@ -13,6 +13,12 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 import { LogsService } from 'src/logs/logs.service';
 
+export interface stockMedicalSuppliesAvailables {
+  sum_medicamentos: string,
+  sum_uniformes: string,
+  sum_equiposOdontologicos: string
+}
+
 @Injectable()
 export class MedicalSuppliesService {
   private readonly logger = new Logger(MedicalSuppliesService.name);
@@ -349,7 +355,7 @@ export class MedicalSuppliesService {
   Consulta que devuelva el acomulado de los stocks de los productos que son de tipo 1,2 o 3.
   Y que son productos no caducados.
   */
-  public async getAccumulatedStockByType(): Promise<any> {
+  public async getAccumulatedStockByType(): Promise<stockMedicalSuppliesAvailables> {
     const result = await this.db
       .select({
         sum_medicamentos: sum(sql`CASE WHEN ${productsTable.type} = 1 THEN ${productsTable.stock} ELSE 0 END`).as('sum_medicamentos'),
@@ -362,7 +368,6 @@ export class MedicalSuppliesService {
           sql`${productsTable.type} IN (1, 2, 3)`,
           ne(productsTable.statusId, 4)
         )
-
       );
 
     return result[0];

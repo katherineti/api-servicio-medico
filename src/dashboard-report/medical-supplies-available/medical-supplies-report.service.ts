@@ -11,10 +11,22 @@ import type {
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import type { TDocumentDefinitions } from "pdfmake/interfaces"
 import { PG_CONNECTION } from "src/constants"
+import { MedicalSuppliesService } from "src/medical-supplies/medical-supplies.service"
+import { count, sql, sum } from "drizzle-orm"
+import { productsTable } from "src/db/schema"
+
+interface medicationStatistics{
+  totalStockMedicamentos: string,
+  stockMedicamentosDisponibles: string,
+  stockMedicamentosCaducados: string,
+  cantidadMedicamentosStockBajo: number
+}
 
 @Injectable()
 export class MedicalSuppliesReportService extends BaseReportService {
-  constructor(@Inject(PG_CONNECTION) private db: NeonDatabase) {
+  constructor(
+    @Inject(PG_CONNECTION) private db: NeonDatabase,
+    private readonly medicalSuppliesService: MedicalSuppliesService) {
     super()
   }
 
@@ -56,11 +68,13 @@ export class MedicalSuppliesReportService extends BaseReportService {
   }
 
   private async getMedicamentosStats(options: MedicalSupplyReportOptions): Promise<MedicalSupplyStats> {
+    console.log("await this.medicalSuppliesService.getAccumulatedStockByType() ", await this.medicalSuppliesService.getAccumulatedStockByType() );
+    console.log("getMedicationStatistics()", await this.getMedicationStatistics())
     return {
-      totalItems: 0,
-      availableItems: 0,
-      lowStockItems: 0,
-      expiredItems: 0,
+      totalItems: Number((await this.getMedicationStatistics()).totalStockMedicamentos),
+      availableItems: Number((await this.getMedicationStatistics()).stockMedicamentosDisponibles),
+      lowStockItems: Number((await this.getMedicationStatistics()).cantidadMedicamentosStockBajo),
+      expiredItems: Number((await this.getMedicationStatistics()).stockMedicamentosCaducados),
       totalValue: 0,
       averagePrice: 0,
       topItems: [],
@@ -126,7 +140,7 @@ export class MedicalSuppliesReportService extends BaseReportService {
       pageSize: "A4",
       pageMargins: [40, 60, 40, 60] as [number, number, number, number],
       footer: (currentPage: number, pageCount: number) => ({
-        text: `${this.getReportTitle(options.supplyType)} - Página ${currentPage} de ${pageCount}`,
+        text: `${ this.toSentenceCase( this.getReportTitle(options.supplyType)) } - Página ${currentPage} de ${pageCount}`,
         style: "footer",
       }),
     }
@@ -153,25 +167,27 @@ export class MedicalSuppliesReportService extends BaseReportService {
     styles: any,
     options: MedicalSupplyReportOptions,
   ) {
+
+    const supplyType = this.getSupplyTypeName(options.supplyType)
     content.push({ text: "Estadísticas Generales", style: "sectionTitle" })
 
     const baseStats = [
       [
-        { text: "Total de Items:", style: "tableCellLabel" },
+        { text: `Total de ${supplyType}:`, style: "tableCellLabel" },
         { text: stats.totalItems.toString(), style: "tableCellValue" },
       ],
       [
-        { text: "Items Disponibles:", style: "tableCellLabel" },
+        { text: `${supplyType} Disponibles:`, style: "tableCellLabel" },
         { text: stats.availableItems.toString(), style: "metricValue" },
       ],
       [
-        { text: "Items con Stock Bajo:", style: "tableCellLabel" },
+        { text: `${supplyType} con Stock Bajo:`, style: "tableCellLabel" },
         { text: stats.lowStockItems.toString(), style: stats.lowStockItems > 0 ? "errorValue" : "tableCellValue" },
       ],
-      [
+/*       [
         { text: "Valor Total Inventario:", style: "tableCellLabel" },
         { text: `$${stats.totalValue.toLocaleString()}`, style: "tableCellValue" },
-      ],
+      ], */
     ]
 
     if (options.supplyType === 1 && stats.expiredItems !== undefined) {
@@ -254,7 +270,8 @@ export class MedicalSuppliesReportService extends BaseReportService {
     const recommendations: string[] = []
 
     if (stats.lowStockItems > 0) {
-      recommendations.push(`Se recomienda reabastecer ${stats.lowStockItems} items con stock bajo`)
+      // recommendations.push(`Se recomienda reabastecer ${stats.lowStockItems} items con stock bajo`)
+      recommendations.push(`Se recomienda reabastecer ${stats.lowStockItems} artículo(s) con stock bajo`)
     }
 
     if (options.supplyType === 1 && stats.expiredItems && stats.expiredItems > 0) {
@@ -262,7 +279,7 @@ export class MedicalSuppliesReportService extends BaseReportService {
     }
 
     if (stats.availableItems === 0) {
-      recommendations.push("URGENTE: No hay items disponibles en inventario")
+      recommendations.push("URGENTE: No hay artículos disponibles en inventario")
     }
 
     return recommendations
@@ -317,4 +334,47 @@ export class MedicalSuppliesReportService extends BaseReportService {
   private async loadLogo(): Promise<Buffer | null> {
     return null
   }
+
+//data
+  public async getMedicationStatistics(): Promise<medicationStatistics> {
+    const result = await this.db
+      .select({
+        totalStockMedicamentos: sum(
+          sql`CASE WHEN ${productsTable.type} = 1 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('total_stock_medicamentos'),
+        stockMedicamentosDisponibles: sum(
+          sql`CASE WHEN ${productsTable.type} = 1 AND ${productsTable.statusId} = 1 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('stock_medicamentos_disponibles'),
+        stockMedicamentosCaducados: sum(
+          sql`CASE WHEN ${productsTable.type} = 1 AND ${productsTable.statusId} = 4 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('stock_medicamentos_caducados'),
+        cantidadMedicamentosStockBajo: count(
+          sql`CASE WHEN ${productsTable.type} = 1 AND ${productsTable.stock} < 16 THEN ${productsTable.id} ELSE NULL END`
+        ).as('cantidad_medicamentos_stock_bajo'),
+      })
+      .from(productsTable);
+
+    // Drizzle devuelve un array, y como esta consulta sin GROUP BY
+    // siempre devuelve un solo resultado, tomamos el primer elemento.
+    return result[0];
+  }
+
+  toSentenceCase(str: string): string {
+    if (!str) {
+      return ''; // Maneja entradas nulas o vacías
+    }
+
+    // 1. Convertir todo el string a minúsculas para asegurar la uniformidad
+    const lowercasedStr = str.toLowerCase();
+
+    // 2. Tomar la primera letra y convertirla a mayúscula
+    const firstChar = lowercasedStr.charAt(0).toUpperCase();
+
+    // 3. Tomar el resto del string (desde el segundo carácter)
+    const restOfString = lowercasedStr.slice(1);
+
+    // 4. Unir la primera letra capitalizada con el resto del string
+    return firstChar + restOfString;
+}
+
 }

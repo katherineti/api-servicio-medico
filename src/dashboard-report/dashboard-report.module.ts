@@ -8,9 +8,10 @@ import { MedicalSuppliesReportMonthService } from './medical-supplies-registered
 import { AssignmentReportMonthService } from './assignment-registered/assignment-report-month.service';
 import { AssignmentModule } from 'src/assignment/assignment.module';
 import { MedicalSuppliesReportService } from './medical-supplies-available/medical-supplies-report.service';
+import { MedicalSuppliesModule } from 'src/medical-supplies/medical-supplies.module';
 
 @Module({
-    imports: [ DrizzleDbConecctionModule, AssignmentModule ],
+    imports: [ DrizzleDbConecctionModule, AssignmentModule, MedicalSuppliesModule ],
     controllers: [DashboardReportController],
     providers: [
         DashboardReportService, PdfDashboardService,

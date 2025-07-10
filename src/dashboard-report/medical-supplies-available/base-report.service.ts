@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import type { Response } from "express"
 import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
+import { MedicalSupplyType } from "./medical-supplies-report.interface"
 
 @Injectable()
 export abstract class BaseReportService {
@@ -84,6 +85,9 @@ export abstract class BaseReportService {
   }
 
   protected addGeneralInfoTable(content: any[], reportData: any, styles: StyleDictionary): void {
+    const typeReport_number = this.getValidContent(reportData.type || reportData.typeName);
+    const supplyType = this.getSupplyTypeName( Number(typeReport_number) );
+
     content.push({
       margin: [0, 10, 0, 20],
       table: {
@@ -96,7 +100,7 @@ export abstract class BaseReportService {
             { text: "Fecha de Generación", style: "tableHeader" },
           ],
           [
-            { text: this.getValidContent(reportData.type || reportData.typeName), style: "tableCellValue" },
+            { text: supplyType + " Disponibles", style: "tableCellValue" },
             { text: this.formatDate(reportData.date), style: "tableCellValue" },
             { text: this.formatDate(new Date().toISOString()), style: "tableCellValue" },
           ],
@@ -137,7 +141,7 @@ export abstract class BaseReportService {
     }
   }
 
-  protected getValidContent(content: any): string {
+  protected getValidContent(content: any): string {console.log("tipo de Reporte: getValidContent(): " , JSON.stringify(content, null, 2))
     if (content === null || content === undefined) return "No disponible"
     if (typeof content === "string" && content.trim() === "") return "No disponible"
     if (typeof content === "object") {
@@ -201,4 +205,17 @@ export abstract class BaseReportService {
 
   // Método abstracto con firma flexible
   abstract generateCustomPdf(reportData: any, res: Response, options?: any): Promise<void>
+
+  getSupplyTypeName(supplyType: MedicalSupplyType): string {
+    switch (supplyType) {
+      case 1:
+        return "Medicamentos"
+      case 2:
+        return "Uniformes"
+      case 3:
+        return "Equipos Odontológicos"
+      default:
+        return "Insumos Médicos"
+    }
+  }
 }
