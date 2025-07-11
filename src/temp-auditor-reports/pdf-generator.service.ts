@@ -7,7 +7,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Style, StyleDictionary, TDocumentDefinitions, TFontDictionary } from 'pdfmake/interfaces';
 import { Reports } from 'src/db/types/reports.types';
-import { API_URL } from 'src/constants';
 /**
  * Interfaz para errores personalizados del servicio
  */
@@ -30,6 +29,7 @@ export class PdfGeneratorService {
   private readonly MAX_IMAGES = 10;
   private readonly MAX_RETRIES = 3;
   private readonly fonts: TFontDictionary;
+  private readonly STANDARD_IMAGE_WIDTH = 300;
 
   constructor() {
     try {
@@ -721,7 +721,8 @@ private async createDocumentDefinition_(
           if (img.exists && img.dataUrl) {
             content.push({
               image: img.dataUrl,
-              width: 400, // Ajusta el ancho según sea necesario
+              // width: 400, // Ajusta el ancho según sea necesario
+              width: this.STANDARD_IMAGE_WIDTH, // Ajusta el ancho según sea necesario
               alignment: 'center',
               margin: [0, 10, 0, 10]
             });
@@ -961,13 +962,13 @@ private async createDocumentDefinition_(
    * @param imagePath Ruta de la imagen
    * @returns Objeto con información de la imagen
    */
-  private async loadImageWithRetry(reportId: number | string, imagePath: string): Promise<any> {
+/*   private async loadImageWithRetry(reportId: number | string, imagePath: string): Promise<any> {
     // Posibles rutas donde puede estar la imagen
     const possiblePaths = [
       path.join(API_URL, 'uploads', 'reports', `Id ${reportId}`, imagePath.split('/').pop()),
-    //   path.join(process.cwd(), 'uploads', 'reports', `Id ${reportId}`, imagePath.split('/').pop()),
-    //   path.join(process.cwd(), 'uploads', 'reports', imagePath.split('/').pop()),
-    //   path.join(process.cwd(), 'uploads', imagePath),
+      // path.join(process.cwd(), 'uploads', 'reports', `Id ${reportId}`, imagePath.split('/').pop()),
+      // path.join(process.cwd(), 'uploads', 'reports', imagePath.split('/').pop()),
+      // path.join(process.cwd(), 'uploads', imagePath),
       imagePath // Ruta absoluta si se proporciona
     ];
     
@@ -1015,8 +1016,54 @@ private async createDocumentDefinition_(
       exists: false,
       error: 'No se pudo cargar la imagen después de varios intentos'
     };
+  } */
+private async loadImageWithRetry(reportId: number | string, imagePath: string): Promise<any> {
+  // Obtener solo el nombre del archivo
+  const fileName = imagePath.split('/').pop() || imagePath;
+  
+  // ✅ RUTAS CORRECTAS del sistema de archivos
+  const possiblePaths = [
+    // Ruta principal donde Multer guarda los archivos
+    path.join(process.cwd(), 'uploads', 'reports', `Id ${reportId}`, fileName),
+    
+    // Ruta alternativa desde la carpeta del proyecto
+    path.join(__dirname, '..', '..', 'uploads', 'reports', `Id ${reportId}`, fileName),
+    
+    // Si imagePath es una ruta completa
+    path.join(process.cwd(), imagePath.replace(/^\//, ''))
+  ];
+  
+  console.log(`🔍 Buscando imagen: ${fileName} para reporte ${reportId}`);
+  
+  for (const fullPath of possiblePaths) {
+    console.log(`Verificando: ${fullPath}`);
+    
+    if (fs.existsSync(fullPath)) {
+      console.log(`✅ ¡Imagen encontrada!: ${fullPath}`);
+      
+      // Leer y convertir la imagen
+      const imageBuffer = fs.readFileSync(fullPath);
+      const base64Image = imageBuffer.toString('base64');
+      const mimeType = this.getMimeType(fullPath);
+      
+      return {
+        dataUrl: `data:${mimeType};base64,${base64Image}`,
+        path: imagePath,
+        exists: true,
+        fullPath: fullPath
+      };
+    }
   }
-
+  
+  // Si no se encuentra la imagen
+  console.error(`❌ Imagen NO encontrada: ${fileName}`);
+  return {
+    dataUrl: '',
+    path: imagePath,
+    exists: false,
+    error: 'Imagen no encontrada en el sistema de archivos'
+  };
+}
   /**
    * Obtiene el tipo MIME de un archivo basado en su extensión
    * @param filePath Ruta del archivo

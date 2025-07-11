@@ -68,8 +68,9 @@ export class TempAuditorReportsController {
       @Body() reportDto: ReportUpdateDto,
       @UploadedFiles() files: { images?: Express.Multer.File[] }
     ) {
-      console.log('Datos del reporte recibidos:', JSON.stringify(reportDto, null, 2));
-      console.log('Archivos recibidos:', files?.images?.length || 0);
+      console.log('Datos del reporte recibido:', JSON.stringify(reportDto, null, 2));
+      console.log('Numero de archivos recibidos:', files?.images?.length || 0);
+      console.log('Archivos recibidos:', files?.images );
     
       // Extraer los archivos del objeto files
       const imageFiles = files?.images || [];
@@ -89,7 +90,7 @@ export class TempAuditorReportsController {
     @Res() res: Response,
     @Query('download') download?: string,
   ){
-    this.logger.log(`Solicitud de generación de PDF para el informe ${id}`);
+    this.logger.log(`** Endpoint @Post('pdf/:id'). Solicitud de generación de PDF para el informe ${id} **`);
     
     try {
       const report = await this.tempAuditorReportsService.getById(id)
