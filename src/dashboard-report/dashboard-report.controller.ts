@@ -658,7 +658,17 @@ export class DashboardReportController {
     const dateStr = today.toISOString().split("T")[0]
     const typeName = this.getSupplyTypeName(supplyType).toLowerCase().replace(/\s+/g, "-")
 
-    return `reporte-${typeName}-${dateStr}.pdf`
+    // return `reporte-${typeName}-${dateStr}.pdf`
+    if(supplyType==1){
+      return `reporte-estadistico-medicamentos-disponibles-${dateStr}.pdf`;
+
+    }else if(supplyType==2){
+      return `reporte-estadistico-uniformes-disponibles-${dateStr}.pdf`;
+
+    }else if(supplyType==3){
+      return `reporte-estadistico-equiposodontologicos-disponibles-${dateStr}.pdf`;
+      
+    }
   }
 
   private setResponseHeaders(res: Response, filename: string, isDownload: boolean) {

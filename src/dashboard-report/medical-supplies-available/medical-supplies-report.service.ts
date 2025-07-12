@@ -21,6 +21,18 @@ interface medicationStatistics{
   stockMedicamentosCaducados: string,
   cantidadMedicamentosStockBajo: number
 }
+interface uniformesStatistics{
+  totalStockUniformes: string,
+  stockUniformesDisponibles: string,
+  // stockUniformesCaducados: string,
+  cantidadUniformesStockBajo: number
+}
+interface equiposodontologicosStatistics{
+  totalStockEquiposOdontologicos: string,
+  stockEquiposOdontologicosDisponibles: string,
+  // stockEquiposOdontologicosCaducados: string,
+  cantidadEquiposOdontologicosStockBajo: number
+}
 
 @Injectable()
 export class MedicalSuppliesReportService extends BaseReportService {
@@ -81,11 +93,12 @@ export class MedicalSuppliesReportService extends BaseReportService {
     }
   }
 
+  
   private async getUniformesStats(options: MedicalSupplyReportOptions): Promise<MedicalSupplyStats> {
     return {
-      totalItems: 0,
-      availableItems: 0,
-      lowStockItems: 0,
+      totalItems: Number((await this.getUniformesStatistics()).totalStockUniformes),
+      availableItems: Number((await this.getUniformesStatistics()).stockUniformesDisponibles),
+      lowStockItems: Number((await this.getUniformesStatistics()).cantidadUniformesStockBajo),
       totalValue: 0,
       averagePrice: 0,
       topItems: [],
@@ -94,9 +107,9 @@ export class MedicalSuppliesReportService extends BaseReportService {
 
   private async getEquiposOdontologicosStats(options: MedicalSupplyReportOptions): Promise<MedicalSupplyStats> {
     return {
-      totalItems: 0,
-      availableItems: 0,
-      lowStockItems: 0,
+      totalItems: Number((await this.getEquiposOdontologicosStatistics()).totalStockEquiposOdontologicos),
+      availableItems: Number((await this.getEquiposOdontologicosStatistics()).stockEquiposOdontologicosDisponibles),
+      lowStockItems: Number((await this.getEquiposOdontologicosStatistics()).cantidadEquiposOdontologicosStockBajo),
       totalValue: 0,
       averagePrice: 0,
       topItems: [],
@@ -349,8 +362,52 @@ export class MedicalSuppliesReportService extends BaseReportService {
           sql`CASE WHEN ${productsTable.type} = 1 AND ${productsTable.statusId} = 4 THEN ${productsTable.stock} ELSE 0 END`
         ).as('stock_medicamentos_caducados'),
         cantidadMedicamentosStockBajo: count(
-          sql`CASE WHEN ${productsTable.type} = 1 AND ${productsTable.stock} < 16 THEN ${productsTable.id} ELSE NULL END`
+          sql`CASE WHEN ${productsTable.type} = 1 AND ${productsTable.stock} < 16 AND ${productsTable.statusId} = 1 THEN ${productsTable.id} ELSE NULL END`
         ).as('cantidad_medicamentos_stock_bajo'),
+      })
+      .from(productsTable);
+
+    // Drizzle devuelve un array, y como esta consulta sin GROUP BY
+    // siempre devuelve un solo resultado, tomamos el primer elemento.
+    return result[0];
+  }
+  public async getUniformesStatistics(): Promise<uniformesStatistics> {
+    const result = await this.db
+      .select({
+        totalStockUniformes: sum(
+          sql`CASE WHEN ${productsTable.type} = 2 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('total_stock_uniformes'),
+        stockUniformesDisponibles: sum(
+          sql`CASE WHEN ${productsTable.type} = 2 AND ${productsTable.statusId} = 1 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('stock_uniformes_disponibles'),
+/*         stockUniformesCaducados: sum(
+          sql`CASE WHEN ${productsTable.type} = 2 AND ${productsTable.statusId} = 4 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('stock_uniformes_caducados'), */
+        cantidadUniformesStockBajo: count(
+          sql`CASE WHEN ${productsTable.type} = 2 AND ${productsTable.stock} < 16 AND ${productsTable.statusId} = 1 THEN ${productsTable.id} ELSE NULL END`
+        ).as('cantidad_uniformes_stock_bajo'),
+      })
+      .from(productsTable);
+
+    // Drizzle devuelve un array, y como esta consulta sin GROUP BY
+    // siempre devuelve un solo resultado, tomamos el primer elemento.
+    return result[0];
+  }
+  public async getEquiposOdontologicosStatistics(): Promise<equiposodontologicosStatistics> {
+    const result = await this.db
+      .select({
+        totalStockEquiposOdontologicos: sum(
+          sql`CASE WHEN ${productsTable.type} = 3 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('total_stock_equiposOdontologicos'),
+        stockEquiposOdontologicosDisponibles: sum(
+          sql`CASE WHEN ${productsTable.type} = 3 AND ${productsTable.statusId} = 1 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('stock_equiposOdontologicos_disponibles'),
+        /* stockEquiposOdontologicosCaducados: sum(
+          sql`CASE WHEN ${productsTable.type} = 3 AND ${productsTable.statusId} = 4 THEN ${productsTable.stock} ELSE 0 END`
+        ).as('stock_equiposOdontologicos_caducados'), */
+        cantidadEquiposOdontologicosStockBajo: count(
+          sql`CASE WHEN ${productsTable.type} = 3 AND ${productsTable.stock} < 16 AND ${productsTable.statusId} = 1 THEN ${productsTable.id} ELSE NULL END`
+        ).as('cantidad_equiposOdontologicos_stock_bajo'),
       })
       .from(productsTable);
 
