@@ -1,15 +1,25 @@
-import { Controller, Post, Body, Res, Query, Logger, Get, Param, ParseIntPipe, HttpStatus } from "@nestjs/common"
-import type { Response } from "express"
-import { PdfDashboardService } from "./pdf-dasboard.service"
-import { DashboardReportService } from "./dashboard-report.service";
-import { Usersesion } from "src/auth/strategies/usersesion.decorator";
-import { IJwtPayload } from "src/auth/dto/jwt-payload.interface";
-import { MedicalSuppliesReportTodayService } from "./medical-supplies-registered/medical-supplies-report-today.service";
-import { MedicalSuppliesReportMonthService } from "./medical-supplies-registered/medical-supplies-report-month.service";
-import { AssignmentReportMonthService, AssignmentReportOptions } from "./assignment-registered/assignment-report-month.service";
+import { Controller, Post, Query, Logger, Get, Param, HttpStatus, Res } from "@nestjs/common"
+import  { Response } from "express"
+import  { PdfDashboardService } from "./pdf-dasboard.service"
+import  { DashboardReportService } from "./dashboard-report.service"
+import { Usersesion } from "src/auth/strategies/usersesion.decorator"
+import  { IJwtPayload } from "src/auth/dto/jwt-payload.interface"
+import  { MedicalSuppliesReportTodayService } from "./medical-supplies-registered/medical-supplies-report-today.service"
+import  { MedicalSuppliesReportMonthService } from "./medical-supplies-registered/medical-supplies-report-month.service"
+import  {
+  AssignmentReportMonthService,
+  AssignmentReportOptions,
+} from "./assignment-registered/assignment-report-month.service"
 // import { ApiOperation, ApiParam, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { MedicalSuppliesReportService } from "./medical-supplies-available/medical-supplies-report.service";
-import { AlertSummary, InventoryAlert, MedicalSupplyReportData, MedicalSupplyReportOptions, MedicalSupplyType } from "./medical-supplies-available/medical-supplies-report.interface";
+// import type { MedicalSuppliesReportService } from "./medical-supplies-available/medical-supplies-report.service"
+import type {
+  AlertSummary,
+  InventoryAlert,
+  MedicalSupplyReportData,
+  MedicalSupplyReportOptions,
+  MedicalSupplyType,
+} from "./medical-supplies-available/medical-supplies-report.interface"
+import { MedicalSuppliesReportService } from "./medical-supplies-available/medical-supplies-report.service"
 
 // @ApiTags("Medical Supplies Reports")
 @Controller("dashboard-reports")
@@ -22,21 +32,20 @@ export class DashboardReportController {
     private readonly medicalSuppliesReportTodayService: MedicalSuppliesReportTodayService,
     private readonly medicalSuppliesReportMonthService: MedicalSuppliesReportMonthService,
     private readonly assignmentReportMonthService: AssignmentReportMonthService,
-    // private readonly productReportService: ProductReportService
-    private readonly medicalSuppliesReportService: MedicalSuppliesReportService
+    private readonly medicalSuppliesReportService: MedicalSuppliesReportService,
   ) {}
 
   //1-PDF para reporte estadistico de usuarios
   // @Post("pdf/:id")
   @Post("pdf")
   async generatePdfUsers(
-    // id: number, 
-    // @Body() reportDto: any, 
-    @Res() res: Response, 
+    // id: number,
+    // @Body() reportDto: any,
+    @Res() res: Response,
     @Usersesion() user: IJwtPayload,
     @Query('download') download?: string,
   ) {
-    this.logger.log(`Solicitud de generación de PDF para el reporte de estadísticas de usuarios`);
+    this.logger.log(`Solicitud de generación de PDF para el reporte de estadísticas de usuarios`)
 
     try {
       // Obtener las estadísticas completas de usuarios
@@ -44,14 +53,14 @@ export class DashboardReportController {
       this.logger.log(`Estadísticas obtenidas:`, userStats)
 
       // Determinar si el PDF debe descargarse o mostrarse en el navegador
-      const isDownload = download === "true" || download === "1";
+      const isDownload = download === "true" || download === "1"
 
-      let today = new Date();
-      let year = today.getFullYear();
-      let month = (today.getMonth() + 1).toString().padStart(2, '0');
-      let day = today.getDate().toString().padStart(2, '0');
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = (today.getMonth() + 1).toString().padStart(2, "0")
+      const day = today.getDate().toString().padStart(2, "0")
       // const filename = `reporte-estadisticas-usuarios-${new Date().toISOString().split("T")[0]}.pdf`
-      let filename = `reporte-estadistico-de-usuarios-${year}-${month}-${day}.pdf`;
+      const filename = `reporte-estadistico-de-usuarios-${year}-${month}-${day}.pdf`
 
       // Configurar encabezados de respuesta
       res.setHeader("Content-Type", "application/pdf")
@@ -64,12 +73,12 @@ export class DashboardReportController {
       // await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, reportDto, res)
       await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, res, user)
 
-      this.logger.log(`PDF de estadísticas generado exitosamente`);
+      this.logger.log(`PDF de estadísticas generado exitosamente`)
     } catch (error) {
-      this.logger.error(`Error al generar PDF de estadísticas:`, error);
+      this.logger.error(`Error al generar PDF de estadísticas:`, error)
 
       if (res.headersSent) {
-        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`);
+        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`)
         return
       }
 
@@ -79,8 +88,8 @@ export class DashboardReportController {
       })
     }
   }
-  
-/*   @Get('estadisticas')
+
+  /*   @Get('estadisticas')
   async estadisticas(){ 
       const getCompleteUserStats = await this.dashboardReportService.getCompleteUserStats()
       // console.log(getCompleteUserStats);
@@ -88,12 +97,8 @@ export class DashboardReportController {
   } */
 
   //2-PDF para reporte estadistico de: Registros de Insumos Médicos (Hoy)
-    @Post("pdf/register/medicalSuppliesToday")
-  async pdfMedicalSupplies_today(
-    @Res() res: Response, 
-    @Usersesion() user: IJwtPayload,
-    @Query('download') download?: string,
-  ) {
+  @Post("pdf/register/medicalSuppliesToday")
+  async pdfMedicalSupplies_today(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
     this.logger.log(`Solicitud de generación de PDF para el reporte de Inventario Almacén registrados hoy`)
 
     try {
@@ -150,12 +155,8 @@ export class DashboardReportController {
   }
 
   //3-PDF para reporte estadistico de: Registros de Insumos Médicos (Mes)
-    @Post("pdf/register/medicalSuppliesMonth")
-  async pdfMedicalSupplies_month(
-    @Res() res: Response, 
-    @Usersesion() user: IJwtPayload,
-    @Query('download') download?: string,
-  ) {
+  @Post("pdf/register/medicalSuppliesMonth")
+  async pdfMedicalSupplies_month(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
     this.logger.log(`Solicitud de generación de PDF para el reporte de Inventario Almacén registrados en el mes`)
 
     try {
@@ -209,10 +210,10 @@ export class DashboardReportController {
         message: `Error al generar PDF: ${error.message || "Error desconocido"}`,
       })
     }
-  }  
+  }
 
   //card 4, card 5 del dashboard -PDF para reporte estadistico sobre: Registros de Asignaciones de Insumos Médicos a empleado o a familiar de empleado (Dia,Mes)
-/*   @Post("pdf/register/assignments-month")
+  /*   @Post("pdf/register/assignments-month")
   async pdfAssignmentsMonth(
     res: Response, 
     @Usersesion() user: IJwtPayload, 
@@ -262,7 +263,7 @@ export class DashboardReportController {
       this.logger.error(`Error al generar PDF de asignaciones del mes:`, error)
 
       if (res.headersSent) {
-        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`)
+        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`);
         return
       }
 
@@ -273,7 +274,7 @@ export class DashboardReportController {
     }
   } */
 
- @Post("pdf/register/assignments-month")
+  @Post("pdf/register/assignments-month")
   async pdfAssignmentsMonth(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
     const options: AssignmentReportOptions = { reportType: "month" }
 
@@ -392,7 +393,7 @@ export class DashboardReportController {
     }
   }
 
-/*     // ==================== REPORTES DE INSUMOS MEDICOS DISPONIBLES ====================
+  /*     // ==================== REPORTES DE INSUMOS MEDICOS DISPONIBLES ====================
 
   @Get("products/medicamentos")
   async generateMedicamentosReport(
@@ -427,9 +428,9 @@ export class DashboardReportController {
     await this.productReportService.generateEquiposOdontologicosReport(res, user, download)
   } */
 
-
+  //                                                              pdf para prouctos disponibles
   @Post("generate/:supplyType") //ejemplo "dashboard-reports/generate/1"
-/*   @ApiOperation({ summary: "Generate conditional medical supplies report PDF" })
+  /*   @ApiOperation({ summary: "Generate conditional medical supplies report PDF" })
   @ApiParam({
     name: "supplyType",
     enum: [1, 2, 3],
@@ -442,20 +443,15 @@ export class DashboardReportController {
   @ApiResponse({ status: 400, description: "Invalid supply type" })
   @ApiResponse({ status: 500, description: "Internal server error" }) */
   async generateMedicalSuppliesReport(
-    // supplyType: string, // Remove decorator
-@Param('supplyType') supplyType: string, // Specify the parameter name
+    @Param('supplyType') supplyType: string,
     @Res() res: Response,
     @Usersesion() user: IJwtPayload,
-    // includeExpired?: string,
-    // minStockThreshold?: string,
     @Query('includeExpired') includeExpired?: string,
     @Query('minStockThreshold') minStockThreshold?: string,
-    @Query('download') download?: string
+    @Query('download') download?: string,
   ) {
     try {
-      const parsedSupplyType = Number.parseInt(supplyType);
-      console.log("supplyType " , supplyType)
-      // const parsedSupplyType = supplyType
+      const parsedSupplyType = Number.parseInt(supplyType)
       this.validateSupplyType(parsedSupplyType)
 
       const options: MedicalSupplyReportOptions = {
@@ -475,7 +471,7 @@ export class DashboardReportController {
   }
 
   @Get("stats/:supplyType")
-/*   @ApiOperation({ summary: "Get medical supplies statistics" })
+  /*   @ApiOperation({ summary: "Get medical supplies statistics" })
   @ApiParam({
     name: "supplyType",
     enum: [1, 2, 3],
@@ -485,7 +481,7 @@ export class DashboardReportController {
   @ApiQuery({ name: "endDate", required: false, type: String })
   @ApiResponse({ status: 200, description: "Statistics retrieved successfully" }) */
   async getMedicalSuppliesStats(
-    supplyType: string, // Remove decorator
+    @Param('supplyType') supplyType: string, // Remove decorator
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Usersesion() user?: IJwtPayload,
@@ -554,14 +550,14 @@ export class DashboardReportController {
   }
 
   @Get("alerts/:supplyType")
-/*   @ApiOperation({ summary: "Get inventory alerts for specific supply type" })
+  /*   @ApiOperation({ summary: "Get inventory alerts for specific supply type" })
   @ApiParam({
     name: "supplyType",
     enum: [1, 2, 3],
     description: "1=Medicamentos, 2=Uniformes, 3=Equipos Odontológicos",
   })
   @ApiResponse({ status: 200, description: "Alerts retrieved successfully" }) */
-  async getInventoryAlerts(supplyType: string, @Usersesion() user?: IJwtPayload) {
+  async getInventoryAlerts(@Param('supplyType') supplyType: string, @Usersesion() user?: IJwtPayload) {
     // Remove decorator
     try {
       const parsedSupplyType = Number.parseInt(supplyType)
@@ -628,8 +624,8 @@ export class DashboardReportController {
         totalItems: 0,
         availableItems: 0,
         lowStockItems: 0,
-        totalValue: 0,
-        averagePrice: 0,
+        totalValue: 0, // Se inicializa en 0 para compatibilidad
+        averagePrice: 0, // Se inicializa en 0 para compatibilidad
         topItems: [],
       },
       additionalInfo: {
@@ -656,18 +652,13 @@ export class DashboardReportController {
   private generateFilename(supplyType: MedicalSupplyType): string {
     const today = new Date()
     const dateStr = today.toISOString().split("T")[0]
-    const typeName = this.getSupplyTypeName(supplyType).toLowerCase().replace(/\s+/g, "-")
 
-    // return `reporte-${typeName}-${dateStr}.pdf`
-    if(supplyType==1){
-      return `reporte-estadistico-medicamentos-disponibles-${dateStr}.pdf`;
-
-    }else if(supplyType==2){
-      return `reporte-estadistico-uniformes-disponibles-${dateStr}.pdf`;
-
-    }else if(supplyType==3){
-      return `reporte-estadistico-equiposodontologicos-disponibles-${dateStr}.pdf`;
-      
+    if (supplyType == 1) {
+      return `reporte-estadistico-medicamentos-disponibles-${dateStr}.pdf`
+    } else if (supplyType == 2) {
+      return `reporte-estadistico-uniformes-disponibles-${dateStr}.pdf`
+    } else if (supplyType == 3) {
+      return `reporte-estadistico-equiposodontologicos-disponibles-${dateStr}.pdf`
     }
   }
 
@@ -754,7 +745,7 @@ export class DashboardReportController {
     this.logger.error(message, error)
 
     if (res.headersSent) {
-      this.logger.warn("Headers already sent, cannot send error response")
+      this.logger.warn("Headers already sent, no se puede enviar respuesta de error")
       return
     }
 
@@ -765,6 +756,147 @@ export class DashboardReportController {
       path: res.req?.url || "unknown",
     })
   }
-  
 
+  //nuevos
+  // ==================== REPORTES MEJORADOS DE PRODUCTOS DISPONIBLES ====================
+
+  @Post("generate/available/:supplyType") // Nuevo endpoint mejorado
+  async generateEnhancedAvailableProductsReport(
+    @Param('supplyType') supplyType: string,
+    res: Response,
+    @Usersesion() user: IJwtPayload,
+    @Query('includeExpired') includeExpired?: string,
+    @Query('minStockThreshold') minStockThreshold?: string,
+    @Query('download') download?: string,
+  ) {
+    try {
+      const parsedSupplyType = Number.parseInt(supplyType)
+      this.validateSupplyType(parsedSupplyType)
+
+      this.logger.log(`Generando reporte MEJORADO de ${this.getSupplyTypeName(parsedSupplyType)} disponibles`)
+
+      const options: MedicalSupplyReportOptions = {
+        supplyType: parsedSupplyType,
+        includeExpired: false, // Siempre false para reportes de disponibles
+        minStockThreshold: minStockThreshold
+          ? Number.parseInt(minStockThreshold)
+          : this.getDefaultStockThreshold(parsedSupplyType),
+        reportDate: new Date(),
+      }
+
+      const reportData = this.createEnhancedReportData(parsedSupplyType, user)
+      this.setResponseHeaders(res, reportData.filename!, download === "true")
+
+      // Usar el servicio mejorado
+      await this.medicalSuppliesReportService.generateCustomPdf(reportData, res, options)
+
+      this.logger.log(`PDF mejorado de ${this.getSupplyTypeName(parsedSupplyType)} disponibles generado exitosamente`)
+    } catch (error) {
+      this.handleError(error, res, `Error generating enhanced available products report for type ${supplyType}`)
+    }
+  }
+
+  @Get("stats/available/:supplyType") // Nuevo endpoint para estadísticas mejoradas
+  async getEnhancedAvailableProductsStats(@Param('supplyType') supplyType: string, @Usersesion() user?: IJwtPayload) {
+    try {
+      const parsedSupplyType = Number.parseInt(supplyType)
+      this.validateSupplyType(parsedSupplyType)
+
+      const options: MedicalSupplyReportOptions = {
+        supplyType: parsedSupplyType,
+        reportDate: new Date(),
+      }
+
+      // Obtener estadísticas mejoradas
+      const enhancedStats = await this.medicalSuppliesReportService.getEnhancedMedicalSupplyStats(options)
+
+      return {
+        success: true,
+        data: {
+          supplyType: parsedSupplyType,
+          typeName: this.getSupplyTypeName(parsedSupplyType),
+          enhancedStats,
+          metadata: {
+            reportType: "available_products_only",
+            generatedAt: new Date().toISOString(),
+            focusedOn: "productos_disponibles_solamente",
+            excludes: ["productos_vencidos", "productos_no_disponibles", "movimientos_de_entrada"],
+          },
+        },
+      }
+    } catch (error) {
+      this.logger.error(`Error getting enhanced available products stats for type ${supplyType}:`, error)
+      return {
+        success: false,
+        message: `Error retrieving enhanced statistics: ${error.message}`,
+        data: null,
+      }
+    }
+  }
+
+  // ==================== MÉTODOS AUXILIARES MEJORADOS ====================
+
+  private createEnhancedReportData(supplyType: MedicalSupplyType, user: IJwtPayload): MedicalSupplyReportData {
+    const today = new Date()
+    const typeName = this.getSupplyTypeName(supplyType)
+
+    return {
+      type: supplyType,
+      typeName,
+      title: `Reporte Estadístico de ${typeName} Disponibles`,
+      date: today.toISOString(),
+      filename: this.generateEnhancedFilename(supplyType),
+      stats: {
+        totalItems: 0,
+        availableItems: 0,
+        lowStockItems: 0,
+        totalValue: 0, // Inicializado a 0 para satisfacer la interfaz MedicalSupplyStats
+        averagePrice: 0, // Inicializado a 0 para satisfacer la interfaz MedicalSupplyStats
+        topItems: [],
+      },
+      additionalInfo: {
+        reportType: "enhanced_available_products",
+        focusedOn: "productos_disponibles_solamente",
+        generatedBy: user?.email || "Sistema",
+        generatedAt: new Date().toISOString(),
+        userId: user?.sub || null,
+        improvements: [
+          "consultas_optimizadas_con_joins",
+          "estadisticas_detalladas_por_categoria",
+          "analisis_de_disponibilidad",
+          "recomendaciones_especificas",
+          "detalles_de_productos_criticos",
+        ],
+      },
+    }
+  }
+
+  private generateEnhancedFilename(supplyType: MedicalSupplyType): string {
+    const today = new Date()
+    const dateStr = today.toISOString().split("T")[0]
+
+    switch (supplyType) {
+      case 1:
+        return `reporte-estadistico-medicamentos-disponibles-mejorado-${dateStr}.pdf`
+      case 2:
+        return `reporte-estadistico-uniformes-disponibles-mejorado-${dateStr}.pdf`
+      case 3:
+        return `reporte-estadistico-equipos-odontologicos-disponibles-mejorado-${dateStr}.pdf`
+      default:
+        return `reporte-estadistico-productos-disponibles-mejorado-${dateStr}.pdf`
+    }
+  }
+
+  private getDefaultStockThreshold(supplyType: MedicalSupplyType): number {
+    switch (supplyType) {
+      case 1:
+        return 10 // Medicamentos
+      case 2:
+        return 5 // Uniformes
+      case 3:
+        return 2 // Equipos odontológicos
+      default:
+        return 10
+    }
+  }
 }

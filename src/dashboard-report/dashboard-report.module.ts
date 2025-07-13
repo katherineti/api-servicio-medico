@@ -21,8 +21,6 @@ import { MedicalSuppliesModule } from 'src/medical-supplies/medical-supplies.mod
         //insumos medicos disponibles
         MedicalSuppliesReportService
     ],
-    exports:[DashboardReportService,MedicalSuppliesReportTodayService, MedicalSuppliesReportMonthService, AssignmentReportMonthService,
-        MedicalSuppliesReportService
-    ]
+    exports:[DashboardReportService,MedicalSuppliesReportTodayService, MedicalSuppliesReportMonthService, AssignmentReportMonthService, MedicalSuppliesReportService]
 })
 export class DashboardReportModule {}

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import type { Response } from "express"
 import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
-import { MedicalSupplyType } from "./medical-supplies-report.interface"
+import type { MedicalSupplyType } from "./medical-supplies-report.interface"
 
 @Injectable()
 export abstract class BaseReportService {
@@ -81,12 +81,41 @@ export abstract class BaseReportService {
         fillColor: "#fdedec",
         margin: [3, 3, 3, 3],
       },
+      // Nuevos estilos para reportes mejorados
+      successValue: {
+        fontSize: 9,
+        bold: true,
+        color: "#27ae60",
+        fillColor: "#eafaf1",
+        margin: [3, 3, 3, 3],
+      },
+      infoValue: {
+        fontSize: 9,
+        bold: true,
+        color: "#3498db",
+        fillColor: "#ebf3fd",
+        margin: [3, 3, 3, 3],
+      },
+      criticalValue: {
+        fontSize: 9,
+        bold: true,
+        color: "#ffffff",
+        fillColor: "#e74c3c",
+        margin: [3, 3, 3, 3],
+      },
+      enhancedSectionTitle: {
+        fontSize: 12,
+        bold: true,
+        margin: [0, 15, 0, 10],
+        color: "#2c3e50",
+        decoration: "underline",
+      },
     }
   }
 
   protected addGeneralInfoTable(content: any[], reportData: any, styles: StyleDictionary): void {
-    const typeReport_number = this.getValidContent(reportData.type || reportData.typeName);
-    const supplyType = this.getSupplyTypeName( Number(typeReport_number) );
+    const typeReport_number = this.getValidContent(reportData.type || reportData.typeName)
+    const supplyType = this.getSupplyTypeName(Number(typeReport_number))
 
     content.push({
       margin: [0, 10, 0, 20],
@@ -109,6 +138,34 @@ export abstract class BaseReportService {
     })
   }
 
+  // Nuevo método para tabla de información mejorada
+  protected addEnhancedGeneralInfoTable(content: any[], reportData: any, styles: StyleDictionary): void {
+    const typeReport_number = this.getValidContent(reportData.type || reportData.typeName)
+    const supplyType = this.getSupplyTypeName(Number(typeReport_number))
+
+    content.push({
+      margin: [0, 10, 0, 20],
+      table: {
+        widths: ["25%", "25%", "25%", "25%"],
+        layout: this.getTableLayout(),
+        body: [
+          [
+            { text: "Tipo de Reporte", style: "tableHeader" },
+            { text: "Enfoque", style: "tableHeader" },
+            { text: "Fecha del Reporte", style: "tableHeader" },
+            { text: "Fecha de Generación", style: "tableHeader" },
+          ],
+          [
+            { text: supplyType + " Disponibles", style: "tableCellValue" },
+            { text: "Solo Productos Disponibles", style: "successValue" },
+            { text: this.formatDate(reportData.date), style: "tableCellValue" },
+            { text: this.formatDate(new Date().toISOString()), style: "tableCellValue" },
+          ],
+        ],
+      },
+    })
+  }
+
   protected getTableLayout() {
     return {
       hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
@@ -119,6 +176,20 @@ export abstract class BaseReportService {
       paddingRight: (i, node) => 10,
       paddingTop: (i, node) => 5,
       paddingBottom: (i, node) => 5,
+    }
+  }
+
+  // Nuevo layout para tablas mejoradas
+  protected getEnhancedTableLayout() {
+    return {
+      hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 2 : 1),
+      vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 2 : 1),
+      hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#2c3e50" : "#bdc3c7"),
+      vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#2c3e50" : "#bdc3c7"),
+      paddingLeft: (i, node) => 12,
+      paddingRight: (i, node) => 12,
+      paddingTop: (i, node) => 8,
+      paddingBottom: (i, node) => 8,
     }
   }
 
@@ -141,7 +212,8 @@ export abstract class BaseReportService {
     }
   }
 
-  protected getValidContent(content: any): string {console.log("tipo de Reporte: getValidContent(): " , JSON.stringify(content, null, 2))
+  protected getValidContent(content: any): string {
+    console.log("tipo de Reporte: getValidContent(): ", JSON.stringify(content, null, 2))
     if (content === null || content === undefined) return "No disponible"
     if (typeof content === "string" && content.trim() === "") return "No disponible"
     if (typeof content === "object") {
@@ -157,6 +229,30 @@ export abstract class BaseReportService {
   protected capitalizeFirstLetter(string: string): string {
     if (!string) return ""
     return string.charAt(0).toUpperCase() + string.slice(1)
+  }
+
+  // Nuevo método para obtener estilo basado en prioridad
+  protected getStyleByPriority(priority: "low" | "medium" | "high" | "critical"): string {
+    switch (priority) {
+      case "critical":
+        return "criticalValue"
+      case "high":
+        return "errorValue"
+      case "medium":
+        return "warningValue"
+      case "low":
+        return "infoValue"
+      default:
+        return "tableCellValue"
+    }
+  }
+
+  // Nuevo método para obtener color basado en disponibilidad
+  protected getAvailabilityStyle(percentage: number): string {
+    if (percentage >= 80) return "successValue"
+    if (percentage >= 60) return "infoValue"
+    if (percentage >= 40) return "warningValue"
+    return "errorValue"
   }
 
   protected async generatePdfResponse(
