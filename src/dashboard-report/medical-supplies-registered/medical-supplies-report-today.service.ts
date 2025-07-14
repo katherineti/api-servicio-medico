@@ -162,7 +162,7 @@ export class MedicalSuppliesReportTodayService {
   }
 
   /**
-   * Obtiene TODAS las estadísticas de los medicamentos (type = 1)
+   * Obtiene TODAS las estadísticas de los medicamentos 
    */
   async getCompleteMedicalSupplyStats(): Promise<CompleteMedicalSupplyStats> {
     try {
@@ -189,7 +189,7 @@ export class MedicalSuppliesReportTodayService {
         })
         .from(productsTable)
         .where(
-          inArray(productsTable.statusId, [1,2,3])
+          inArray(productsTable.statusId, [1,2,3,4])
         )
         // .where(eq(productsTable.type, 1)) // Filtrar solo medicamentos
 console.log("REGISTROS GENERALES " , generalStats)
@@ -208,9 +208,9 @@ console.log("REGISTROS GENERALES " , generalStats)
                     gte(productsTable.createdAt, startOfDay),
                     lte(productsTable.createdAt, endOfDay)
                 ),
-                inArray(productsTable.statusId, [1,2,3])
+                inArray(productsTable.statusId, [1,2,3,4])
             ))
-        .where(inArray(productsTable.statusId, [1,2,3]))
+        .where(inArray(productsTable.statusId, [1,2,3,4]))
         .groupBy(categoriesTable.id, categoriesTable.name)
         .orderBy(categoriesTable.id);
 
@@ -230,10 +230,10 @@ console.log("REGISTROS GENERALES " , generalStats)
                     gte(productsTable.createdAt, startOfDay),
                     lte(productsTable.createdAt, endOfDay)
                   ),
-                inArray(productsTable.statusId, [1,2,3])
+                inArray(productsTable.statusId, [1,2,3,4])
             )
         )
-        .where(inArray(productsTable.statusId, [1,2,3]))
+        .where(inArray(productsTable.statusId, [1,2,3,4]))
         .groupBy(productStatusTable.id, productStatusTable.status)
         .orderBy(productStatusTable.id);
 
@@ -253,10 +253,10 @@ console.log("REGISTROS GENERALES " , generalStats)
                     gte(productsTable.createdAt, startOfDay),
                     lte(productsTable.createdAt, endOfDay)
                   ),
-                inArray(productsTable.statusId, [1,2,3])
+                inArray(productsTable.statusId, [1,2,3,4])
             )
         ) 
-        .where(inArray(productsTable.statusId, [1,2,3]))
+        .where(inArray(productsTable.statusId, [1,2,3,4]))
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
         .orderBy(typesOfProductsTable.id);
 
@@ -271,7 +271,7 @@ console.log("REGISTROS GENERALES " , generalStats)
           and(
             gte(productsTable.createdAt, startOfDay),
             lte(productsTable.createdAt, endOfDay),
-            inArray(productsTable.statusId, [1,2,3])
+            inArray(productsTable.statusId, [1,2,3,4])
             // eq(productsTable.type, 1),
           ),
         )
@@ -302,7 +302,7 @@ console.log("REGISTROS GENERALES " , generalStats)
           and(
             gte(productsTable.createdAt, startOfDay),
             lte(productsTable.createdAt, endOfDay),
-            inArray(productsTable.statusId, [1,2,3])
+            inArray(productsTable.statusId, [1,2,3,4])
             // eq(productsTable.type, 1),
           ),
         )
@@ -547,7 +547,7 @@ console.log("REGISTROS GENERALES " , generalStats)
     styles: StyleDictionary,
   ): void {
     content.push(
-      { text: "Estadísticas Generales de Inventario Almacén (Disponibles, No Disponibles, Pròximos a vencer)", style: "sectionTitle" },
+      { text: "Estadísticas Generales del Inventario Almacén (Disponibles, No Disponibles, Pròximos a vencer, Caducados)", style: "sectionTitle" },
       {
         table: {
           widths: ["50%", "50%"],
@@ -769,7 +769,7 @@ private addTodayRegistrationsChart(
     styles: StyleDictionary,
   ): void {
     if (medicalSupplyStats.todayProducts && medicalSupplyStats.todayProducts.length > 0) {
-      content.push({ text: "Inventario Almacén Registrados Hoy - Detalle", style: "sectionTitle" })
+      content.push({ text: "Inventario Almacén Registrado Hoy - Detalle", style: "sectionTitle" })
 
       const productTableBody = [
         [
@@ -812,7 +812,7 @@ private addTodayRegistrationsChart(
       })
     } else {
       content.push(
-        { text: "Inventario Almacén Registrados Hoy - Detalle", style: "sectionTitle" },
+        { text: "Inventario Almacén Registrado Hoy - Detalle", style: "sectionTitle" },
         {
           text: "No se registró inventario almacén nuevo el día de hoy.",
           style: "paragraph",

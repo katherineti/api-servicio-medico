@@ -188,7 +188,7 @@ export class AssignmentService {
         }
     }
 
-   //Para el contador de registros de asignaciones de insumos medicos al empleado, del dia, en el dashboard. Excepto insumos medicos caducados
+   //Para el contador de registros de asignaciones de insumos medicos al empleado, del dia, en el dashboard. 
    /**
     * 
     * @description inArray(productsTable.type, [1, 2, 3]) :
@@ -210,7 +210,8 @@ export class AssignmentService {
             lt(assignmentTable.createdAt, endOfDay),
            // Nuevas condiciones
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4)
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
+            // ne(productsTable.statusId, 4)
         );
     
         const [assignmentsCount] = await this.db
@@ -234,7 +235,8 @@ export class AssignmentService {
                 lt(assignmentTable.createdAt, endOfDay),
             // Nuevas condiciones
                 inArray(productsTable.type, [1, 2, 3]),
-                ne(productsTable.statusId, 4)
+                // ne(productsTable.statusId, 4)
+                inArray(productsTable.statusId, [1, 2, 3, 4]),
             );
         
             const [assignmentsCount] = await this.db
@@ -270,7 +272,8 @@ export class AssignmentService {
                     sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
                     // inArray(productsTable.type, [1, 2, 3]),
                     inArray(productsTable.type, typesMedicalSuppliesArray),
-                    ne(productsTable.statusId, 4)
+                    // ne(productsTable.statusId, 4)
+                    inArray(productsTable.statusId, [1, 2, 3, 4]),
                 )
             );
             
@@ -298,7 +301,8 @@ export class AssignmentService {
             and(
                 sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
                 inArray(productsTable.type, [1, 2, 3]),
-                ne(productsTable.statusId, 4)
+                // ne(productsTable.statusId, 4)
+                inArray(productsTable.statusId, [1, 2, 3, 4]),
             )
            );
         Logger.debug("Contador registros de asignaciones del mes, en el dashboard" , JSON.stringify(result))
@@ -306,7 +310,7 @@ export class AssignmentService {
         return result || { count: 0 };
     }
 
-    //Para el contador de registros de asignaciones de insumos medicos al empleado, en el dashboard de medico. Excepto insumos medicos caducados
+    //Para el contador de registros de asignaciones de insumos medicos al empleado, en el dashboard de medico. //Excepto insumos medicos caducados(Ya no)
     async totalAssignments(): Promise<{ count: number }> {
  
         const [result] = await this
@@ -316,7 +320,8 @@ export class AssignmentService {
         .where(
             and(
                 inArray(productsTable.type, [1, 2, 3]),
-                ne(productsTable.statusId, 4)
+                // ne(productsTable.statusId, 4)
+                inArray(productsTable.statusId, [1, 2, 3, 4]),
             )
         );
         Logger.debug("Contador registros de asignaciones, para el dashboard" , JSON.stringify(result));
@@ -337,7 +342,8 @@ export class AssignmentService {
       .where(
         and(
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4)
+            // ne(productsTable.statusId, 4)
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
         )
     );
 

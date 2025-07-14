@@ -382,7 +382,7 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
       .where(eq(typesOfProductsTable.type, "Equipos odontologicos"))
       .groupBy(productStatusTable.status);
 
-    const lowStockThreshold = 15 // Menor threshold para uniformes
+    const lowStockThreshold = 15 
     const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0)
     const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_equiposOdontologicos);
     const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 )

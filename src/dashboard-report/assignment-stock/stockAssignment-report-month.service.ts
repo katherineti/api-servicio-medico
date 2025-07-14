@@ -260,7 +260,8 @@ console.log('endOfDay:', endOfDay);
         .where(
           and(
             eq(productsTable.type, options.supplyType), 
-            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
+            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           )
         )
 
@@ -281,7 +282,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(employeeTable.id, employeeTable.name, employeeTable.cedula)
@@ -303,7 +305,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type,  options.supplyType),
-            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
@@ -332,7 +335,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(familyTable.id, familyTable.name, familyTable.cedula, employeeTable.name)
@@ -351,7 +355,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(assignmentTable.createdAt)
@@ -382,7 +387,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .orderBy(desc(assignmentTable.createdAt))
@@ -658,12 +664,12 @@ console.log('endOfDay:', endOfDay);
     styles: StyleDictionary,
     options: AssignmentReportByTypeSuppliesOptions,
   ): void {
-    const periodLabel = options.reportType === "day" ? "Hoy" : "del Mes"
+    const periodLabel = options.reportType === "day" ? "Hoy" : "en el Mes"
     const supplyType = this.getSupplyTypeName(options.supplyType)
 
     if(options.reportType === "day" ){
         content.push(
-          { text: `Estadísticas Generales de Asignaciones de ${supplyType}`, style: "sectionTitle" },
+          { text: `Estadísticas Generales de Asignaciones de ${supplyType} a Empleados`, style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],
@@ -706,7 +712,7 @@ console.log('endOfDay:', endOfDay);
     }else{
 
         content.push(
-          { text: `Estadísticas Generales de Asignaciones de ${supplyType}`, style: "sectionTitle" },
+          { text: `Estadísticas Generales de Asignaciones de ${supplyType} a Empleados`, style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],

@@ -251,7 +251,13 @@ console.log('endOfDay:', endOfDay);
         })
         .from(assignmentTable)
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
-        .where(and(inArray(productsTable.type, [1, 2, 3]), ne(productsTable.statusId, 4)))
+        // .where(and(inArray(productsTable.type, [1, 2, 3]), ne(productsTable.statusId, 4)))
+        .where(
+          and(
+            inArray(productsTable.type, [1, 2, 3]), 
+            inArray(productsTable.statusId, [1, 2, 3, 4]), 
+          )
+        )
 
       // 2. Asignaciones por empleado (del mes actual)
       const assignmentsByEmployeeResult = await this.db
@@ -270,7 +276,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            // ne(productsTable.statusId, 4),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(employeeTable.id, employeeTable.name, employeeTable.cedula)
@@ -292,7 +299,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            // ne(productsTable.statusId, 4),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
@@ -321,7 +329,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            // ne(productsTable.statusId, 4),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(familyTable.id, familyTable.name, familyTable.cedula, employeeTable.name)
@@ -340,7 +349,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            // ne(productsTable.statusId, 4),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(assignmentTable.createdAt)
@@ -371,7 +381,8 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            // ne(productsTable.statusId, 4),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .orderBy(desc(assignmentTable.createdAt))
@@ -640,7 +651,7 @@ console.log('endOfDay:', endOfDay);
 
     if(options.reportType === "day" ){
         content.push(
-          { text: "Estadísticas Generales de Asignaciones", style: "sectionTitle" },
+          { text: "Estadísticas Generales de Asignaciones a Empleados", style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],
@@ -683,7 +694,7 @@ console.log('endOfDay:', endOfDay);
     }else{
 
         content.push(
-          { text: "Estadísticas Generales de Asignaciones", style: "sectionTitle" },
+          { text: "Estadísticas Generales de Asignaciones a Empleados", style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],

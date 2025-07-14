@@ -188,7 +188,7 @@ export class MedicalSuppliesReportMonthService {
         })
         .from(productsTable)
         .where(
-          inArray(productsTable.statusId, [1,2,3])
+          inArray(productsTable.statusId, [1,2,3,4])
         )
         // .where(eq(productsTable.type, 1)) // Filtrar solo medicamentos
 
@@ -207,9 +207,9 @@ export class MedicalSuppliesReportMonthService {
                     gte(productsTable.createdAt, startOfMonth),
                     lte(productsTable.createdAt, endOfMonth)
                 ),
-                inArray(productsTable.statusId, [1,2,3])
+                inArray(productsTable.statusId, [1,2,3,4])
             ))
-        .where(inArray(productsTable.statusId, [1,2,3]))
+        .where(inArray(productsTable.statusId, [1,2,3,4]))
        /*  .leftJoin(productsTable, 
             and(
                 eq(productsTable.categoryId, categoriesTable.id),
@@ -238,10 +238,10 @@ export class MedicalSuppliesReportMonthService {
                     gte(productsTable.createdAt, startOfMonth),
                     lte(productsTable.createdAt, endOfMonth)
                   ),
-                inArray(productsTable.statusId, [1,2,3])
+                inArray(productsTable.statusId, [1,2,3,4])
             )
         )
-        .where(inArray(productsTable.statusId, [1,2,3]))
+        .where(inArray(productsTable.statusId, [1,2,3,4]))
         .groupBy(productStatusTable.id, productStatusTable.status)
         .orderBy(productStatusTable.id);
 
@@ -263,10 +263,10 @@ export class MedicalSuppliesReportMonthService {
                     gte(productsTable.createdAt, startOfMonth),
                     lte(productsTable.createdAt, endOfMonth)
                   ),
-                inArray(productsTable.statusId, [1,2,3])
+                inArray(productsTable.statusId, [1,2,3,4])
             )
         ) 
-        .where(inArray(productsTable.statusId, [1,2,3]))
+        .where(inArray(productsTable.statusId, [1,2,3,4]))
         // .where(eq(typesOfProductsTable.id, 1))
         
         // .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
@@ -284,7 +284,7 @@ export class MedicalSuppliesReportMonthService {
           and(
             gte(productsTable.createdAt, startOfMonth),
             lte(productsTable.createdAt, endOfMonth),
-            inArray(productsTable.statusId, [1,2,3])
+            inArray(productsTable.statusId, [1,2,3,4])
             // eq(productsTable.type, 1),
           ),
         )
@@ -319,7 +319,7 @@ export class MedicalSuppliesReportMonthService {
           and(
             gte(productsTable.createdAt, startOfMonth),
             lte(productsTable.createdAt, endOfMonth),
-            inArray(productsTable.statusId, [1,2,3])
+            inArray(productsTable.statusId, [1,2,3,4])
             // eq(productsTable.type, 1),
           ),
         )
@@ -564,7 +564,7 @@ export class MedicalSuppliesReportMonthService {
     styles: StyleDictionary,
   ): void {
     content.push(
-      { text: "Estadísticas Generales de Inventario Almacén (Disponibles, No Disponibles, Pròximos a vencer)", style: "sectionTitle" },
+      { text: "Estadísticas Generales del Inventario Almacén (Disponibles, No Disponibles, Pròximos a vencer, Caducados)", style: "sectionTitle" },
       {
         table: {
           widths: ["50%", "50%"],
@@ -786,7 +786,7 @@ private addTodayRegistrationsChart(
     styles: StyleDictionary,
   ): void {
     if (medicalSupplyStats.todayProducts && medicalSupplyStats.todayProducts.length > 0) {
-      content.push({ text: "Inventario Almacén Registrados en el Mes - Detalle", style: "sectionTitle" })
+      content.push({ text: "Inventario Almacén Registrado en el Mes - Detalle", style: "sectionTitle" })
 
       const productTableBody = [
         [
@@ -829,7 +829,7 @@ private addTodayRegistrationsChart(
       })
     } else {
       content.push(
-        { text: "Inventario Almacén Registros en el Mes", style: "sectionTitle" },
+        { text: "Inventario Almacén Registro en el Mes", style: "sectionTitle" },
         {
           text: "No se registró inventario almacén nuevos el día del mes.",
           style: "paragraph",
