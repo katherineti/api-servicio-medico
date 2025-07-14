@@ -9,7 +9,7 @@ import type {
   MedicalSupplyType,
 } from "./medical-supplies-report.interface"
 import type { TDocumentDefinitions } from "pdfmake/interfaces"
-import { count, eq, and, or, sum } from "drizzle-orm"
+import { eq, and, or, sum } from "drizzle-orm"
 import { productsTable, categoriesTable, typesOfProductsTable, productStatusTable, providersTable } from "src/db/schema"
 import { PG_CONNECTION } from "src/constants"
 import { NeonDatabase } from "drizzle-orm/neon-serverless"

@@ -20,6 +20,7 @@ import type {
   MedicalSupplyType,
 } from "./medical-supplies-available/medical-supplies-report.interface"
 import { MedicalSuppliesReportService } from "./medical-supplies-available/medical-supplies-report.service"
+import { AssignmentReportByTypeSuppliesOptions, AssignmentReportMonthByMedicalSuppliesService } from "./assignment-stock/stockAssignment-report-month.service"
 
 // @ApiTags("Medical Supplies Reports")
 @Controller("dashboard-reports")
@@ -33,6 +34,7 @@ export class DashboardReportController {
     private readonly medicalSuppliesReportMonthService: MedicalSuppliesReportMonthService,
     private readonly assignmentReportMonthService: AssignmentReportMonthService,
     private readonly medicalSuppliesReportService: MedicalSuppliesReportService,
+    private readonly assignmentReportMonthByMedicalSuppliesService: AssignmentReportMonthByMedicalSuppliesService,
   ) {}
 
   //1-PDF para reporte estadistico de usuarios
@@ -393,6 +395,75 @@ export class DashboardReportController {
     }
   }
 
+  //asignaciones del mes medicamentos,...
+  @Post("pdf/generate/assignments-month/:supplyType")
+  async pdfAssignmentsMonthMedicamentsUniformesOdontologic(@Param('supplyType') supplyType: string, @Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
+    const parsedSupplyType = Number.parseInt(supplyType)
+    const options: AssignmentReportByTypeSuppliesOptions = { reportType: "month", supplyType: parsedSupplyType }
+    this.validateSupplyType(parsedSupplyType)
+
+    try {
+      // Obtener las estadísticas completas de asignaciones del mes
+      const assignmentStats = await this.assignmentReportMonthByMedicalSuppliesService.getCompleteAssignmentStats(options)
+
+      // Determinar si el PDF debe descargarse o mostrarse en el navegador
+      const isDownload = download === "true" || download === "1"
+
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = (today.getMonth() + 1).toString().padStart(2, "0")
+      let filename = `reporte-estadistico-asignaciones-${parsedSupplyType}-${year}-${month}.pdf`
+      if(options.supplyType===1){
+        filename = `reporte-estadistico-asignaciones-medicamentos-${year}-${month}.pdf`
+      }
+      if(options.supplyType===2){
+        filename = `reporte-estadistico-asignaciones-uniformes-${year}-${month}.pdf`
+      }
+      if(options.supplyType===3){
+        filename = `reporte-estadistico-asignaciones-equiposodontologicos-${year}-${month}.pdf`
+      }
+
+      // Configurar encabezados de respuesta
+      res.setHeader("Content-Type", "application/pdf")
+      res.setHeader(
+        "Content-Disposition",
+        isDownload ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
+      )
+
+      // Crear datos del reporte
+      const supplyType = this.getSupplyTypeName(options.supplyType)
+      const reportData = {
+        title: "Asignaciones de Insumos Médicos (Mes)",
+        value: assignmentStats.assignmentsThisMonth,
+        type: `Asignaciones de ${supplyType} a Empleados`,
+        date: today.toISOString(),
+        additionalInfo: {
+          totalAssignments: assignmentStats.totalAssignments,
+          totalProductsAssigned: assignmentStats.totalProductsAssigned,
+          generatedBy: user?.email || "Sistema",
+          generatedAt: new Date().toISOString(),
+        },
+      }
+
+      // Generar PDF personalizado para asignaciones del mes
+      await this.assignmentReportMonthByMedicalSuppliesService.generateCustomAssignmentsPdf(reportData, res, options)
+
+      this.logger.log(`PDF de asignaciones del mes generado exitosamente`)
+    } catch (error) {
+      this.logger.error(`Error al generar PDF de asignaciones del mes:`, error)
+
+      if (res.headersSent) {
+        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`)
+        return
+      }
+
+      res.status(500).json({
+        statusCode: 500,
+        message: `Error al generar PDF: ${error.message || "Error desconocido"}`,
+      })
+    }
+  }
+
   /*     // ==================== REPORTES DE INSUMOS MEDICOS DISPONIBLES ====================
 
   @Get("products/medicamentos")
@@ -457,7 +528,7 @@ export class DashboardReportController {
       const options: MedicalSupplyReportOptions = {
         supplyType: parsedSupplyType,
         includeExpired: includeExpired === "true",
-        minStockThreshold: minStockThreshold ? Number.parseInt(minStockThreshold) : 10,
+        minStockThreshold: minStockThreshold ? Number.parseInt(minStockThreshold) : 15,
         reportDate: new Date(),
       }
 

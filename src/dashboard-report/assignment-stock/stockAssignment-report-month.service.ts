@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import type { Response } from "express"
 import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
-import { and, count, desc, eq, gte, lte, sql, inArray, ne } from "drizzle-orm"
+import { and, count, desc, eq, gte, lte, sql, inArray, ne, or, sum } from "drizzle-orm"
 import {
   assignmentTable,
   employeeTable,
@@ -11,30 +11,36 @@ import {
   typesOfProductsTable,
 } from "src/db/schema"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
-import { DashboardReportService } from "../../dashboard-report/dashboard-report.service"
-import type {
-  AssignmentReportDto,
-  CompleteAssignmentStats,
-  AssignmentRegistrationByDay,
-  AssignmentsByEmployee,
-  AssignmentsByProductType,
-  AssignmentsByFamily,
-} from "./assignment-stats.interface"
+import { DashboardReportService } from "../dashboard-report.service"
+// import type {
+//   AssignmentReportDto,
+//   CompleteAssignmentStats,
+//   AssignmentRegistrationByDay,
+//   AssignmentsByEmployee,
+//   AssignmentsByProductType,
+//   AssignmentsByFamily,
+// } from "./stockAssignment-stats.interface"
 import { PG_CONNECTION } from "src/constants"
 import { AssignmentService } from "src/assignment/assignment.service"
+import { AssignmentRegistrationByDay, AssignmentReportDto, AssignmentsByEmployee, AssignmentsByFamily, AssignmentsByProductType, CompleteAssignmentStats } from "./stockAssignment-stats.interface"
+import { MedicalSupplyType } from "../medical-supplies-available/medical-supplies-report.interface"
 
-export interface AssignmentReportOptions {
+/* export interface AssignmentReportOptions {
   reportType: "day" | "month"
   date?: Date // Fecha específica para reportes del día
+} */
+export interface AssignmentReportByTypeSuppliesOptions {
+  reportType: "day" | "month"
+  date?: Date // Fecha específica para reportes del día
+  supplyType:number
 }
 
 @Injectable()
-export class AssignmentReportMonthService {
-  private readonly logger = new Logger(AssignmentReportMonthService.name)
+export class AssignmentReportMonthByMedicalSuppliesService {
+  private readonly logger = new Logger(AssignmentReportMonthByMedicalSuppliesService.name)
 
   constructor(
     @Inject(PG_CONNECTION) private db: NeonDatabase,
-    // private readonly assignmentService: AssignmentService,
     @Inject(forwardRef(() => DashboardReportService))
     private readonly dashboardReportService: DashboardReportService,
     private readonly assignmentService: AssignmentService
@@ -46,10 +52,10 @@ export class AssignmentReportMonthService {
   async generateCustomAssignmentsPdf(
     reportData: AssignmentReportDto,
     res: Response,
-    options: AssignmentReportOptions = { reportType: "month" },
+    options: AssignmentReportByTypeSuppliesOptions = { reportType: "month", supplyType:1 },
   ): Promise<void> {
     try {
-      this.logger.log(`Generando PDF personalizado para asignaciones del mes: ${reportData.title}`)
+      this.logger.log(`Generando PDF personalizado para asignaciones del mes, por tipo: ${reportData.title}`)
 
       // Obtener estadísticas completas
       const assignmentStats = await this.getCompleteAssignmentStats(options)
@@ -110,7 +116,7 @@ export class AssignmentReportMonthService {
    * Obtiene TODAS las estadísticas de las asignaciones del mes
    */
   async getCompleteAssignmentStats(
-    options: AssignmentReportOptions = { reportType: "month" },
+    options: AssignmentReportByTypeSuppliesOptions = { reportType: "month", supplyType:1 },
   ): Promise<CompleteAssignmentStats> {
     try {
       // Determinar el rango de fechas según el tipo de reporte
@@ -243,15 +249,20 @@ console.log('endOfDay:', endOfDay);
       // 1. Estadísticas generales de asignaciones
       const [generalStats] = await this.db
         .select({
-          totalAssignments: count(),
+          totalAssignments: sum(assignmentTable.products),
           assignmentsToday: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfDay} AND ${assignmentTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
-          assignmentsThisMonth: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN 1 ELSE NULL END)`,
+          assignmentsThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE NULL END)`,
           totalProductsAssigned: sql<number>`sum(${assignmentTable.products})`,//por a hora no se usa porque es la suma de todos los registros
           totalProductsAssignedThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE 0 END)`,
         })
         .from(assignmentTable)
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
-        .where(and(inArray(productsTable.type, [1, 2, 3]), ne(productsTable.statusId, 4)))
+        .where(
+          and(
+            eq(productsTable.type, options.supplyType), 
+            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
+          )
+        )
 
       // 2. Asignaciones por empleado (del mes actual)
       const assignmentsByEmployeeResult = await this.db
@@ -269,8 +280,8 @@ console.log('endOfDay:', endOfDay);
           and(
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
-            inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            eq(productsTable.type, options.supplyType),
+            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
           ),
         )
         .groupBy(employeeTable.id, employeeTable.name, employeeTable.cedula)
@@ -291,8 +302,8 @@ console.log('endOfDay:', endOfDay);
           and(
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
-            inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            eq(productsTable.type,  options.supplyType),
+            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
           ),
         )
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
@@ -320,8 +331,8 @@ console.log('endOfDay:', endOfDay);
           and(
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
-            inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            eq(productsTable.type, options.supplyType),
+            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
           ),
         )
         .groupBy(familyTable.id, familyTable.name, familyTable.cedula, employeeTable.name)
@@ -339,8 +350,8 @@ console.log('endOfDay:', endOfDay);
           and(
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
-            inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            eq(productsTable.type, options.supplyType),
+            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
           ),
         )
         .groupBy(assignmentTable.createdAt)
@@ -370,8 +381,8 @@ console.log('endOfDay:', endOfDay);
           and(
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
-            inArray(productsTable.type, [1, 2, 3]),
-            ne(productsTable.statusId, 4),
+            eq(productsTable.type, options.supplyType),
+            or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
           ),
         )
         .orderBy(desc(assignmentTable.createdAt))
@@ -431,7 +442,7 @@ console.log('endOfDay:', endOfDay);
         assignmentsThisMonth: (await this.assignmentService.totalAssignmentOfMonth()).count,
         totalProductsAssigned: Number(generalStats.totalProductsAssigned) || 0, //no se usa
         // totalProductsAssignedThisMonth: Number(generalStats.totalProductsAssignedThisMonth) || 0,
-        totalProductsAssignedThisMonthOrToday: options.reportType === "day"? Number( (await this.assignmentService.countProductsAssignmentOfTheDay()).count ) : Number( (await this.assignmentService.countProductsAssignmentOfMonth([1,2,3])).count ),
+        totalProductsAssignedThisMonthOrToday: options.reportType === "day"? Number( (await this.assignmentService.countProductsAssignmentOfTheDay()).count ) : Number( (await this.assignmentService.countProductsAssignmentOfMonth([options.supplyType])).count ),
         assignmentsByEmployee,
         assignmentsByProductType,
         assignmentsByFamily,
@@ -453,7 +464,7 @@ console.log('endOfDay:', endOfDay);
   private async createCustomAssignmentsDocumentDefinition(
     reportData: AssignmentReportDto,
     assignmentStats: CompleteAssignmentStats,
-    options: AssignmentReportOptions = { reportType: "month" },
+    options: AssignmentReportByTypeSuppliesOptions = { reportType: "month", supplyType:1 },
   ): Promise<TDocumentDefinitions> {
     try {
       // Cargar logo usando el método del DashboardReportService
@@ -530,10 +541,21 @@ console.log('endOfDay:', endOfDay);
       // Crear contenido del documento
       const content: any[] = []
 
-      const reportTitle =
+/*       const reportTitle =
         options.reportType === "day"
-          ? "REPORTE DIARIO DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
-          : "REPORTE MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
+          ? "REPORTE DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS DE HOY"
+          : "REPORTE MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS" */
+     let reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE MEDICAMENTOS A EMPLEADOS"
+
+     if(options.supplyType===1){
+      reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE MEDICAMENTOS A EMPLEADOS"
+     }
+     if(options.supplyType===2){
+      reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE UNIFORMES A EMPLEADOS"
+     }
+     if(options.supplyType===3){
+      reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE EQUIPOS ODONTOLÓGICOS A EMPLEADOS"
+     }
 
       // Logo y título principal
       if (logoData) {
@@ -634,35 +656,36 @@ console.log('endOfDay:', endOfDay);
     content: any[],
     assignmentStats: CompleteAssignmentStats,
     styles: StyleDictionary,
-    options: AssignmentReportOptions,
+    options: AssignmentReportByTypeSuppliesOptions,
   ): void {
     const periodLabel = options.reportType === "day" ? "Hoy" : "del Mes"
+    const supplyType = this.getSupplyTypeName(options.supplyType)
 
     if(options.reportType === "day" ){
         content.push(
-          { text: "Estadísticas Generales de Asignaciones", style: "sectionTitle" },
+          { text: `Estadísticas Generales de Asignaciones de ${supplyType}`, style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],
               body: [
                 [
-                  { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
+                  { text: `Total de ${supplyType} Asignados:`, style: "tableCellLabel" },
                   { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
                 ],
 /*                 [
                   { text: `Asignaciones ${periodLabel} (Registro)`, style: "tableCellLabel" },
                   { text: assignmentStats.assignmentsThisMonth.toString(), style: "metricValue" },
                 ], */
-                [
+          /*       [
                   { text: `Asignaciones de ${periodLabel} (Registro):`, style: "tableCellLabel" },
                   { text: assignmentStats.assignmentsToday.toString(), style: "metricValue" },
-                ],
+                ], */
                 // [
                 //   { text: "Total de Productos Asignados:", style: "tableCellLabel" },
                 //   { text: assignmentStats.totalProductsAssigned.toString(), style: "tableCellValue" },
                 // ],
                 [
-                  { text: `Total de Productos Asignados ${periodLabel}:`, style: "tableCellLabel" },
+                  { text: `Total de ${supplyType} Asignados ${periodLabel}:`, style: "tableCellLabel" },
                   { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
                 ],
               ],
@@ -683,19 +706,19 @@ console.log('endOfDay:', endOfDay);
     }else{
 
         content.push(
-          { text: "Estadísticas Generales de Asignaciones", style: "sectionTitle" },
+          { text: `Estadísticas Generales de Asignaciones de ${supplyType}`, style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],
               body: [
                 [
-                  { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
+                  { text: `Total de ${supplyType} Asignados:`, style: "tableCellLabel" },
                   { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
                 ],
-                [
+/*                 [
                   { text: `Asignaciones ${periodLabel} (Registro):`, style: "tableCellLabel" },
                   { text: assignmentStats.assignmentsThisMonth.toString(), style: "metricValue" },
-                ],
+                ], */
 /*                 [
                   { text: "Asignaciones de Hoy (Registro):", style: "tableCellLabel" },
                   { text: assignmentStats.assignmentsToday.toString(), style: "tableCellValue" },
@@ -705,7 +728,7 @@ console.log('endOfDay:', endOfDay);
                 //   { text: assignmentStats.totalProductsAssigned.toString(), style: "tableCellValue" },
                 // ],
                 [
-                  { text: `Total de Productos Asignados ${periodLabel}:`, style: "tableCellLabel" },
+                  { text: `Total de ${supplyType} Asignados ${periodLabel}:`, style: "tableCellLabel" },
                   { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
                 ],
               ],
@@ -1044,4 +1067,17 @@ console.log('endOfDay:', endOfDay);
       },
     )
   }
+
+    getSupplyTypeName(supplyType: MedicalSupplyType): string {
+      switch (supplyType) {
+        case 1:
+          return "Medicamentos"
+        case 2:
+          return "Uniformes"
+        case 3:
+          return "Equipos Odontológicos"
+        default:
+          return "Insumos Médicos"
+      }
+    }
 }

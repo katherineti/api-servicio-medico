@@ -248,7 +248,7 @@ export class AssignmentService {
             Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
             return assignmentsCount;
         }
-          async countProductsAssignmentOfMonth(): Promise<{ count: number }> {
+          async countProductsAssignmentOfMonth(typesMedicalSuppliesArray:Array<number>): Promise<{ count: number }> {
             const nowCaracas = new Date();
             const year = nowCaracas.getFullYear();
             const month = nowCaracas.getMonth();
@@ -268,7 +268,8 @@ export class AssignmentService {
             .where(
                 and(
                     sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
-                    inArray(productsTable.type, [1, 2, 3]),
+                    // inArray(productsTable.type, [1, 2, 3]),
+                    inArray(productsTable.type, typesMedicalSuppliesArray),
                     ne(productsTable.statusId, 4)
                 )
             );
