@@ -454,7 +454,7 @@ export class MedicalSuppliesReportTodayService {
       }
 
       content.push({
-        text: "REPORTE DE INVENTARIO ALMACÉN REGISTRADOS HOY",
+        text: "REPORTE ESTADÍSTICO DEL INVENTARIO ALMACÉN REGISTRADO HOY",
         style: "reportTitle",
       })
 

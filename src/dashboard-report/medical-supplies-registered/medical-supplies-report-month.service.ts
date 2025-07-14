@@ -455,7 +455,7 @@ export class MedicalSuppliesReportMonthService {
       }
 
       content.push({
-        text: "REPORTE DE INVENTARIO ALMACÉN REGISTRADOS EN EL MES",
+        text: "REPORTE ESTADÍSTICO DEL INVENTARIO ALMACÉN REGISTRADO EN EL MES",
         style: "reportTitle",
       })
 

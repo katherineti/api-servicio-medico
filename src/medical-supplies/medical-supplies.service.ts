@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable, providersTable } from 'src/db/schema';
-import { count, desc, ilike, eq, and, sql, ne, sum, or } from 'drizzle-orm'
+import { count, desc, ilike, eq, and, sql, ne, sum, or, gte, lte } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
@@ -353,9 +353,10 @@ export class MedicalSuppliesService {
   Nuevos 
   getAccumulatedStockByType: Uniformes Disponibles, Equipos Odontológicos Disponibles, Total Medicamentos Disponibles
   Consulta que devuelva el acomulado de los stocks de los productos que son de tipo 1,2 o 3.
-  Y que son productos no caducados.
+  Y que son productos disponibles o proximos a vencer.
   */
   public async getAccumulatedStockByType(): Promise<stockMedicalSuppliesAvailables> {
+    const dateRanges = this.calculateCurrentMonthRange()
     const result = await this.db
       .select({
         sum_medicamentos: sum(sql`CASE WHEN ${productsTable.type} = 1 THEN ${productsTable.stock} ELSE 0 END`).as('sum_medicamentos'),
@@ -366,10 +367,32 @@ export class MedicalSuppliesService {
       .where(
         and(
           sql`${productsTable.type} IN (1, 2, 3)`,
-          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth),
         )
       );
 
     return result[0];
+  }
+
+    /**
+   * Calculate date range for current month in UTC
+   */
+  public calculateCurrentMonthRange() {
+    const now = new Date()
+    const nowUtc = new Date(now.toISOString())
+
+    const currentYear = nowUtc.getUTCFullYear()
+    const currentMonth = nowUtc.getUTCMonth()
+
+    const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
+    const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
+
+    return {
+      startOfMonth,
+      endOfMonth,
+    }
   }
 }

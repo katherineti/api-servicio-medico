@@ -129,7 +129,7 @@ export abstract class BaseReportService {
             { text: "Fecha de Generación", style: "tableHeader" },
           ],
           [
-            { text: supplyType + " Disponibles", style: "tableCellValue" },
+            { text: supplyType + " Disponibles en el Mes", style: "tableCellValue" },
             { text: this.formatDate(reportData.date), style: "tableCellValue" },
             { text: this.formatDate(new Date().toISOString()), style: "tableCellValue" },
           ],
@@ -314,4 +314,6 @@ export abstract class BaseReportService {
         return "Insumos Médicos"
     }
   }
+
+  
 }

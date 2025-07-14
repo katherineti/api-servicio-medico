@@ -8,12 +8,13 @@ import type {
   MedicalSupplyStats,
   MedicalSupplyType,
 } from "./medical-supplies-report.interface"
-import type { TDocumentDefinitions } from "pdfmake/interfaces"
-import { eq, and, or, sum } from "drizzle-orm"
+import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
+import { eq, and, or, sum, gte, lte } from "drizzle-orm"
 import { productsTable, categoriesTable, typesOfProductsTable, productStatusTable, providersTable } from "src/db/schema"
 import { PG_CONNECTION } from "src/constants"
 import { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { MedicalSuppliesService } from "src/medical-supplies/medical-supplies.service"
+import { DashboardReportService } from "../dashboard-report.service"
 
 // Interfaces mejoradas para estadísticas detalladas
 export interface EnhancedMedicationStatistics {
@@ -66,11 +67,13 @@ export interface EnhancedMedicationStatistics {
   countRegistryAvailableProducts:number
 }
 
+//Suplementos medicos disponibles en el mes
 @Injectable()
 export class MedicalSuppliesReportService extends BaseReportService {
   constructor(
      @Inject(PG_CONNECTION) private db: NeonDatabase,
-     private readonly medicalSuppliesService: MedicalSuppliesService
+     private readonly medicalSuppliesService: MedicalSuppliesService,
+     private readonly dashboardReportService: DashboardReportService,
   ) {
     super()
   }
@@ -119,6 +122,8 @@ export class MedicalSuppliesReportService extends BaseReportService {
     const thirtyDaysFromNow = new Date()
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
 
+    //Mes actual
+    const dateRanges = this.medicalSuppliesService.calculateCurrentMonthRange()
     // Consulta optimizada con joins para productos DISPONIBLES
     const availableProducts = await this.db
       .select({
@@ -138,6 +143,9 @@ export class MedicalSuppliesReportService extends BaseReportService {
         and(
           eq(typesOfProductsTable.type, "Medicamentos"),
           or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ), // Solo productos DISPONIBLES o PROXIMOS A VENCER
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth),
         ),
       )
 
@@ -151,14 +159,21 @@ export class MedicalSuppliesReportService extends BaseReportService {
       .from(productsTable)
       .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
       .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
-      .where(eq(typesOfProductsTable.type, "Medicamentos"))
+      .where(
+        and(
+          eq(typesOfProductsTable.type, "Medicamentos"),
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth),
+        )
+      )
       .groupBy(productStatusTable.status)
 console.log("systemTotals " , systemTotals)
     // Procesar estadísticas
     // const totalAvailableProducts_sumStock = availableProducts.length
     const totalAvailableProducts_sumStock = Number(
       (await this.medicalSuppliesService.getAccumulatedStockByType()).sum_medicamentos
-    ) ;
+    );
     const countRegistryAvailableProducts = availableProducts.length
     // const totalAvailableValue = totalAvailableProducts_sumStock * 150 // Precio promedio
 
@@ -420,20 +435,30 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
     stats: EnhancedMedicationStatistics,
     options: MedicalSupplyReportOptions,
   ): Promise<TDocumentDefinitions> {
-    const styles = this.getCommonStyles()
-    const content: any[] = []
+      // Cargar logo usando el método del DashboardReportService
+      let logoData = null
+      try {
+        logoData = await this.dashboardReportService.loadLogoWithRetry()
+      } catch (error) {
+        this.logger.warn("No se pudo cargar el logo:", error.message)
+      }
 
-    // Logo
-    const logoData = await this.loadLogo()
-    if (logoData) {
-      content.push({
-        image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
-        maxWidth: 515,
-        maxHeight: 150,
-        alignment: "center",
-        margin: [0, 0, 0, 20],
-      })
-    }
+      // Definir estilos (reutilizando la estructura del DashboardReportService)
+      const styles: StyleDictionary = this.getCommonStyles()
+
+      // Crear contenido del documento
+      const content: any[] = []
+
+      // Logo y título principal
+      if (logoData) {
+        content.push({
+          image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+          maxWidth: 515,
+          maxHeight: 150,
+          alignment: "center",
+          margin: [0, 0, 0, 20],
+        })
+      }
 
     // Título mejorado
     const title = this.getReportTitle(options.supplyType)
@@ -780,13 +805,13 @@ console.log("-> lowStockAvailableDetails " ,  stats.lowStockAvailableDetails)
   private getReportTitle(supplyType: MedicalSupplyType): string {
     switch (supplyType) {
       case 1:
-        return "REPORTE ESTADÍSTICO DE MEDICAMENTOS DISPONIBLES"
+        return "REPORTE ESTADÍSTICO DE MEDICAMENTOS DISPONIBLES EN EL MES"
       case 2:
-        return "REPORTE ESTADÍSTICO DE UNIFORMES DISPONIBLES"
+        return "REPORTE ESTADÍSTICO DE UNIFORMES DISPONIBLES EN EL MES"
       case 3:
-        return "REPORTE ESTADÍSTICO DE EQUIPOS ODONTOLÓGICOS DISPONIBLES"
+        return "REPORTE ESTADÍSTICO DE EQUIPOS ODONTOLÓGICOS DISPONIBLES EN EL MES"
       default:
-        return "REPORTE ESTADÍSTICO DE INSUMOS MÉDICOS DISPONIBLES"
+        return "REPORTE ESTADÍSTICO DE INSUMOS MÉDICOS DISPONIBLES EN EL MES"
     }
   }
 
@@ -810,9 +835,9 @@ console.log("-> lowStockAvailableDetails " ,  stats.lowStockAvailableDetails)
     return `reporte-estadistico-${typeStr}-${dateStr}.pdf`
   }
 
-  private async loadLogo(): Promise<Buffer | null> {
+/*   private async loadLogo(): Promise<Buffer | null> {
     return null
-  }
+  } */
 
   // Métodos de compatibilidad (mantener para no romper funcionalidad existente)
   public async getMedicationStatistics() {
