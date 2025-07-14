@@ -520,7 +520,7 @@ export class DashboardReportController {
     }
   }
 
-  @Get("types")
+  @Get("SupplyTypes")
   // @ApiOperation({ summary: "Get available medical supply types" })
   // @ApiResponse({ status: 200, description: "Supply types retrieved successfully" })
   async getSupplyTypes() {
@@ -530,7 +530,7 @@ export class DashboardReportController {
         {
           id: 1,
           name: "Medicamentos",
-          description: "Productos farmacéuticos y medicamentos",
+          description: "Productos farmacéuticos",
           features: ["expiration_tracking", "batch_control", "prescription_required"],
         },
         {
@@ -624,8 +624,8 @@ export class DashboardReportController {
         totalItems: 0,
         availableItems: 0,
         lowStockItems: 0,
-        totalValue: 0, // Se inicializa en 0 para compatibilidad
-        averagePrice: 0, // Se inicializa en 0 para compatibilidad
+        // totalValue: 0, // Se inicializa en 0 para compatibilidad
+        // averagePrice: 0, // Se inicializa en 0 para compatibilidad
         topItems: [],
       },
       additionalInfo: {
@@ -850,8 +850,8 @@ export class DashboardReportController {
         totalItems: 0,
         availableItems: 0,
         lowStockItems: 0,
-        totalValue: 0, // Inicializado a 0 para satisfacer la interfaz MedicalSupplyStats
-        averagePrice: 0, // Inicializado a 0 para satisfacer la interfaz MedicalSupplyStats
+        // totalValue: 0, // Inicializado a 0 para satisfacer la interfaz MedicalSupplyStats
+        // averagePrice: 0, // Inicializado a 0 para satisfacer la interfaz MedicalSupplyStats
         topItems: [],
       },
       additionalInfo: {

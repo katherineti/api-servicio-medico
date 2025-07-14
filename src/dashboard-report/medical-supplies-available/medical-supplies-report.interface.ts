@@ -12,7 +12,7 @@ export type ProductStatus = "available" | "low_stock" | "expired" | "discontinue
 export interface EnhancedAvailableProductsStats {
   // Estadísticas básicas de productos DISPONIBLES
   totalAvailableProducts: number
-  totalAvailableValue: number
+  // totalAvailableValue: number
 
   // Análisis de productos disponibles
   availableWithLowStock: number
@@ -83,17 +83,17 @@ export interface MedicalSupplyStats {
   availableItems: number
   lowStockItems: number
   expiredItems?: number // Solo para medicamentos
-  totalValue: number
-  averagePrice: number
+  // totalValue: number
+  // averagePrice: number
   topItems: TopItem[]
 }
 
 export interface TopItem {
   name: string
   quantity: number
-  value: number
+  // value: number
   status: ProductStatus
-  expirationDate?: string // Solo para medicamentos
+  // expirationDate?: string // Solo para medicamentos
 }
 
 export interface MedicalSupplyReportData {

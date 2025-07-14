@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION, PRODUCT_STATUS_INACTIVO } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable, providersTable } from 'src/db/schema';
-import { count, desc, ilike, eq, and, sql, ne, sum } from 'drizzle-orm'
+import { count, desc, ilike, eq, and, sql, ne, sum, or } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
 import { ProductsGetAll } from './dto/read-products-dto';
 import { Product } from 'src/db/types/products.types';
@@ -72,7 +72,7 @@ export class MedicalSuppliesService {
     }
 
     // Condición para excluir statusId = 4 (productos caducados)
-    whereConditions.push(ne(productsTable.statusId, 4));
+    whereConditions.push(or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ));
 
     // Condición de búsqueda combinada (si hay alguna)
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
@@ -309,7 +309,7 @@ export class MedicalSuppliesService {
         and(
           sql`${productsTable.createdAt} >= ${startOfDayCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfDayCaracas.toISOString()}`,
           // Condición para excluir statusId = 4 (productos caducados)
-          ne(productsTable.statusId, 4)
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
         )
       );
 
@@ -334,7 +334,7 @@ export class MedicalSuppliesService {
         and(
           sql`${productsTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
           // Condición para excluir statusId = 4 (productos caducados)
-          ne(productsTable.statusId, 4)
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
         )
       );
 
@@ -344,7 +344,7 @@ export class MedicalSuppliesService {
   //Para el contador de productos en el dashboard de almacen
   async countAllProducts(): Promise<{ count: number }> {
     const [result] = await 
-    this.db.select({ count: count() }).from(productsTable).where(ne(productsTable.statusId, 4));
+    this.db.select({ count: count() }).from(productsTable).where(or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ));
     
     return result ? result : { count: 0 };
   }
@@ -366,7 +366,7 @@ export class MedicalSuppliesService {
       .where(
         and(
           sql`${productsTable.type} IN (1, 2, 3)`,
-          ne(productsTable.statusId, 4)
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
         )
       );
 

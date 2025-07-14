@@ -9,16 +9,17 @@ import type {
   MedicalSupplyType,
 } from "./medical-supplies-report.interface"
 import type { TDocumentDefinitions } from "pdfmake/interfaces"
-import { count, eq, and } from "drizzle-orm"
+import { count, eq, and, or, sum } from "drizzle-orm"
 import { productsTable, categoriesTable, typesOfProductsTable, productStatusTable, providersTable } from "src/db/schema"
 import { PG_CONNECTION } from "src/constants"
 import { NeonDatabase } from "drizzle-orm/neon-serverless"
+import { MedicalSuppliesService } from "src/medical-supplies/medical-supplies.service"
 
 // Interfaces mejoradas para estadísticas detalladas
 export interface EnhancedMedicationStatistics {
   // Estadísticas básicas de productos DISPONIBLES
-  totalAvailableProducts: number
-  totalAvailableValue: number
+  totalAvailableProducts_sumStock: number
+  // totalAvailableValue: number
 
   // Análisis de productos disponibles
   availableWithLowStock: number
@@ -58,13 +59,18 @@ export interface EnhancedMedicationStatistics {
     availabilityPercentage: number
     notAvailableProducts: number
     expiredProducts: number
+
+    noAvailabilityPercentage: number
   }
+
+  countRegistryAvailableProducts:number
 }
 
 @Injectable()
 export class MedicalSuppliesReportService extends BaseReportService {
   constructor(
-     @Inject(PG_CONNECTION) private db: NeonDatabase
+     @Inject(PG_CONNECTION) private db: NeonDatabase,
+     private readonly medicalSuppliesService: MedicalSuppliesService
   ) {
     super()
   }
@@ -131,14 +137,15 @@ export class MedicalSuppliesReportService extends BaseReportService {
       .where(
         and(
           eq(typesOfProductsTable.type, "Medicamentos"),
-          eq(productsTable.statusId, 1), // Solo productos DISPONIBLES
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ), // Solo productos DISPONIBLES o PROXIMOS A VENCER
         ),
       )
 
     // Consulta para análisis de disponibilidad general
     const systemTotals = await this.db
       .select({
-        total: count(),
+        // total: count(),
+        total: sum(productsTable.stock),
         status: productStatusTable.status,
       })
       .from(productsTable)
@@ -146,13 +153,17 @@ export class MedicalSuppliesReportService extends BaseReportService {
       .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
       .where(eq(typesOfProductsTable.type, "Medicamentos"))
       .groupBy(productStatusTable.status)
-
+console.log("systemTotals " , systemTotals)
     // Procesar estadísticas
-    const totalAvailableProducts = availableProducts.length
-    const totalAvailableValue = totalAvailableProducts * 150 // Precio promedio
+    // const totalAvailableProducts_sumStock = availableProducts.length
+    const totalAvailableProducts_sumStock = Number(
+      (await this.medicalSuppliesService.getAccumulatedStockByType()).sum_medicamentos
+    ) ;
+    const countRegistryAvailableProducts = availableProducts.length
+    // const totalAvailableValue = totalAvailableProducts_sumStock * 150 // Precio promedio
 
     // Productos disponibles con stock bajo
-    const lowStockThreshold = 10
+    const lowStockThreshold = 15
     const availableWithLowStock = availableProducts.filter((p) => p.stock <= lowStockThreshold).length
 
     // Productos disponibles próximos a vencer
@@ -168,11 +179,12 @@ export class MedicalSuppliesReportService extends BaseReportService {
         name: p.name,
         code: p.code,
         stock: p.stock,
-        minStock: 20,
+        minStock: 15,
         category: p.categoryName || "Sin categoría",
         provider: p.providerName || "Sin proveedor",
       }))
-
+console.log("**availableProducts",availableProducts)
+console.log("**lowStockAvailableDetails",lowStockAvailableDetails)
     // Detalles de productos disponibles próximos a vencer
     const nearExpiryAvailableDetails = availableProducts
       .filter(
@@ -191,37 +203,49 @@ export class MedicalSuppliesReportService extends BaseReportService {
     const categoryMap = new Map()
     availableProducts.forEach((product) => {
       const category = product.categoryName || "Sin categoría"
-      categoryMap.set(category, (categoryMap.get(category) || 0) + 1)
+      // categoryMap.set(category, (categoryMap.get(category) || 0) + 1) //Productos Disponibles : cantidad registros de productos disponibles
+      categoryMap.set(category, (categoryMap.get(category) || 0) + product.stock)
     })
 
-    const categoryDistribution = Array.from(categoryMap.entries()).map(([categoryName, count]) => ({
+/*     const categoryDistribution = Array.from(categoryMap.entries()).map(([categoryName, count]) => ({
       categoryName,
       availableCount: count,
-      percentage: totalAvailableProducts > 0 ? (count / totalAvailableProducts) * 100 : 0,
+      percentage: totalAvailableProducts_sumStock > 0 ? (count / totalAvailableProducts_sumStock) * 100 : 0,
+    })) */
+    const categoryDistribution = Array.from(categoryMap.entries()).map(([categoryName, totalStock]) => ({
+      categoryName,
+      availableCount: totalStock, // <-- Ahora esto representa la SUMA DEL STOCK
+      percentage: totalAvailableProducts_sumStock > 0 ? (totalStock / totalAvailableProducts_sumStock) * 100 : 0,
     }))
 
     // Análisis de disponibilidad general
-    const totalInSystem = systemTotals.reduce((sum, item) => sum + item.total, 0)
-    const expiredCount = systemTotals.find((item) => item.status === "Caducado")?.total || 0
-    const notAvailableCount = systemTotals.find((item) => item.status === "No Disponible")?.total || 0
+    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0)
+    const expiredCount = Number( systemTotals.find((item) => item.status === "Caducado")?.total || 0 )
+    const _AvailableSumStock =Number( systemTotals.find((item) => item.status === "Disponible")?.total || 0 )
+    const notAvailableSumStock =Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 )
 
     const availabilityAnalysis = {
       totalProductsInSystem: totalInSystem,
-      availableProducts: totalAvailableProducts,
-      availabilityPercentage: totalInSystem > 0 ? (totalAvailableProducts / totalInSystem) * 100 : 0,
-      notAvailableProducts: notAvailableCount,
+      availableProducts: totalAvailableProducts_sumStock,
+      availabilityPercentage: totalInSystem > 0 ? (totalAvailableProducts_sumStock / totalInSystem) * 100 : 0,
+      noAvailabilityPercentage: totalInSystem > 0 ? (notAvailableSumStock / totalInSystem) * 100 : 0,
+      notAvailableProducts: notAvailableSumStock,
       expiredProducts: expiredCount,
     }
-
+console.log("availabilityPercentage ", availabilityAnalysis.availabilityPercentage)
+console.log("totalAvailableProducts_sumStock", totalAvailableProducts_sumStock )
+console.log("totalInSystem", totalInSystem )
+console.log("sum med disponibles o prox a vencer", totalAvailableProducts_sumStock, " , solo disponibles:", _AvailableSumStock )
+console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPercentage  ",availabilityAnalysis.noAvailabilityPercentage)
     return {
-      totalAvailableProducts,
-      totalAvailableValue,
+      totalAvailableProducts_sumStock,
       availableWithLowStock,
       availableNearExpiry,
       lowStockAvailableDetails,
       nearExpiryAvailableDetails,
       categoryDistribution,
       availabilityAnalysis,
+      countRegistryAvailableProducts
     }
   }
 
@@ -244,16 +268,43 @@ export class MedicalSuppliesReportService extends BaseReportService {
       .where(
         and(
           eq(typesOfProductsTable.type, "Uniformes"),
-          eq(productsTable.statusId, 1), // Solo productos DISPONIBLES
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ), // Solo productos DISPONIBLES o PROXIMOS A VENCER
         ),
-      )
-
-    const totalAvailableProducts = availableProducts.length
-    const lowStockThreshold = 5 // Menor threshold para uniformes
+      );
+    
+    // Consulta para análisis de disponibilidad general
+    const systemTotals = await this.db
+      .select({
+        // total: count(),
+        total: sum(productsTable.stock),
+        status: productStatusTable.status,
+      })
+      .from(productsTable)
+      .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
+      .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
+      .where(eq(typesOfProductsTable.type, "Uniformes"))
+      .groupBy(productStatusTable.status);
+      
+    const lowStockThreshold = 15 // Menor threshold para uniformes
+    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0)
+    const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_uniformes);
+    const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 )
+    const countRegistryAvailableProducts = availableProducts.length;
+      
+    // Distribución por categorías (solo productos disponibles)
+    const categoryMap = new Map()
+    availableProducts.forEach((product) => {
+      const category = product.categoryName || "Sin categoría"
+      categoryMap.set(category, (categoryMap.get(category) || 0) + product.stock)
+    });
+    const categoryDistribution = Array.from(categoryMap.entries()).map(([categoryName, totalStock]) => ({
+      categoryName,
+      availableCount: totalStock, // <-- Ahora esto representa la SUMA DEL STOCK
+      percentage: totalAvailableProducts_sumStock > 0 ? (totalStock / totalAvailableProducts_sumStock) * 100 : 0,
+    }));
 
     return {
-      totalAvailableProducts,
-      totalAvailableValue: totalAvailableProducts * 75,
+      totalAvailableProducts_sumStock,
       availableWithLowStock: availableProducts.filter((p) => p.stock <= lowStockThreshold).length,
       availableNearExpiry: 0, // Uniformes no vencen
       lowStockAvailableDetails: availableProducts
@@ -263,19 +314,21 @@ export class MedicalSuppliesReportService extends BaseReportService {
           name: p.name,
           code: p.code,
           stock: p.stock,
-          minStock: 10,
+          minStock: 15,
           category: p.categoryName || "Sin categoría",
           provider: p.providerName || "Sin proveedor",
         })),
       nearExpiryAvailableDetails: [], // No aplica para uniformes
-      categoryDistribution: [], // Implementar según necesidad
+      categoryDistribution, 
       availabilityAnalysis: {
-        totalProductsInSystem: 0, // Implementar consulta
-        availableProducts: totalAvailableProducts,
-        availabilityPercentage: 0,
-        notAvailableProducts: 0,
+        totalProductsInSystem: systemTotals.reduce((sum, item) => sum + Number(item.total), 0),
+        availableProducts: totalAvailableProducts_sumStock,
+        notAvailableProducts: notAvailableSumStock,
         expiredProducts: 0,
+        availabilityPercentage: totalInSystem > 0 ? (totalAvailableProducts_sumStock / totalInSystem) * 100 : 0,
+        noAvailabilityPercentage: totalInSystem > 0 ? (notAvailableSumStock / totalInSystem) * 100 : 0,
       },
+      countRegistryAvailableProducts
     }
   }
 
@@ -298,18 +351,44 @@ export class MedicalSuppliesReportService extends BaseReportService {
       .where(
         and(
           eq(typesOfProductsTable.type, "Equipos odontologicos"),
-          eq(productsTable.statusId, 1), // Solo productos DISPONIBLES
+          or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ), // Solo productos DISPONIBLES
         ),
-      )
+      );
 
-    const totalAvailableProducts = availableProducts.length
-    const lowStockThreshold = 2 // Muy bajo para equipos costosos
+      const systemTotals = await this.db
+      .select({
+        // total: count(),
+        total: sum(productsTable.stock),
+        status: productStatusTable.status,
+      })
+      .from(productsTable)
+      .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
+      .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
+      .where(eq(typesOfProductsTable.type, "Equipos odontologicos"))
+      .groupBy(productStatusTable.status);
+
+    const lowStockThreshold = 15 // Menor threshold para uniformes
+    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0)
+    const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_equiposOdontologicos);
+    const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 )
+    const countRegistryAvailableProducts = availableProducts.length;
+      
+    // Distribución por categorías (solo productos disponibles)
+    const categoryMap = new Map()
+    availableProducts.forEach((product) => {
+      const category = product.categoryName || "Sin categoría"
+      categoryMap.set(category, (categoryMap.get(category) || 0) + product.stock)
+    });
+    const categoryDistribution = Array.from(categoryMap.entries()).map(([categoryName, totalStock]) => ({
+      categoryName,
+      availableCount: totalStock, // <-- Ahora esto representa la SUMA DEL STOCK
+      percentage: totalAvailableProducts_sumStock > 0 ? (totalStock / totalAvailableProducts_sumStock) * 100 : 0,
+    }));
 
     return {
-      totalAvailableProducts,
-      totalAvailableValue: totalAvailableProducts * 500,
+      totalAvailableProducts_sumStock,
       availableWithLowStock: availableProducts.filter((p) => p.stock <= lowStockThreshold).length,
-      availableNearExpiry: 0, // Equipos no vencen típicamente
+      availableNearExpiry: 0, // Uniformes no vencen
       lowStockAvailableDetails: availableProducts
         .filter((p) => p.stock <= lowStockThreshold)
         .map((p) => ({
@@ -317,19 +396,21 @@ export class MedicalSuppliesReportService extends BaseReportService {
           name: p.name,
           code: p.code,
           stock: p.stock,
-          minStock: 3,
+          minStock: 15,
           category: p.categoryName || "Sin categoría",
           provider: p.providerName || "Sin proveedor",
         })),
-      nearExpiryAvailableDetails: [],
-      categoryDistribution: [],
+      nearExpiryAvailableDetails: [], // No aplica para uniformes
+      categoryDistribution, 
       availabilityAnalysis: {
-        totalProductsInSystem: 0,
-        availableProducts: totalAvailableProducts,
-        availabilityPercentage: 0,
-        notAvailableProducts: 0,
+        totalProductsInSystem: systemTotals.reduce((sum, item) => sum + Number(item.total), 0),
+        availableProducts: totalAvailableProducts_sumStock,
+        notAvailableProducts: notAvailableSumStock,
         expiredProducts: 0,
+        availabilityPercentage: totalInSystem > 0 ? (totalAvailableProducts_sumStock / totalInSystem) * 100 : 0,
+        noAvailabilityPercentage: totalInSystem > 0 ? (notAvailableSumStock / totalInSystem) * 100 : 0,
       },
+      countRegistryAvailableProducts
     }
   }
 
@@ -365,19 +446,19 @@ export class MedicalSuppliesReportService extends BaseReportService {
     this.addEnhancedStatsSection(content, stats, styles, options)
 
     // Análisis de disponibilidad
-    this.addAvailabilityAnalysisSection(content, stats, styles)
+    this.addAvailabilityAnalysisSection(content, stats, styles, options)
 
     // Productos disponibles con stock bajo (detalle)
     this.addLowStockDetailsSection(content, stats, styles, options)
 
     // Productos disponibles próximos a vencer (solo medicamentos)
     if (options.supplyType === 1 && stats.nearExpiryAvailableDetails.length > 0) {
-      this.addNearExpiryDetailsSection(content, stats, styles)
+      this.addNearExpiryDetailsSection(content, stats, styles, options)
     }
 
     // Distribución por categorías
     if (stats.categoryDistribution.length > 0) {
-      this.addCategoryDistributionSection(content, stats, styles)
+      this.addCategoryDistributionSection(content, stats, styles, options)
     }
 
     // Recomendaciones mejoradas
@@ -406,16 +487,22 @@ export class MedicalSuppliesReportService extends BaseReportService {
     options: MedicalSupplyReportOptions,
   ) {
     const supplyType = this.getSupplyTypeName(options.supplyType)
-    content.push({ text: "Estadísticas de Productos Disponibles", style: "sectionTitle" })
+    content.push({ text: `Estadísticas de ${supplyType} Disponibles`, style: "sectionTitle" })
 
     const baseStats = [
       [
-        { text: `Total ${supplyType} Disponibles:`, style: "tableCellLabel" },
-        { text: stats.totalAvailableProducts.toString(), style: "metricValue" },
-        { text: `$${stats.totalAvailableValue.toLocaleString()}`, style: "tableCellValue" },
+        { text: `Total ${supplyType} (Disponibles, No Disponibles, Pròximos a vencer, Caducados):`, style: "tableCellLabel" },
+        { text: stats.availabilityAnalysis.totalProductsInSystem, style: "tableCellLabel" },
+      ],
+      //Importante:
+      [
+        { text: `Total ${supplyType} Disponibles (Disponibles, Pròximos a vencer):`, style: "tableCellLabel" },
+        { text: stats.totalAvailableProducts_sumStock.toString(), style: "metricValue" },
+        
+        //  { text: ``, style: "tableCellValue" }, // { text: `$${stats.totalAvailableValue.toLocaleString()}`, style: "tableCellValue" },
       ],
       [
-        { text: `Disponibles con Stock Bajo:`, style: "tableCellLabel" },
+        { text: `Artículos Disponibles con Stock Bajo:`, style: "tableCellLabel" },
         {
           text: stats.availableWithLowStock.toString(),
           style: stats.availableWithLowStock > 0 ? "errorValue" : "tableCellValue",
@@ -434,12 +521,13 @@ export class MedicalSuppliesReportService extends BaseReportService {
 
     content.push({
       table: {
-        widths: ["50%", "25%", "25%"],
+        // widths: ["50%", "25%", "25%"],
+        widths: ["75%", "25%", "25%"],
         body: [
           [
             { text: "Métrica", style: "tableHeader" },
             { text: "Cantidad", style: "tableHeader" },
-            { text: "Valor/Estado", style: "tableHeader" },
+            // { text: "Valor/Estado", style: "tableHeader" },
           ],
           ...baseStats,
         ],
@@ -450,7 +538,9 @@ export class MedicalSuppliesReportService extends BaseReportService {
   }
 
   // Nueva sección de análisis de disponibilidad
-  private addAvailabilityAnalysisSection(content: any[], stats: EnhancedMedicationStatistics, styles: any) {
+  private addAvailabilityAnalysisSection(content: any[], stats: EnhancedMedicationStatistics, styles: any, options: MedicalSupplyReportOptions,) {
+    const supplyType = this.getSupplyTypeName(options.supplyType)
+
     content.push({ text: "Análisis de Disponibilidad en el Sistema", style: "sectionTitle" })
 
     content.push({
@@ -463,14 +553,16 @@ export class MedicalSuppliesReportService extends BaseReportService {
             { text: "Porcentaje", style: "tableHeader" },
           ],
           [
-            { text: "Productos Disponibles", style: "tableCellLabel" },
+            { text: `${supplyType} Disponibles (Disponibles, Pròximos a vencer):`, style: "tableCellLabel" },
             { text: stats.availabilityAnalysis.availableProducts.toString(), style: "metricValue" },
             { text: `${stats.availabilityAnalysis.availabilityPercentage.toFixed(1)}%`, style: "metricValue" },
           ],
           [
-            { text: "Productos No Disponibles", style: "tableCellLabel" },
+            { text: `${supplyType} No Disponibles`, style: "tableCellLabel" },
             { text: stats.availabilityAnalysis.notAvailableProducts.toString(), style: "errorValue" },
-            { text: `${(100 - stats.availabilityAnalysis.availabilityPercentage).toFixed(1)}%`, style: "errorValue" },
+            // { text: `${(100 - stats.availabilityAnalysis.availabilityPercentage).toFixed(1)}%`, style: "errorValue" },
+            // { text: `${(100 - stats.availabilityAnalysis.noAvailabilityPercentage).toFixed(1)}%`, style: "errorValue" },
+            { text: `${( stats.availabilityAnalysis.noAvailabilityPercentage).toFixed(1)}%`, style: "errorValue" },
           ],
         ],
       },
@@ -486,9 +578,11 @@ export class MedicalSuppliesReportService extends BaseReportService {
     styles: any,
     options: MedicalSupplyReportOptions,
   ) {
+    const supplyType = this.getSupplyTypeName(options.supplyType)
+
     if (stats.lowStockAvailableDetails.length === 0) return
 
-    content.push({ text: "Productos Disponibles con Stock Bajo - Requieren Reabastecimiento", style: "sectionTitle" })
+    content.push({ text: `${supplyType} Disponibles con Stock Bajo - Requieren Reabastecimiento`, style: "sectionTitle" })
 
     const tableBody = [
       [
@@ -500,10 +594,10 @@ export class MedicalSuppliesReportService extends BaseReportService {
       ],
       ...stats.lowStockAvailableDetails.map((item) => [
         { text: item.code, style: "tableCellValue" },
-        { text: item.name, style: "tableCellValue" },
+        { text: this.toSentenceCase(item.name), style: "tableCellValue" },
         { text: item.stock.toString(), style: "errorValue" },
         { text: item.minStock.toString(), style: "tableCellValue" },
-        { text: item.provider, style: "tableCellValue" },
+        { text: this.toSentenceCase(item.provider), style: "tableCellValue" },
       ]),
     ]
 
@@ -518,8 +612,10 @@ export class MedicalSuppliesReportService extends BaseReportService {
   }
 
   // Nueva sección de productos próximos a vencer
-  private addNearExpiryDetailsSection(content: any[], stats: EnhancedMedicationStatistics, styles: any) {
-    content.push({ text: "Productos Disponibles Próximos a Vencer (30 días)", style: "sectionTitle" })
+  private addNearExpiryDetailsSection(content: any[], stats: EnhancedMedicationStatistics, styles: any, options: MedicalSupplyReportOptions) {
+    const supplyType = this.getSupplyTypeName(options.supplyType)
+
+    content.push({ text: `${supplyType} Disponibles Próximos a Vencer (30 días)`, style: "sectionTitle" })
 
     const tableBody = [
       [
@@ -547,8 +643,10 @@ export class MedicalSuppliesReportService extends BaseReportService {
   }
 
   // Nueva sección de distribución por categorías
-  private addCategoryDistributionSection(content: any[], stats: EnhancedMedicationStatistics, styles: any) {
-    content.push({ text: "Distribución por Categorías (Solo Productos Disponibles)", style: "sectionTitle" })
+  private addCategoryDistributionSection(content: any[], stats: EnhancedMedicationStatistics, styles: any,  options: MedicalSupplyReportOptions) {
+    const supplyType = this.getSupplyTypeName(options.supplyType)
+
+    content.push({ text: `Distribución por Categorías (Solo ${supplyType} Disponibles)`, style: "sectionTitle" })
 
     const tableBody = [
       [
@@ -557,7 +655,7 @@ export class MedicalSuppliesReportService extends BaseReportService {
         { text: "Porcentaje", style: "tableHeader" },
       ],
       ...stats.categoryDistribution.map((item) => [
-        { text: item.categoryName, style: "tableCellValue" },
+        { text: this.toSentenceCase(item.categoryName), style: "tableCellValue" },
         { text: item.availableCount.toString(), style: "tableCellValue" },
         { text: `${item.percentage.toFixed(1)}%`, style: "tableCellValue" },
       ]),
@@ -578,12 +676,13 @@ export class MedicalSuppliesReportService extends BaseReportService {
     content: any[],
     stats: EnhancedMedicationStatistics,
     styles: any,
-    options: MedicalSupplyReportOptions,
+    options: MedicalSupplyReportOptions
   ) {
+    const supplyType = this.getSupplyTypeName(options.supplyType)
     const recommendations = this.generateEnhancedRecommendations(stats, options)
 
     if (recommendations.length > 0) {
-      content.push({ text: "Recomendaciones para Productos Disponibles", style: "sectionTitle" })
+      content.push({ text: `Recomendaciones para ${supplyType} Disponibles`, style: "sectionTitle" })
 
       recommendations.forEach((recommendation) => {
         content.push({
@@ -605,22 +704,24 @@ export class MedicalSuppliesReportService extends BaseReportService {
 
     // Disponibilidad general
     recommendations.push(
-      `Disponibilidad actual: ${stats.availabilityAnalysis.availabilityPercentage.toFixed(1)}% de ${supplyType.toLowerCase()} en el sistema están disponibles`,
+      `Disponibilidad actual: El ${stats.availabilityAnalysis.availabilityPercentage.toFixed(1)}% de ${supplyType.toLowerCase()} en el sistema están disponibles`,
     )
 
     // Stock bajo
     if (stats.availableWithLowStock > 0) {
       recommendations.push(
-        `URGENTE: Reabastecer ${stats.availableWithLowStock} producto(s) disponible(s) con stock bajo`,
+        // `URGENTE: Reabastecer ${stats.availableWithLowStock} producto(s) disponible(s) con stock bajo`,
+        `URGENTE: Reabastecer ${stats.availableWithLowStock} artículos(s) disponible(s) con stock bajo`,
       )
-
+console.log("-> lowStockAvailableDetails " ,  stats.lowStockAvailableDetails)
       // Recomendaciones específicas por producto
-      stats.lowStockAvailableDetails.slice(0, 3).forEach((product) => {
+      // stats.lowStockAvailableDetails.slice(0, 3).forEach((product) => {
+      stats.lowStockAvailableDetails.forEach((product) => {
         const needed = product.minStock - product.stock
-        recommendations.push(`  - ${product.name}: Solicitar ${needed} unidades adicionales a ${product.provider}`)
+        recommendations.push(`  - ${this.toSentenceCase(product.name)}: Solicitar ${needed} unidades adicionales al proveedor ${product.provider}`)
       })
     } else {
-      recommendations.push(`✓ Todos los productos disponibles tienen stock adecuado`)
+      recommendations.push(`✓ Todos los ${supplyType.toLowerCase()} disponibles tienen stock adecuado`)
     }
 
     // Próximos a vencer (solo medicamentos)
@@ -631,14 +732,24 @@ export class MedicalSuppliesReportService extends BaseReportService {
     }
 
     // Valor del inventario
-    recommendations.push(`Valor total de productos disponibles: $${stats.totalAvailableValue.toLocaleString()}`)
+    // recommendations.push(`Valor total de productos disponibles: $${stats.totalAvailableValue.toLocaleString()}`)
 
     // Optimización
-    if (stats.totalAvailableProducts > 0) {
-      const lowStockPercentage = (stats.availableWithLowStock / stats.totalAvailableProducts) * 100
+/*     if (stats.totalAvailableProducts_sumStock > 0) {
+      const lowStockPercentage = (stats.availableWithLowStock / stats.totalAvailableProducts_sumStock) * 100
       if (lowStockPercentage > 20) {
         recommendations.push(
           `RECOMENDACIÓN: ${lowStockPercentage.toFixed(1)}% de productos disponibles tienen stock bajo. Considerar revisar políticas de reabastecimiento`,
+        )
+      }
+    } */
+   console.log("stats.availableWithLowStock  " ,stats.availableWithLowStock )
+   console.log("stats.countRegistryAvailableProducts " , stats.countRegistryAvailableProducts)
+    if (stats.totalAvailableProducts_sumStock > 0) {
+      const lowStockPercentage = (stats.availableWithLowStock / stats.countRegistryAvailableProducts) * 100
+      if (lowStockPercentage > 15) {
+        recommendations.push(
+          `RECOMENDACIÓN: El ${lowStockPercentage.toFixed(1)}% de ${supplyType.toLowerCase()} disponibles tienen stock bajo. Considerar revisar políticas de reabastecimiento`,
         )
       }
     }
@@ -652,15 +763,15 @@ export class MedicalSuppliesReportService extends BaseReportService {
 
     // Convertir estadísticas mejoradas al formato original para compatibilidad
     return {
-      totalItems: enhancedStats.totalAvailableProducts,
-      availableItems: enhancedStats.totalAvailableProducts,
+      totalItems: enhancedStats.totalAvailableProducts_sumStock,
+      availableItems: enhancedStats.totalAvailableProducts_sumStock,
       lowStockItems: enhancedStats.availableWithLowStock,
       expiredItems: options.supplyType === 1 ? enhancedStats.availableNearExpiry : undefined,
-      totalValue: enhancedStats.totalAvailableValue,
-      averagePrice:
-        enhancedStats.totalAvailableProducts > 0
-          ? enhancedStats.totalAvailableValue / enhancedStats.totalAvailableProducts
-          : 0,
+      // totalValue: enhancedStats.totalAvailableValue,
+/*       averagePrice:
+        enhancedStats.totalAvailableProducts_sumStock > 0
+          ? enhancedStats.totalAvailableValue / enhancedStats.totalAvailableProducts_sumStock
+          : 0, */
       topItems: [], // Implementar si es necesario
     }
   }
@@ -707,8 +818,8 @@ export class MedicalSuppliesReportService extends BaseReportService {
   public async getMedicationStatistics() {
     const enhancedStats = await this.getEnhancedMedicationStatistics()
     return {
-      totalStockMedicamentos: enhancedStats.totalAvailableProducts.toString(),
-      stockMedicamentosDisponibles: enhancedStats.totalAvailableProducts.toString(),
+      totalStockMedicamentos: enhancedStats.totalAvailableProducts_sumStock.toString(),
+      stockMedicamentosDisponibles: enhancedStats.totalAvailableProducts_sumStock.toString(),
       stockMedicamentosCaducados: "0", // Ya no relevante para productos disponibles
       cantidadMedicamentosStockBajo: enhancedStats.availableWithLowStock,
     }
@@ -717,8 +828,8 @@ export class MedicalSuppliesReportService extends BaseReportService {
   public async getUniformesStatistics() {
     const enhancedStats = await this.getEnhancedUniformStatistics()
     return {
-      totalStockUniformes: enhancedStats.totalAvailableProducts.toString(),
-      stockUniformesDisponibles: enhancedStats.totalAvailableProducts.toString(),
+      totalStockUniformes: enhancedStats.totalAvailableProducts_sumStock.toString(),
+      stockUniformesDisponibles: enhancedStats.totalAvailableProducts_sumStock.toString(),
       cantidadUniformesStockBajo: enhancedStats.availableWithLowStock,
     }
   }
@@ -726,8 +837,8 @@ export class MedicalSuppliesReportService extends BaseReportService {
   public async getEquiposOdontologicosStatistics() {
     const enhancedStats = await this.getEnhancedDentalEquipmentStatistics()
     return {
-      totalStockEquiposOdontologicos: enhancedStats.totalAvailableProducts.toString(),
-      stockEquiposOdontologicosDisponibles: enhancedStats.totalAvailableProducts.toString(),
+      totalStockEquiposOdontologicos: enhancedStats.totalAvailableProducts_sumStock.toString(),
+      stockEquiposOdontologicosDisponibles: enhancedStats.totalAvailableProducts_sumStock.toString(),
       cantidadEquiposOdontologicosStockBajo: enhancedStats.availableWithLowStock,
     }
   }
