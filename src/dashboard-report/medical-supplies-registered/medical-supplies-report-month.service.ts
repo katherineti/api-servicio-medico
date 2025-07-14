@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import type { Response } from "express"
 import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { and, count, desc, eq, gte, inArray, lte, sql } from "drizzle-orm"
 import { productsTable, categoriesTable, productStatusTable, typesOfProductsTable, providersTable } from "src/db/schema"
 import  { NeonDatabase } from "drizzle-orm/neon-serverless"
 // import  { DashboardReportService, DashboardReportDto } from "./dashboard-report.service"
@@ -161,7 +161,7 @@ export class MedicalSuppliesReportMonthService {
   }
 
   /**
-   * Obtiene TODAS las estadísticas de los medicamentos (type = 1)
+   * Obtiene TODAS las estadísticas de los suplementos medicos
    */
   async getCompleteMedicalSupplyStats(): Promise<CompleteMedicalSupplyStats> {
     try {
@@ -180,16 +180,19 @@ export class MedicalSuppliesReportMonthService {
       const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
       const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
 
-      // 1. Estadísticas generales de productos (solo medicamentos - type = 1)
+      // 1. Estadísticas generales de productos 
       const [generalStats] = await this.db
         .select({
           totalProducts: count(),
           productsToday: sql<number>`count(CASE WHEN ${productsTable.createdAt} >= ${startOfMonth} AND ${productsTable.createdAt} <= ${endOfMonth} THEN 1 ELSE NULL END)`,
         })
         .from(productsTable)
+        .where(
+          inArray(productsTable.statusId, [1,2,3])
+        )
         // .where(eq(productsTable.type, 1)) // Filtrar solo medicamentos
 
-      // 2. Productos por categoría (solo medicamentos)
+      // 2. Productos por categoría 
       const productsByCategoryResult = await this.db
         .select({
           categoryId: categoriesTable.id,
@@ -197,7 +200,16 @@ export class MedicalSuppliesReportMonthService {
           productCount: count(productsTable.id),
         })
         .from(categoriesTable)
-        .leftJoin(productsTable, eq(productsTable.categoryId, categoriesTable.id))
+        .innerJoin(productsTable,             
+            and(
+                eq(productsTable.categoryId, categoriesTable.id),
+                and(
+                    gte(productsTable.createdAt, startOfMonth),
+                    lte(productsTable.createdAt, endOfMonth)
+                ),
+                inArray(productsTable.statusId, [1,2,3])
+            ))
+        .where(inArray(productsTable.statusId, [1,2,3]))
        /*  .leftJoin(productsTable, 
             and(
                 eq(productsTable.categoryId, categoriesTable.id),
@@ -208,9 +220,9 @@ export class MedicalSuppliesReportMonthService {
             )
            ) */
         .groupBy(categoriesTable.id, categoriesTable.name)
-        .orderBy(categoriesTable.id)
+        .orderBy(categoriesTable.id);
 
-      // 3. Productos por estado (solo medicamentos)
+      // 3. Productos por estado 
       const productsByStatusResult = await this.db
         .select({
           statusId: productStatusTable.id,
@@ -218,20 +230,22 @@ export class MedicalSuppliesReportMonthService {
           productCount: count(productsTable.id),
         })
         .from(productStatusTable)
-        .leftJoin(productsTable, eq(productsTable.statusId, productStatusTable.id))
-      /*   .leftJoin(productsTable,
+        // .leftJoin(productsTable, eq(productsTable.statusId, productStatusTable.id))
+         .innerJoin(productsTable,
             and(
                 eq(productsTable.statusId, productStatusTable.id) ,
                   and(
                     gte(productsTable.createdAt, startOfMonth),
                     lte(productsTable.createdAt, endOfMonth)
-                  )
+                  ),
+                inArray(productsTable.statusId, [1,2,3])
             )
-        ) */
+        )
+        .where(inArray(productsTable.statusId, [1,2,3]))
         .groupBy(productStatusTable.id, productStatusTable.status)
-        .orderBy(productStatusTable.id)
+        .orderBy(productStatusTable.id);
 
-      // 4. Productos por tipo (solo medicamentos - type = 1)
+      // 4. Productos por tipo 
       const productsByTypeResult = await this.db
         .select({
           typeId: typesOfProductsTable.id,
@@ -239,8 +253,8 @@ export class MedicalSuppliesReportMonthService {
           productCount: count(productsTable.id),
         })
         .from(typesOfProductsTable)
-        .leftJoin(productsTable, eq(productsTable.type, typesOfProductsTable.id))
-       /*  .leftJoin(
+        // .leftJoin(productsTable, eq(productsTable.type, typesOfProductsTable.id))
+        .innerJoin(
             productsTable, 
             // eq(productsTable.type, typesOfProductsTable.id)
              and(
@@ -248,16 +262,18 @@ export class MedicalSuppliesReportMonthService {
                   and(
                     gte(productsTable.createdAt, startOfMonth),
                     lte(productsTable.createdAt, endOfMonth)
-                  )
+                  ),
+                inArray(productsTable.statusId, [1,2,3])
             )
-    ) */
+        ) 
+        .where(inArray(productsTable.statusId, [1,2,3]))
         // .where(eq(typesOfProductsTable.id, 1))
         
         // .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
-        .orderBy(typesOfProductsTable.id)
+        .orderBy(typesOfProductsTable.id);
 
-      // 5. Registros por día del mes actual (solo medicamentos)
+      // 5. Registros por día del mes actual 
       const registrationsByDayResult = await this.db
         .select({
           createdAt: productsTable.createdAt,
@@ -268,11 +284,12 @@ export class MedicalSuppliesReportMonthService {
           and(
             gte(productsTable.createdAt, startOfMonth),
             lte(productsTable.createdAt, endOfMonth),
+            inArray(productsTable.statusId, [1,2,3])
             // eq(productsTable.type, 1),
           ),
         )
         .groupBy(productsTable.createdAt)
-        .orderBy(productsTable.createdAt)
+        .orderBy(productsTable.createdAt);
 
       // 6. Productos específicos creados mes 
       const todayProductsResult = await this.db
@@ -290,18 +307,23 @@ export class MedicalSuppliesReportMonthService {
           createdAt: productsTable.createdAt,
         })
         .from(productsTable)
-        .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+/*         .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
         .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
         .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
-        .leftJoin(providersTable, eq(productsTable.providerId, providersTable.id))
+        .leftJoin(providersTable, eq(productsTable.providerId, providersTable.id)) */
+        .innerJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+        .innerJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
+        .innerJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
+        .innerJoin(providersTable, eq(productsTable.providerId, providersTable.id))
         .where(
           and(
             gte(productsTable.createdAt, startOfMonth),
             lte(productsTable.createdAt, endOfMonth),
+            inArray(productsTable.statusId, [1,2,3])
             // eq(productsTable.type, 1),
           ),
         )
-        .orderBy(desc(productsTable.createdAt))
+        .orderBy(desc(productsTable.createdAt));
 
       // Procesar resultados usando métodos del DashboardReportService
       const productsByCategory: ProductsByCategory[] = productsByCategoryResult.map((row) => ({
@@ -542,13 +564,13 @@ export class MedicalSuppliesReportMonthService {
     styles: StyleDictionary,
   ): void {
     content.push(
-      { text: "Estadísticas Generales de Inventario", style: "sectionTitle" },
+      { text: "Estadísticas Generales de Inventario Almacén (Disponibles, No Disponibles, Pròximos a vencer)", style: "sectionTitle" },
       {
         table: {
           widths: ["50%", "50%"],
           body: [
             [
-              { text: "Total de Inventario almacén:", style: "tableCellLabel" },
+              { text: "Registros de Inventario almacén:", style: "tableCellLabel" },
               { text: medicalSupplyStats.totalProducts.toString(), style: "tableCellValue" },
             ],
             [
@@ -807,7 +829,7 @@ private addTodayRegistrationsChart(
       })
     } else {
       content.push(
-        { text: "Inventario Almacén Registros del Mes", style: "sectionTitle" },
+        { text: "Inventario Almacén Registros en el Mes", style: "sectionTitle" },
         {
           text: "No se registró inventario almacén nuevos el día del mes.",
           style: "paragraph",
@@ -827,46 +849,62 @@ private addTodayRegistrationsChart(
     medicalSupplyStats: CompleteMedicalSupplyStats,
     styles: StyleDictionary,
   ): void {
-    content.push({ text: "Distribución por Categoría", style: "sectionTitle" })
 
-    const categoryTableBody = [
-      [
-        { text: "Categoría", style: "tableHeader" },
-        { text: "Cantidad de Inventario Almacén(Mes)", style: "tableHeader" },
-        { text: "Porcentaje", style: "tableHeader" },
-      ],
-    ]
+    if (medicalSupplyStats.productsByCategory && medicalSupplyStats.productsByCategory.length > 0) {
+      content.push({ text: "Distribución por Categoría", style: "sectionTitle" })
 
-    medicalSupplyStats.productsByCategory.forEach((category) => {
-      const percentage =
-        medicalSupplyStats.totalProducts > 0
-          ? ((category.productCount / medicalSupplyStats.totalProducts) * 100).toFixed(1)
-          : "0"
+      const categoryTableBody = [
+        [
+          { text: "Categoría", style: "tableHeader" },
+          { text: "Cantidad de Inventario Almacén(Mes)", style: "tableHeader" },
+          { text: "Porcentaje", style: "tableHeader" },
+        ],
+      ]
 
-      categoryTableBody.push([
-        { text: category.categoryName, style: "tableCellValue" },
-        { text: category.productCount.toString(), style: "tableCellValue" },
-        { text: `${percentage}%`, style: "tableCellValue" },
-      ])
-    })
+      medicalSupplyStats.productsByCategory.forEach((category) => {
+        const percentage =
+          // medicalSupplyStats.totalProducts > 0
+          medicalSupplyStats.productsToday > 0
+            // ? ((category.productCount / medicalSupplyStats.totalProducts) * 100).toFixed(1)
+            ? ((category.productCount / medicalSupplyStats.productsToday) * 100).toFixed(1)
+            : "0"
+  console.log("medicalSupplyStats.totalProducts " , medicalSupplyStats.totalProducts)
+        categoryTableBody.push([
+          { text: category.categoryName, style: "tableCellValue" },
+          { text: category.productCount.toString(), style: "tableCellValue" },
+          { text: `${percentage}%`, style: "tableCellValue" },
+        ])
+      })
 
-    content.push({
-      table: {
-        widths: ["50%", "25%", "25%"],
-        body: categoryTableBody,
-      },
-      layout: {
-        hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
-        vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
-        hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
-        vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
-        paddingLeft: (i, node) => 10,
-        paddingRight: (i, node) => 10,
-        paddingTop: (i, node) => 5,
-        paddingBottom: (i, node) => 5,
-      },
-      margin: [0, 10, 0, 20],
-    })
+      content.push({
+        table: {
+          widths: ["50%", "25%", "25%"],
+          body: categoryTableBody,
+        },
+        layout: {
+          hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+          vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+          hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+          vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+          paddingLeft: (i, node) => 10,
+          paddingRight: (i, node) => 10,
+          paddingTop: (i, node) => 5,
+          paddingBottom: (i, node) => 5,
+        },
+        margin: [0, 10, 0, 20],
+      })
+    } else {
+      content.push(
+        { text: "Distribución por Categoría", style: "sectionTitle" },
+        {
+          text: "No se registró inventario almacén nuevo el día de hoy.",
+          style: "paragraph",
+          alignment: "center",
+          color: "#666666",
+          margin: [0, 10, 0, 20],
+        },
+      )
+    }
   }
 
   /**
@@ -877,6 +915,8 @@ private addTodayRegistrationsChart(
     medicalSupplyStats: CompleteMedicalSupplyStats,
     styles: StyleDictionary,
   ): void {
+
+   if (medicalSupplyStats.productsByStatus && medicalSupplyStats.productsByStatus.length > 0) {
     content.push({ text: "Distribución por Estado", style: "sectionTitle" })
 
     const statusTableBody = [
@@ -889,8 +929,10 @@ private addTodayRegistrationsChart(
 
     medicalSupplyStats.productsByStatus.forEach((status) => {
       const percentage =
-        medicalSupplyStats.totalProducts > 0
-          ? ((status.productCount / medicalSupplyStats.totalProducts) * 100).toFixed(1)
+        // medicalSupplyStats.totalProducts > 0
+        medicalSupplyStats.productsToday > 0
+          // ? ((status.productCount / medicalSupplyStats.totalProducts) * 100).toFixed(1)
+          ? ((status.productCount / medicalSupplyStats.productsToday) * 100).toFixed(1)
           : "0"
 
       statusTableBody.push([
@@ -917,6 +959,19 @@ private addTodayRegistrationsChart(
       },
       margin: [0, 10, 0, 20],
     })
+
+    } else {
+      content.push(
+        { text: "Distribución por Estado", style: "sectionTitle" },
+        {
+          text: "No se registró inventario almacén nuevo el día de hoy.",
+          style: "paragraph",
+          alignment: "center",
+          color: "#666666",
+          margin: [0, 10, 0, 20],
+        },
+      )
+    }
   }
 
   /**

@@ -344,7 +344,11 @@ export class MedicalSuppliesService {
   //Para el contador de productos en el dashboard de almacen
   async countAllProducts(): Promise<{ count: number }> {
     const [result] = await 
-    this.db.select({ count: count() }).from(productsTable).where(or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ));
+    this.db.select({ count: count() }).from(productsTable).where(
+      or( 
+        eq(productsTable.statusId, 1), 
+        eq(productsTable.statusId, 3)),
+    );
     
     return result ? result : { count: 0 };
   }

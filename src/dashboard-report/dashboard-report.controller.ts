@@ -128,7 +128,7 @@ export class DashboardReportController {
       const reportData = {
         title: "Registros de Inventario Almacén (Hoy)",
         value: medicalSupplyStats.productsToday,
-        type: "Inventario Almacén",
+        type: "Inventario Almacén de Hoy (Registros)",
         date: today.toISOString(),
         additionalInfo: {
           totalProducts: medicalSupplyStats.totalProducts,
@@ -186,7 +186,7 @@ export class DashboardReportController {
       const reportData = {
         title: "Registros de Inventario Almacén (Mes)",
         value: medicalSupplyStats.productsToday,
-        type: "Inventario Almacén",
+        type: "Inventario Almacén en el Mes (Registros)",
         date: today.toISOString(),
         additionalInfo: {
           totalProducts: medicalSupplyStats.totalProducts,
