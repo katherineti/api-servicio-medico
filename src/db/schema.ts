@@ -159,6 +159,7 @@ export const reportStatusTable = table("reportStatus",{
     status: t.varchar({ length: 30 }).notNull().unique(),
 })
 
+//Reporte de auditoria (tabla temporal)
 export const auditReportsTable_temp = table("auditReports_temp", {
     id: t.serial().primaryKey(),
     code: t.varchar().notNull(),
@@ -180,4 +181,34 @@ export const auditReportsTable_temp = table("auditReports_temp", {
     startDate: t.timestamp().notNull(),
     endDate: t.timestamp(),
     updatedAt: t.timestamp().default(null)
+});
+
+//Pacientes
+export const patientTable = table("patients", {
+    id: t.serial().primaryKey(),
+    name: t.varchar({ length: 200 }).notNull(),
+    birthdate: t.date().default(null),
+    age: t.integer().notNull(),
+    cedula: t.varchar({ length: 10 }).notNull().unique(),
+    email: t.varchar({ length: 100 }).notNull().unique(),
+    phone: t.varchar({ length: 50 }).notNull(),
+    gender: t.varchar({ length: 1 }).notNull(),
+    civilStatus: t.varchar({ length: 1 }).notNull(),
+    children: t.integer().notNull().default(0),
+    createdAt: t.timestamp().defaultNow(),
+    updatedAt: t.timestamp().defaultNow()
+});
+
+//Informe medico
+export const medicalReportsTable = table("medicalReports", {
+    id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+    patientId: t.integer().notNull().references(() => patientTable.id, { onDelete: 'cascade' }), //Paciente
+    doctorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }), // Usuario de rol Medico o Admin
+    description: t.varchar({ length: 300 }).default(null),//Informe
+    insurance: t.varchar({ length: 100 }).default(null),//Aseguradora
+    apsCenter: t.varchar({ length: 100 }).default(null),//Centro APS
+    mppsCM: t.varchar({ length: 100 }).default(null), //M.P.P.S - C.M 
+    isActivate: t.boolean('isActivate').notNull().default(true),
+    createdAt: t.timestamp().defaultNow().notNull(),
+    updatedAt: t.timestamp().defaultNow()
 });

@@ -20,6 +20,7 @@ import { FilesModule } from './files/files.module';
 import { MedicalSuppliesExpiredModule } from './medical-supplies-expired/medical-supplies-expired.module';
 import { ProvidersModule } from './providers/providers.module';
 import { DashboardReportModule } from './dashboard-report/dashboard-report.module';
+import { MedicalReportsModule } from './medical-reports/medical-reports.module';
 
 @Module({
   imports: [
@@ -41,7 +42,8 @@ import { DashboardReportModule } from './dashboard-report/dashboard-report.modul
     FilesModule,
     MedicalSuppliesExpiredModule,
     ProvidersModule,
-    DashboardReportModule
+    DashboardReportModule,
+    MedicalReportsModule
   ],
   // controllers: [AppController],
   controllers: [],
