@@ -81,4 +81,35 @@ export class AuthService {
   
       return objSaved;
     }
+
+  // Nuevo método para refrescar el token
+  async refreshAccessToken(payload_sesion_actual: IJwtPayload): Promise<{ token: string }> {
+
+      const user = await this.usersService.findOnByEmail(payload_sesion_actual.email);
+
+      if(!user){
+          throw new UnauthorizedException("Usuario no encontrado"); 
+      }
+
+      if (user.isActivate === false) {
+        throw new NotFoundException('El usuario esta inactivo');
+      }
+
+      const payload: IJwtPayload = { 
+        sub: user.id, 
+        email: user.email,
+        name: user.name || '',
+        role: user.role as TypesRoles
+      };
+
+    // console.log("viejo payload(recibido)",payload_sesion_actual)
+    // console.log("generando nuevo payload",payload)
+    console.log("refreshAccessToken: generando nuevo payload")
+
+    return {
+      token: await this.jwtService.signAsync(payload, {
+        secret: jwtConstants.secret
+      }),
+    }
+  }
 }

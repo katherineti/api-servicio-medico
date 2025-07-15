@@ -20,7 +20,8 @@ import { LogsModule } from 'src/logs/logs.module';
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: '1d' },
+      // signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '5m' },
     }),
   ],
   controllers: [AuthController],

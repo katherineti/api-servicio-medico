@@ -3,6 +3,8 @@ import { AuthService } from './auth.service';
 import { SignInDto } from './dto/signIn.dto';
 import { Public } from 'src/decorators/public.decorator';
 import { SignupDto } from './dto/signup.dto';
+import { Usersesion } from './strategies/usersesion.decorator';
+import { IJwtPayload } from './dto/jwt-payload.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -38,4 +40,12 @@ export class AuthController {
       }> {
         return this.authService.signUp(signupDto);
     } 
+
+  // Nuevo endpoint para refrescar el token
+  // No necesita @Public() porque solo los usuarios autenticados (con un token válido) pueden acceder
+  @Post('refresh-token')
+    async refreshToken(@Usersesion() user: IJwtPayload): Promise<{ token: string }> {
+        console.log("user",user)
+      return this.authService.refreshAccessToken(user);
+    }
 }
