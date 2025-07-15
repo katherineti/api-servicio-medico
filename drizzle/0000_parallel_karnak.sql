@@ -82,6 +82,36 @@ CREATE TABLE "logs" (
 	"createdAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "medicalReports" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "medicalReports_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"patientId" integer NOT NULL,
+	"doctorId" integer NOT NULL,
+	"description" varchar(300) DEFAULT null,
+	"insurance" varchar(100) DEFAULT null,
+	"apsCenter" varchar(100) DEFAULT null,
+	"mppsCM" varchar(100) DEFAULT null,
+	"isActivate" boolean DEFAULT true NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
+CREATE TABLE "patients" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" varchar(200) NOT NULL,
+	"birthdate" date DEFAULT null,
+	"age" integer NOT NULL,
+	"cedula" varchar(10) NOT NULL,
+	"email" varchar(100) NOT NULL,
+	"phone" varchar(50) NOT NULL,
+	"gender" varchar(1) NOT NULL,
+	"civilStatus" varchar(1) NOT NULL,
+	"children" integer DEFAULT 0 NOT NULL,
+	"createdAt" timestamp DEFAULT now(),
+	"updatedAt" timestamp DEFAULT now(),
+	CONSTRAINT "patients_cedula_unique" UNIQUE("cedula"),
+	CONSTRAINT "patients_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
 CREATE TABLE "productStatus" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"status" varchar(30) NOT NULL,
@@ -144,12 +174,14 @@ CREATE TABLE "typesProducts" (
 CREATE TABLE "users" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "users_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"name" varchar(200) NOT NULL,
+	"cedula" varchar(10) NOT NULL,
 	"email" varchar NOT NULL,
 	"password" varchar(255) NOT NULL,
 	"role" integer NOT NULL,
 	"isActivate" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
 	"updatedAt" timestamp DEFAULT now(),
+	CONSTRAINT "users_cedula_unique" UNIQUE("cedula"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
@@ -163,6 +195,8 @@ ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_employeeId_employee_
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "medicalReports" ADD CONSTRAINT "medicalReports_patientId_patients_id_fk" FOREIGN KEY ("patientId") REFERENCES "public"."patients"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "medicalReports" ADD CONSTRAINT "medicalReports_doctorId_users_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_providerId_providers_id_fk" FOREIGN KEY ("providerId") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_type_typesProducts_id_fk" FOREIGN KEY ("type") REFERENCES "public"."typesProducts"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_categoryId_categories_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."categories"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
