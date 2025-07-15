@@ -102,9 +102,10 @@ export class AuthService {
         role: user.role as TypesRoles
       };
 
-    // console.log("viejo payload(recibido)",payload_sesion_actual)
-    // console.log("generando nuevo payload",payload)
-    console.log("refreshAccessToken: generando nuevo payload")
+    // console.log("payload actual recibido",payload_sesion_actual);
+    // console.log("refreshAccessToken: generando nuevo payload",payload)
+    console.log("payload actual recibido");
+    console.log("refreshAccessToken: generando nuevo payload");
 
     return {
       token: await this.jwtService.signAsync(payload, {

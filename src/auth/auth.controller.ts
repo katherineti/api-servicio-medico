@@ -45,7 +45,6 @@ export class AuthController {
   // No necesita @Public() porque solo los usuarios autenticados (con un token válido) pueden acceder
   @Post('refresh-token')
     async refreshToken(@Usersesion() user: IJwtPayload): Promise<{ token: string }> {
-        console.log("user",user)
       return this.authService.refreshAccessToken(user);
     }
 }
