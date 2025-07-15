@@ -8,6 +8,7 @@ export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes
 export const usersTable = table("users", {
     id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
     name: t.varchar({ length: 200 }).notNull(),
+    cedula: t.varchar({ length: 10 }).notNull().unique(),
     email: t.varchar().notNull().unique(),
     password: t.varchar({ length: 255 }).notNull(),
     role: t.integer().notNull().references(() => rolesTable.id),
