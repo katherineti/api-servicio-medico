@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, UsePipes, ValidationPipe } from '@nestjs/common';
 import { MedicalReportsService } from './medical-reports.service';
 import { MedicalReportsGetAll } from './dto/read-medical-reports-dto';
 import { SearchMedicalReportsDto } from './dto/search-medical-reports.dto';
@@ -14,6 +14,11 @@ export class MedicalReportsController {
     @UsePipes(ValidationPipe)
     getProducts(@Body() body: SearchMedicalReportsDto): Promise<MedicalReportsGetAll> {
         return this.medicalReportsService.getAll(body);
+    }
+
+    @Get(':id')
+    getById( @Param('id', ParseIntPipe) id: number ): Promise<any[]> {
+        return this.medicalReportsService.getById(id);
     }
 
     @Roles(TypesRoles.admin, TypesRoles.medico)

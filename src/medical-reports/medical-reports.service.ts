@@ -71,6 +71,21 @@ export class MedicalReportsService {
       return result;
   }
 
+  async getById(id: number): Promise<any> {
+    try{
+        const result = await this.db.select()
+        .from(medicalReportsTable)
+        .where(eq( medicalReportsTable.id, id ))
+        .limit(1);
+
+        return result[0] || null;
+
+    }catch(err){
+        console.error("Error en la base de datos al buscar el informe médico  " + id + ": ", err);
+        throw new Error("Error al obtener el informe médico " + id + " " + err);
+    }
+}
+
   async getDoctor(doctorId: number): Promise<any> {
       try{
           const result = await this.db.select()
