@@ -45,7 +45,7 @@ export class MedicalReportsController {
     await this.medicalReportPdfService.generateMedicalReportPdf(id, res, isDownload)
   } 
 } */
-import { Controller, Get, Param, Post, UsePipes, ValidationPipe, Res, Query, ParseIntPipe } from "@nestjs/common"
+import { Controller, Get, Param, Post, UsePipes, ValidationPipe, Res, Query, ParseIntPipe, Body } from "@nestjs/common"
 import { MedicalReportsService } from "./medical-reports.service" // Changed from 'type' to regular import
 import type { MedicalReportsGetAll } from "./dto/read-medical-reports-dto"
 import type { SearchMedicalReportsDto } from "./dto/search-medical-reports.dto"
@@ -64,7 +64,7 @@ export class MedicalReportsController {
 
   @Post("getAll")
   @UsePipes(ValidationPipe)
-  getProducts(body: SearchMedicalReportsDto): Promise<MedicalReportsGetAll> {
+  getProducts(@Body() body: SearchMedicalReportsDto): Promise<MedicalReportsGetAll> {
     return this.medicalReportsService.getAll(body)
   }
 
@@ -76,7 +76,8 @@ export class MedicalReportsController {
   @Roles(TypesRoles.admin, TypesRoles.medico)
   @Post("create")
   @UsePipes(ValidationPipe)
-  async create(createMedicalReportsDto: CreateMedicalReportDto): Promise<any> {
+  async create(@Body() createMedicalReportsDto: CreateMedicalReportDto): Promise<any> {
+    console.log("createMedicalReportsDto",createMedicalReportsDto)
     return this.medicalReportsService.create(createMedicalReportsDto)
   }
 
