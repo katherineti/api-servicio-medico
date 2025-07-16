@@ -200,7 +200,7 @@ export const patientTable = table("patients", {
     updatedAt: t.timestamp().defaultNow()
 });
 
-//Informe medico
+//Informes medicos
 export const medicalReportsTable = table("medicalReports", {
     id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
     patientId: t.integer().notNull().references(() => patientTable.id, { onDelete: 'cascade' }), //Paciente
@@ -213,3 +213,24 @@ export const medicalReportsTable = table("medicalReports", {
     createdAt: t.timestamp().defaultNow().notNull(),
     updatedAt: t.timestamp().defaultNow()
 });
+
+// Recipes médicos
+export const medicalPrescriptionsTable = table("medicalPrescriptions", {
+  id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
+  medicalReportId: t.integer().references(() => medicalReportsTable.id, { onDelete: "set null" }), // Opcional, puede estar vinculada a un informe
+  place: t.varchar({ length: 100 }).notNull(),
+  doctorId: t
+  .integer()
+  .notNull()
+  .references(() => usersTable.id, { onDelete: "cascade" }),
+  mpps: t.varchar({ length: 100 }).notNull(), // Longitud actualizada a 100
+  patientId: t
+  .integer()
+  .notNull()
+  .references(() => patientTable.id, { onDelete: "cascade" }),
+  recipeContent: t.varchar({ length: 700 }).notNull(),
+  indications: t.varchar({ length: 700 }).default(null), // Campo opcional
+  expirationDate: t.date().notNull(),
+  createdAt: t.timestamp().defaultNow().notNull(),
+  updatedAt: t.timestamp().defaultNow(),
+})

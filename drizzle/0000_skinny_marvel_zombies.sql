@@ -82,6 +82,20 @@ CREATE TABLE "logs" (
 	"createdAt" timestamp DEFAULT now()
 );
 --> statement-breakpoint
+CREATE TABLE "medicalPrescriptions" (
+	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "medicalPrescriptions_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"medicalReportId" integer,
+	"place" varchar(100) NOT NULL,
+	"doctorId" integer NOT NULL,
+	"mpps" varchar(100) NOT NULL,
+	"patientId" integer NOT NULL,
+	"recipeContent" varchar(700) NOT NULL,
+	"indications" varchar(700) DEFAULT null,
+	"expirationDate" date NOT NULL,
+	"createdAt" timestamp DEFAULT now() NOT NULL,
+	"updatedAt" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE "medicalReports" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "medicalReports_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"patientId" integer NOT NULL,
@@ -195,6 +209,9 @@ ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_employeeId_employee_
 ALTER TABLE "employeeFamily" ADD CONSTRAINT "employeeFamily_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_userId_users_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "logs" ADD CONSTRAINT "logs_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "medicalPrescriptions" ADD CONSTRAINT "medicalPrescriptions_medicalReportId_medicalReports_id_fk" FOREIGN KEY ("medicalReportId") REFERENCES "public"."medicalReports"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "medicalPrescriptions" ADD CONSTRAINT "medicalPrescriptions_doctorId_users_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "medicalPrescriptions" ADD CONSTRAINT "medicalPrescriptions_patientId_patients_id_fk" FOREIGN KEY ("patientId") REFERENCES "public"."patients"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "medicalReports" ADD CONSTRAINT "medicalReports_patientId_patients_id_fk" FOREIGN KEY ("patientId") REFERENCES "public"."patients"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "medicalReports" ADD CONSTRAINT "medicalReports_doctorId_users_id_fk" FOREIGN KEY ("doctorId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_providerId_providers_id_fk" FOREIGN KEY ("providerId") REFERENCES "public"."providers"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
