@@ -6,6 +6,10 @@ export class SearchUserDto {
   @IsString()
   name: string;
 
+  @IsOptional()
+  @IsString()
+  cedula: string;
+
   @IsNumber()
   @IsNotEmpty()
   page: number;

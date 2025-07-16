@@ -205,7 +205,7 @@ export const medicalReportsTable = table("medicalReports", {
     id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
     patientId: t.integer().notNull().references(() => patientTable.id, { onDelete: 'cascade' }), //Paciente
     doctorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }), // Usuario de rol Medico o Admin
-    description: t.varchar({ length: 300 }).default(null),//Informe
+    description: t.varchar({ length: 700 }).default(null),//Informe
     insurance: t.varchar({ length: 100 }).default(null),//Aseguradora
     apsCenter: t.varchar({ length: 100 }).default(null),//Centro APS
     mppsCM: t.varchar({ length: 100 }).default(null), //M.P.P.S - C.M 

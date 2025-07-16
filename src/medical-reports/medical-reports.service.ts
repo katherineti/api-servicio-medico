@@ -101,6 +101,7 @@ export class MedicalReportsService {
   }
 
   async create(createMedicalReportsDto: CreateMedicalReportDto): Promise<any>{
+
       const idMedicoExist = await this.getDoctor(Number(createMedicalReportsDto.doctorId));
       if (!idMedicoExist) {
           throw new ConflictException('El doctor no existe.');
@@ -116,7 +117,7 @@ export class MedicalReportsService {
           ...createMedicalReportsDto,
           isActivate:true,
         };
-        console.log("createMedicalReportsDto" , newReport)
+        // console.log("createMedicalReportsDto" , newReport)
         const [result] = await this.db.insert(medicalReportsTable).values(newReport).returning();
         this.logger.debug(`Informe medico creado: ${JSON.stringify(result)}`);
         return result;

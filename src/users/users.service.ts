@@ -127,15 +127,29 @@ export class UsersService {
   async getAll(filter: SearchUserDto, user: IJwtPayload): Promise<ResultGetAll> {
     const buscadorLike: string = filter.name ? filter.name : '';
 
-    //Filtrar por status = true
-    const statusCondition = eq(usersTable.isActivate , true );
+/*     //Filtrar por status = true
+    // const statusCondition = eq(usersTable.isActivate , true );
 
     //Búsqueda por nombre
     const searchCondition = ilike(usersTable.name, `%${buscadorLike}%`)
 
     //Combinamos las condiciones con AND
-    const whereCondition = searchCondition ? and(statusCondition, searchCondition) : statusCondition
+    // const whereCondition = searchCondition ? and(statusCondition, searchCondition) : statusCondition
+ */
+    const whereConditions = [];
 
+      // Búsqueda por patientCedula(ilike) si se proporciona
+    if (true) {
+      whereConditions.push(ilike(usersTable.name, `%${buscadorLike}%`));
+    } 
+
+    if (filter.cedula) {
+      whereConditions.push(ilike(usersTable.cedula, `%${filter.cedula}%`));
+    } 
+
+    // Condición de búsqueda combinada (si hay alguna)
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+    
     const rows = await 
     this.db.select({
       id:  usersTable.id,
@@ -146,16 +160,19 @@ export class UsersService {
       updatedAt: usersTable.updatedAt,
       role: rolesTable.name,
       roleId: rolesTable.id,
+      cedula: usersTable.cedula,
     })
     .from(usersTable)
     .leftJoin(rolesTable, eq(usersTable.role, rolesTable.id))
-    .where(searchCondition)
+    // .where(searchCondition)
+    .where(whereClause)
     .orderBy(desc(usersTable.id))
     .limit(filter.take)
     .offset((filter.page - 1) * filter.take);
 
     // Consulta para obtener el total de usuarios (para metadata)
-    const [{ value: total }] = await this.db.select({ value: count() }).from(usersTable).where(searchCondition);
+    // const [{ value: total }] = await this.db.select({ value: count() }).from(usersTable).where(searchCondition);
+    const [{ value: total }] = await this.db.select({ value: count() }).from(usersTable).where(whereClause);
 
     const result = new ResultGetAll();
     result.total = total;

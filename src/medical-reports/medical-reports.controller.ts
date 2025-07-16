@@ -17,7 +17,7 @@ export class MedicalReportsController {
     }
 
     @Roles(TypesRoles.admin, TypesRoles.medico)
-    @Post('new')
+    @Post('create')
     @UsePipes(ValidationPipe)
     async create(
         @Body() createMedicalReportsDto: CreateMedicalReportDto,

@@ -86,7 +86,7 @@ CREATE TABLE "medicalReports" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "medicalReports_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"patientId" integer NOT NULL,
 	"doctorId" integer NOT NULL,
-	"description" varchar(300) DEFAULT null,
+	"description" varchar(700) DEFAULT null,
 	"insurance" varchar(100) DEFAULT null,
 	"apsCenter" varchar(100) DEFAULT null,
 	"mppsCM" varchar(100) DEFAULT null,
