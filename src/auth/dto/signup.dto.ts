@@ -26,7 +26,8 @@ export class SignupDto {
   @IsNumber()
   role: number;
   
-    @IsOptional()
-    @IsString()
-    cedula: string;
+  //Nuevo porque el medico debe tener cedula para el informe medico
+  @IsNotEmpty()
+  @IsString()
+  cedula: string;
 }

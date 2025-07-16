@@ -21,6 +21,7 @@ import { MedicalSuppliesExpiredModule } from './medical-supplies-expired/medical
 import { ProvidersModule } from './providers/providers.module';
 import { DashboardReportModule } from './dashboard-report/dashboard-report.module';
 import { MedicalReportsModule } from './medical-reports/medical-reports.module';
+import { PatientsModule } from './patients/patients.module';
 
 @Module({
   imports: [
@@ -43,7 +44,8 @@ import { MedicalReportsModule } from './medical-reports/medical-reports.module';
     MedicalSuppliesExpiredModule,
     ProvidersModule,
     DashboardReportModule,
-    MedicalReportsModule
+    MedicalReportsModule,
+    PatientsModule
   ],
   // controllers: [AppController],
   controllers: [],

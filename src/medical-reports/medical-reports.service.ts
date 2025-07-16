@@ -55,14 +55,14 @@ export class MedicalReportsService {
       .limit(filter.take)
       .offset((filter.page - 1) * filter.take);
   
-      // Consulta para obtener el total de productos
+      // Consulta para obtener el total de registros
       const [{ value: total }] = await 
       this.db.select({ value: count() })
       .from(medicalReportsTable)
       .leftJoin(usersTable, eq(medicalReportsTable.doctorId, usersTable.id))
       .leftJoin(patientTable, eq(medicalReportsTable.patientId, patientTable.id))
       .where(whereClause);
-  
+
       const result = new MedicalReportsGetAll();
       result.total = total;
       result.page = filter.page;
