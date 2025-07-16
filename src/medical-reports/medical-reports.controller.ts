@@ -45,7 +45,7 @@ export class MedicalReportsController {
     await this.medicalReportPdfService.generateMedicalReportPdf(id, res, isDownload)
   } 
 } */
-import { Controller, Get, Param, Post, UsePipes, ValidationPipe, Res, Query } from "@nestjs/common"
+import { Controller, Get, Param, Post, UsePipes, ValidationPipe, Res, Query, ParseIntPipe } from "@nestjs/common"
 import { MedicalReportsService } from "./medical-reports.service" // Changed from 'type' to regular import
 import type { MedicalReportsGetAll } from "./dto/read-medical-reports-dto"
 import type { SearchMedicalReportsDto } from "./dto/search-medical-reports.dto"
@@ -69,7 +69,7 @@ export class MedicalReportsController {
   }
 
   @Get(":id")
-  getById(id: number): Promise<any[]> {
+  getById(@Param('id', ParseIntPipe) id: number): Promise<any[]> {
     return this.medicalReportsService.getById(id)
   }
 
