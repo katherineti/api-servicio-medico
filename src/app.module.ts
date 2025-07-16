@@ -22,6 +22,7 @@ import { ProvidersModule } from './providers/providers.module';
 import { DashboardReportModule } from './dashboard-report/dashboard-report.module';
 import { MedicalReportsModule } from './medical-reports/medical-reports.module';
 import { PatientsModule } from './patients/patients.module';
+import { MedicalPrescriptionsModule } from './medical-prescriptions/medical-prescriptions.module';
 
 @Module({
   imports: [
@@ -45,7 +46,8 @@ import { PatientsModule } from './patients/patients.module';
     ProvidersModule,
     DashboardReportModule,
     MedicalReportsModule,
-    PatientsModule
+    PatientsModule,
+    MedicalPrescriptionsModule,
   ],
   // controllers: [AppController],
   controllers: [],
