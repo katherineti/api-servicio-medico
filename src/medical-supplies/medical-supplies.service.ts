@@ -13,10 +13,15 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 import { LogsService } from 'src/logs/logs.service';
 
-export interface stockMedicalSuppliesAvailables {
+/* export interface stockMedicalSuppliesAvailables {
   sum_medicamentos: string,
   sum_uniformes: string,
   sum_equiposOdontologicos: string
+} */
+export interface stockMedicalSuppliesAvailables {
+  sum_medicamentos: number,
+  sum_uniformes: number,
+  sum_equiposOdontologicos: number
 }
 
 @Injectable()
@@ -361,6 +366,7 @@ export class MedicalSuppliesService {
   getAccumulatedStockByType: Uniformes Disponibles, Equipos Odontológicos Disponibles, Total Medicamentos Disponibles
   Consulta que devuelva el acomulado de los stocks de los productos que son de tipo 1,2 o 3.
   Y que son productos disponibles o proximos a vencer.
+  mensual
   */
   public async getAccumulatedStockByType(): Promise<stockMedicalSuppliesAvailables> {
     const dateRanges = this.calculateCurrentMonthRange()
@@ -380,8 +386,30 @@ export class MedicalSuppliesService {
           lte(productsTable.createdAt, dateRanges.endOfMonth),
         )
       );
+      // return result[0];
+      console.log("result eq odontologico disponible",result)
+      // Extrae el primer (y único) elemento del array de resultados.
+      // Si el array está vacío, `data` será `undefined`.
+      const data = result[0];
+      // Crea un objeto base con todos los valores en 0.
+      // Esto asegura que siempre se devuelva una estructura completa.
+      // Crea un objeto base con todos los valores en 0.
+      // Esto asegura que siempre se devuelva una estructura completa.
+      const finalResult: stockMedicalSuppliesAvailables = {
+        sum_medicamentos: 0,
+        sum_uniformes: 0,
+        sum_equiposOdontologicos: 0,
+      };
 
-    return result[0];
+      // Si `data` existe, mapea los valores a `finalResult`.
+      // Usa el operador de coalescencia nula (??) para reemplazar `null` con `0`.
+      if (data) {
+        finalResult.sum_medicamentos = Number(data.sum_medicamentos ?? 0);
+        finalResult.sum_uniformes = Number(data.sum_uniformes ?? 0);
+        finalResult.sum_equiposOdontologicos = Number(data.sum_equiposOdontologicos ?? 0);
+      }
+
+      return finalResult;
   }
 
     /**
