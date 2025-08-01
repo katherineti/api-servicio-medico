@@ -266,6 +266,9 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
 
   // Estadísticas mejoradas para UNIFORMES DISPONIBLES
   private async getEnhancedUniformStatistics(): Promise<EnhancedMedicationStatistics> {
+    //Mes actual
+    const dateRanges = this.medicalSuppliesService.calculateCurrentMonthRange()
+
     const availableProducts = await this.db
       .select({
         id: productsTable.id,
@@ -284,6 +287,9 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
         and(
           eq(typesOfProductsTable.type, "Uniformes"),
           or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ), // Solo productos DISPONIBLES o PROXIMOS A VENCER
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth),
         ),
       );
     
@@ -297,7 +303,14 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
       .from(productsTable)
       .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
       .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
-      .where(eq(typesOfProductsTable.type, "Uniformes"))
+      .where(
+        and(
+          eq(typesOfProductsTable.type, "Uniformes"),
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth),
+        )
+      )
       .groupBy(productStatusTable.status);
       
     const lowStockThreshold = 15 // Menor threshold para uniformes
@@ -349,6 +362,8 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
 
   // Estadísticas mejoradas para EQUIPOS ODONTOLÓGICOS DISPONIBLES
   private async getEnhancedDentalEquipmentStatistics(): Promise<EnhancedMedicationStatistics> {
+    const dateRanges = this.medicalSuppliesService.calculateCurrentMonthRange()
+
     const availableProducts = await this.db
       .select({
         id: productsTable.id,
@@ -367,6 +382,9 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
         and(
           eq(typesOfProductsTable.type, "Equipos odontologicos"),
           or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ), // Solo productos DISPONIBLES
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth),
         ),
       );
 
@@ -379,7 +397,14 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
       .from(productsTable)
       .leftJoin(productStatusTable, eq(productsTable.statusId, productStatusTable.id))
       .leftJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
-      .where(eq(typesOfProductsTable.type, "Equipos odontologicos"))
+      .where(
+        and(
+          eq(typesOfProductsTable.type, "Equipos odontologicos"),
+          // Filtro por mes
+          gte(productsTable.createdAt, dateRanges.startOfMonth),
+          lte(productsTable.createdAt, dateRanges.endOfMonth)
+        )
+       )
       .groupBy(productStatusTable.status);
 
     const lowStockThreshold = 15 
