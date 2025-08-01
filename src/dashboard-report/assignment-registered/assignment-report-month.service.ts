@@ -543,8 +543,8 @@ console.log('endOfDay:', endOfDay);
 
       const reportTitle =
         options.reportType === "day"
-          ? "REPORTE DIARIO DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
-          : "REPORTE MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
+          ? "REPORTE DE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
+          : "REPORTE DE REGISTROS MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
 
       // Logo y título principal
       if (logoData) {

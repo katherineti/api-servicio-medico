@@ -306,7 +306,7 @@ export class DashboardReportController {
       const reportData = {
         title: "Asignaciones de Insumos Médicos (Mes)",
         value: assignmentStats.assignmentsThisMonth,
-        type: "Asignaciones Médicas Mensuales",
+        type: "Registros de Asignaciones Médicas Mensuales",
         date: today.toISOString(),
         additionalInfo: {
           totalAssignments: assignmentStats.totalAssignments,
@@ -366,7 +366,7 @@ export class DashboardReportController {
       const reportData = {
         title: "Asignaciones de Insumos Médicos (Día)",
         value: assignmentStats.assignmentsToday,
-        type: "Asignaciones Médicas Diarias",
+        type: "Registros de Asignaciones Médicas Diarias",
         date: today.toISOString(),
         additionalInfo: {
           totalAssignments: assignmentStats.totalAssignments,

@@ -6,7 +6,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq, and, count, sql, gte, lt, inArray, ne, sum } from 'drizzle-orm'
+import { eq, and, count, sql, gte, lt, inArray, ne, sum, lte } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
@@ -310,6 +310,7 @@ export class AssignmentService {
         return result || { count: 0 };
     }
 
+    //Solo médico
     //Para el contador de registros de asignaciones de insumos medicos al empleado, en el dashboard de medico. //Excepto insumos medicos caducados(Ya no)
     async totalAssignments(): Promise<{ count: number }> {
  
@@ -331,22 +332,48 @@ export class AssignmentService {
 
     //Nuevo. Incluye asignaciones de productos que ya no existen
     async getAccumulatedAssignmentProductsByType() {
+    const dateRanges = this.calculateCurrentMonthRange()
     const result = await this.db
-      .select({
+/*       .select({
         sumAsig_medicamentos: sql<number>`SUM(CASE WHEN ${productsTable.type} = 1 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_medicamentos'),
         sumAsig_uniformes: sql<number>`SUM(CASE WHEN ${productsTable.type} = 2 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_uniformes'),
         sumAsig_equiposOdontologicos: sql<number>`SUM(CASE WHEN ${productsTable.type} = 3 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_equiposOdontologicos'),
-      })
+      }) */
+        .select({
+        sumAsig_medicamentos: sql<number>`COALESCE(SUM(CASE WHEN ${productsTable.type} = 1 THEN ${assignmentTable.products} ELSE 0 END), 0)`.as('sumAsig_medicamentos'),
+        sumAsig_uniformes: sql<number>`COALESCE(SUM(CASE WHEN ${productsTable.type} = 2 THEN ${assignmentTable.products} ELSE 0 END), 0)`.as('sumAsig_uniformes'),
+        sumAsig_equiposOdontologicos: sql<number>`COALESCE(SUM(CASE WHEN ${productsTable.type} = 3 THEN ${assignmentTable.products} ELSE 0 END), 0)`.as('sumAsig_equiposOdontologicos'),
+        })
       .from(assignmentTable)
       .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
       .where(
         and(
             inArray(productsTable.type, [1, 2, 3]),
-            // ne(productsTable.statusId, 4)
             inArray(productsTable.statusId, [1, 2, 3, 4]),
+            gte(productsTable.createdAt, dateRanges.startOfMonth),
+            lte(productsTable.createdAt, dateRanges.endOfMonth),
         )
     );
-
+console.log("result asignaciones de productos en el mes",result)
     return result[0];
+  }
+
+      /**
+   * Calculate date range for current month in UTC
+   */
+  public calculateCurrentMonthRange() {
+    const now = new Date()
+    const nowUtc = new Date(now.toISOString())
+
+    const currentYear = nowUtc.getUTCFullYear()
+    const currentMonth = nowUtc.getUTCMonth()
+
+    const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
+    const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
+
+    return {
+      startOfMonth,
+      endOfMonth,
+    }
   }
 }

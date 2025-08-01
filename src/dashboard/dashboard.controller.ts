@@ -45,6 +45,7 @@ export class DashboardController {
       return this.medicalSuppliesService.countAllProducts();
     }
 
+    //Solo médico
     @Get('totalAssignments')
     totalAssignments(): Promise<any> {
       return this.assignmentService.totalAssignments();
