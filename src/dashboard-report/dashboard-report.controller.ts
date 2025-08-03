@@ -21,6 +21,7 @@ import type {
 } from "./medical-supplies-available/medical-supplies-report.interface"
 import { MedicalSuppliesReportService } from "./medical-supplies-available/medical-supplies-report.service"
 import { AssignmentReportByTypeSuppliesOptions, AssignmentReportMonthByMedicalSuppliesService } from "./assignment-stock/stockAssignment-report-month.service"
+import { MedicalSuppliesReportAllService } from "./medical-supplies-registered/medical-supplies-report-all.service"
 
 // @ApiTags("Medical Supplies Reports")
 @Controller("dashboard-reports")
@@ -32,6 +33,7 @@ export class DashboardReportController {
     private readonly pdfGeneratorDashboardService: PdfDashboardService,
     private readonly medicalSuppliesReportTodayService: MedicalSuppliesReportTodayService,
     private readonly medicalSuppliesReportMonthService: MedicalSuppliesReportMonthService,
+    private readonly medicalSuppliesReportAllService: MedicalSuppliesReportAllService,
     private readonly assignmentReportMonthService: AssignmentReportMonthService,
     private readonly medicalSuppliesReportService: MedicalSuppliesReportService,
     private readonly assignmentReportMonthByMedicalSuppliesService: AssignmentReportMonthByMedicalSuppliesService,
@@ -156,7 +158,7 @@ export class DashboardReportController {
     }
   }
 
-  //3-PDF para reporte estadistico de: Registros de Insumos Médicos (Mes)
+  //3.0- PDF para reporte estadistico de: Registros de Insumos Médicos (Mes)
   @Post("pdf/register/medicalSuppliesMonth")
   async pdfMedicalSupplies_month(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
     this.logger.log(`Solicitud de generación de PDF para el reporte de Inventario Almacén registrados en el mes`)
@@ -201,6 +203,71 @@ export class DashboardReportController {
       this.logger.log(`PDF de Inventario Almacén generado exitosamente`)
     } catch (error) {
       this.logger.error(`Error al generar PDF de Inventario Almacén(Mes):`, error)
+
+      if (res.headersSent) {
+        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`)
+        return
+      }
+
+      res.status(500).json({
+        statusCode: 500,
+        message: `Error al generar PDF: ${error.message || "Error desconocido"}`,
+      })
+    }
+  }
+
+  //3.1- PDF para reporte estadistico de: Registros de Insumos Médicos (para los roles Almacen y Medico)
+  @Post("pdf/register/medicalSupplies/all")
+  async pdfMedicalSupply_AllRecords(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
+    this.logger.log(`Solicitud de generación de PDF para el reporte de Inventario Almacén registrado(Todo) `)
+
+    try {
+      // Obtener las estadísticas completas de medicamentos
+      // const medicalSupplyStats = await this.medicalSuppliesReportMonthService.getCompleteMedicalSupplyStats()
+      const medicalSupplyStats = await this.medicalSuppliesReportAllService.getCompleteMedicalSupplyStats()
+      this.logger.log(`Estadísticas de Inventario Almacén obtenidas:`, medicalSupplyStats)
+
+      // Determinar si el PDF debe descargarse o mostrarse en el navegador
+      const isDownload = download === "true" || download === "1"
+
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = (today.getMonth() + 1).toString().padStart(2, "0")
+      const day = today.getDate().toString().padStart(2, "0")
+      const filename = `reporte-estadistico-insumos-medicos-${year}.pdf`
+
+      // Configurar encabezados de respuesta
+      res.setHeader("Content-Type", "application/pdf")
+      res.setHeader(
+        "Content-Disposition",
+        isDownload ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
+      )
+
+      // Crea una nueva instancia de Date
+      const fechaActual = new Date();
+      // Obtiene el año de la fecha actual
+      const anioActual = fechaActual.getFullYear();
+
+      // Crear datos del reporte
+      const reportData = {
+        title: "Registros de Inventario Almacén (Año)",
+        value: medicalSupplyStats.productsYear,
+        type: `Inventario Almacén del Año ${anioActual} (Registros)`,
+        date: today.toISOString(),
+        additionalInfo: {
+          totalProducts: medicalSupplyStats.totalProducts,
+          generatedBy: user?.email || "Sistema",
+          generatedAt: new Date().toISOString(),
+        },
+      }
+
+      // Generar PDF personalizado para Inventario Almacén
+      // await this.medicalSuppliesReportMonthService.generateCustomMedicalSuppliesPdf(reportData, res)
+      await this.medicalSuppliesReportAllService.generateCustomMedicalSuppliesPdf(reportData, res)
+
+      this.logger.log(`PDF de Inventario Almacén generado exitosamente`)
+    } catch (error) {
+      this.logger.error(`Error al generar PDF de Inventario Almacén(Año):`, error)
 
       if (res.headersSent) {
         this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`)
