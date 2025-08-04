@@ -24,7 +24,7 @@ import { PG_CONNECTION } from "src/constants"
 import { AssignmentService } from "src/assignment/assignment.service"
 
 export interface AssignmentReportOptions {
-  reportType: "day" | "month"
+  reportType: "day" | "month" | "year"
   date?: Date // Fecha específica para reportes del día
 }
 
@@ -49,7 +49,8 @@ export class AssignmentReportMonthService {
     options: AssignmentReportOptions = { reportType: "month" },
   ): Promise<void> {
     try {
-      this.logger.log(`Generando PDF personalizado para asignaciones del mes: ${reportData.title}`)
+      console.log("GenerateCustomAssignmentsPdf()  options: " , options);
+      this.logger.log(`Generando PDF personalizado de asignaciones a empleados: ${reportData.title}`)
 
       // Obtener estadísticas completas
       const assignmentStats = await this.getCompleteAssignmentStats(options)
@@ -91,7 +92,7 @@ export class AssignmentReportMonthService {
       pdfDoc.pipe(res)
       pdfDoc.end()
 
-      this.logger.log(`PDF personalizado de asignaciones del mes generado exitosamente`)
+      this.logger.log(`PDF personalizado de las asignaciones a empleados, generado exitosamente`)
     } catch (error) {
       this.logger.error(`Error al generar PDF personalizado:`, error)
 
@@ -107,14 +108,17 @@ export class AssignmentReportMonthService {
   }
 
   /**
-   * Obtiene TODAS las estadísticas de las asignaciones del mes
+   * Obtiene TODAS las estadísticas de las asignaciones a empleados
    */
   async getCompleteAssignmentStats(
     options: AssignmentReportOptions = { reportType: "month" },
   ): Promise<CompleteAssignmentStats> {
     try {
+      console.log("GetCompleteAssignmentStats()  options: " , options);
       // Determinar el rango de fechas según el tipo de reporte
-      let startRange: Date, endRange: Date, startOfDay: Date, endOfDay: Date
+      let startRange: Date, endRange: Date, 
+          startOfDay: Date, endOfDay: Date, 
+          startMonth: Date, endMonth: Date
 
 /*        if (options.reportType === "day") {
         const targetDate = options.date || new Date()
@@ -193,6 +197,32 @@ export class AssignmentReportMonthService {
         endRange = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
       } */
 
+    const now = new Date();
+    const currentYear = now.getUTCFullYear();
+
+    //año
+    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+
+    const nowUtc = new Date(now.toISOString());
+    //mes
+    const currentMonth = nowUtc.getUTCMonth()
+    startMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
+    endMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
+
+    //dia
+    startOfDay = new Date(Date.UTC(
+        nowUtc.getUTCFullYear(), 
+        nowUtc.getUTCMonth(), 
+        nowUtc.getUTCDate(), 0, 0, 0, 0));
+    endOfDay = new Date( Date.UTC(
+        nowUtc.getUTCFullYear(), 
+        nowUtc.getUTCMonth(), 
+        nowUtc.getUTCDate(), 23, 59, 59, 999));
+
+    startRange = startOfYear;
+    endRange = endOfYear;
+
     if (options.reportType === "day") {
         // 1. Obtener la fecha objetivo (hoy, en tu zona horaria local)
         const targetDateLocal = options.date || new Date();
@@ -218,7 +248,8 @@ export class AssignmentReportMonthService {
 
         startRange = startOfDay;
         endRange = endOfDay;
-      } else {
+
+      } else if (options.reportType === "month"){
         const now = new Date()
         const nowUtc = new Date(now.toISOString())
 
@@ -237,10 +268,12 @@ export class AssignmentReportMonthService {
         endRange = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
       } 
 
-console.log('*****************************getCompleteAssignmentStats:');
-console.log('startOfDay:', startOfDay);
-console.log('endOfDay:', endOfDay);
-      // 1. Estadísticas generales de asignaciones
+this.logger.log('***************  Filtro de dia o mes o anio: ***************');
+this.logger.log('año prueba antes:', startOfYear," ",endOfYear);
+this.logger.log('startOfDay:', startOfDay);
+this.logger.log('endOfDay:', endOfDay);
+console.log("antes de 1.generalStats")
+/*     // 1. Estadísticas generales de asignaciones
       const [generalStats] = await this.db
         .select({
           totalAssignments: count(),
@@ -257,9 +290,49 @@ console.log('endOfDay:', endOfDay);
             inArray(productsTable.type, [1, 2, 3]), 
             inArray(productsTable.statusId, [1, 2, 3, 4]), 
           )
-        )
+        ) */
+      // 1. Estadísticas generales de asignaciones
+      let generalStats=null
+      if(options.reportType === "year"){
+      generalStats = await this.db
+        .select({
+          totalAssignments: count(),
 
-      // 2. Asignaciones por empleado (del mes actual)
+          assignmentsThisMonth: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startMonth} AND ${assignmentTable.createdAt} <= ${endMonth} THEN 1 ELSE NULL END)`,
+          totalProductsAssignedThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startMonth} AND ${assignmentTable.createdAt} <= ${endMonth} THEN ${assignmentTable.products} ELSE 0 END)`,
+        
+          registryAssignmentsYear: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfYear} AND ${assignmentTable.createdAt} <= ${endOfYear} THEN 1 ELSE NULL END)`,
+          totalProductsAssignedYear: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startOfYear} AND ${assignmentTable.createdAt} <= ${endOfYear} THEN ${assignmentTable.products} ELSE 0 END)`,
+        })
+        .from(assignmentTable)
+        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+        .where(
+          and(
+            inArray(productsTable.type, [1, 2, 3]), 
+            inArray(productsTable.statusId, [1, 2, 3, 4]), 
+          )
+        ); 
+      }else{ 
+      //Consulta para dia y mes actual:
+      generalStats = await this.db
+        .select({
+          totalAssignments: count(),
+          assignmentsThisMonth: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN 1 ELSE NULL END)`,
+          totalProductsAssignedThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE 0 END)`,
+        })
+        .from(assignmentTable)
+        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+        .where(
+          and(
+            inArray(productsTable.type, [1, 2, 3]), 
+            inArray(productsTable.statusId, [1, 2, 3, 4]), 
+          )
+        );
+      }
+
+      generalStats = generalStats[0]
+
+      // 2. Asignaciones por empleado (del dia,mes o año actual)
       const assignmentsByEmployeeResult = await this.db
         .select({
           employeeId: employeeTable.id,
@@ -281,9 +354,9 @@ console.log('endOfDay:', endOfDay);
           ),
         )
         .groupBy(employeeTable.id, employeeTable.name, employeeTable.cedula)
-        .orderBy(desc(sql<number>`count(${assignmentTable.id})`))
+        .orderBy(desc(sql<number>`count(${assignmentTable.id})`));
 
-      // 3. Asignaciones por tipo de producto (del mes actual)
+      // 3. Asignaciones por tipo de producto (del dia,mes o año actual)
       const assignmentsByProductTypeResult = await this.db
         .select({
           typeId: typesOfProductsTable.id,
@@ -299,14 +372,13 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            // ne(productsTable.statusId, 4),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
-        .orderBy(typesOfProductsTable.id)
+        .orderBy(typesOfProductsTable.id);
 
-      // 4. Asignaciones a familiares (del mes actual)
+      // 4. Asignaciones a familiares (del dia,mes o año actual)
       const assignmentsByFamilyResult = await this.db
         .select({
           familyId: familyTable.id,
@@ -329,12 +401,11 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            // ne(productsTable.statusId, 4),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(familyTable.id, familyTable.name, familyTable.cedula, employeeTable.name)
-        .orderBy(desc(sql<number>`count(${assignmentTable.id})`))
+        .orderBy(desc(sql<number>`count(${assignmentTable.id})`));
 
       // 5. Registros por día del mes actual
       const registrationsByDayResult = await this.db
@@ -349,15 +420,15 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            // ne(productsTable.statusId, 4),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(assignmentTable.createdAt)
-        .orderBy(assignmentTable.createdAt)
+        .orderBy(assignmentTable.createdAt);
 
-      // 6. Asignaciones específicas del mes con detalles completos
-      const monthlyAssignmentsResult = await this.db
+      // 6. Asignaciones específicas del dia, mes o año con detalles completos
+      // const monthlyAssignmentsResult = await this.db
+      const assignmentsDetailsResult = await this.db
         .select({
           id: assignmentTable.id,
           employeeName: employeeTable.name,
@@ -381,11 +452,10 @@ console.log('endOfDay:', endOfDay);
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            // ne(productsTable.statusId, 4),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
-        .orderBy(desc(assignmentTable.createdAt))
+        .orderBy(desc(assignmentTable.createdAt));
 
       // Procesar resultados
       const assignmentsByEmployee: AssignmentsByEmployee[] = assignmentsByEmployeeResult.map((row) => ({
@@ -436,25 +506,27 @@ console.log('endOfDay:', endOfDay);
 
       const completeStats: CompleteAssignmentStats = {
         totalAssignments: Number(generalStats.totalAssignments),
-        // assignmentsToday: Number(generalStats.assignmentsToday),
+
         assignmentsToday:  (await this.assignmentService.totalAssignmentOfTheDay()).count,
-        // assignmentsThisMonth: Number(generalStats.assignmentsThisMonth),
         assignmentsThisMonth: (await this.assignmentService.totalAssignmentOfMonth()).count,
-        totalProductsAssigned: Number(generalStats.totalProductsAssigned) || 0, //no se usa
-        // totalProductsAssignedThisMonth: Number(generalStats.totalProductsAssignedThisMonth) || 0,
+
         totalProductsAssignedThisMonthOrToday: options.reportType === "day"? Number( (await this.assignmentService.countProductsAssignmentOfTheDay()).count ) : Number( (await this.assignmentService.countProductsAssignmentOfMonth([1,2,3])).count ),
+        assignmentDetails: assignmentsDetailsResult,//Asignaciones específicas del dia, mes o año con detalles completos
+
         assignmentsByEmployee,
         assignmentsByProductType,
         assignmentsByFamily,
         registrationsByDay,
-        monthlyAssignments: monthlyAssignmentsResult,
+
+        registryAssignmentsYear: Number(generalStats.registryAssignmentsYear),
+        totalProductsAssignedYear: Number(generalStats.totalProductsAssignedYear),
       }
 
-      this.logger.log("Estadísticas completas de asignaciones del mes:", JSON.stringify(completeStats, null, 2))
+      this.logger.log("Estadísticas completas de asignaciones a empleados:", JSON.stringify(completeStats, null, 2))
       return completeStats
     } catch (error) {
-      this.logger.error("Error al obtener estadísticas de asignaciones del mes:", error)
-      throw new Error("Error al obtener estadísticas completas de asignaciones del mes")
+      this.logger.error("Error al obtener estadísticas de asignaciones a empleados:", error)
+      throw new Error("Error al obtener estadísticas completas de asignaciones a empleados")
     }
   }
 
@@ -466,10 +538,18 @@ console.log('endOfDay:', endOfDay);
     assignmentStats: CompleteAssignmentStats,
     options: AssignmentReportOptions = { reportType: "month" },
   ): Promise<TDocumentDefinitions> {
-    try {
+    try {console.log("--------------options",options)
       // Cargar logo usando el método del DashboardReportService
       let logoData = null;
-      let labelReportType = options.reportType === "day"? 'del Dia':'del Mes';
+      // let labelReportType = options.reportType === "day"? 'del Dia':'del Mes';
+      let labelReportType = "del Año Actual";
+      if(options.reportType === "month"){
+        labelReportType = 'del Mes';
+      }
+      if(options.reportType === "day"){
+        labelReportType = 'del Dia';
+      }
+
       try {
         logoData = await this.dashboardReportService.loadLogoWithRetry()
       } catch (error) {
@@ -541,10 +621,17 @@ console.log('endOfDay:', endOfDay);
       // Crear contenido del documento
       const content: any[] = []
 
-      const reportTitle =
+/*       const reportTitle =
         options.reportType === "day"
           ? "REPORTE DE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
-          : "REPORTE DE REGISTROS MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
+          : "REPORTE DE REGISTROS MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS" */
+      let reportTitle = "REPORTE REGISTROS ANUALES DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
+      if(options.reportType === "month"){
+       reportTitle = "REPORTE REGISTROS MENSUALES DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
+      }
+      if(options.reportType === "day"){
+      reportTitle = "REPORTE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
+      }
 
       // Logo y título principal
       if (logoData) {
@@ -649,52 +736,55 @@ console.log('endOfDay:', endOfDay);
   ): void {
     const periodLabel = options.reportType === "day" ? "Hoy" : "del Mes"
 
-    if(options.reportType === "day" ){
-        content.push(
-          { text: "Estadísticas Generales de Asignaciones a Empleados", style: "sectionTitle" },
-          {
-            table: {
-              widths: ["50%", "50%"],
-              body: [
-                [
-                  { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
-                  { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
-                ],
-/*                 [
-                  { text: `Asignaciones ${periodLabel} (Registro)`, style: "tableCellLabel" },
-                  { text: assignmentStats.assignmentsThisMonth.toString(), style: "metricValue" },
-                ], */
-                [
-                  { text: `Asignaciones de ${periodLabel} (Registro):`, style: "tableCellLabel" },
-                  { text: assignmentStats.assignmentsToday.toString(), style: "metricValue" },
-                ],
-                // [
-                //   { text: "Total de Productos Asignados:", style: "tableCellLabel" },
-                //   { text: assignmentStats.totalProductsAssigned.toString(), style: "tableCellValue" },
-                // ],
-                [
-                  { text: `Total de Productos Asignados ${periodLabel}:`, style: "tableCellLabel" },
-                  { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
-                ],
+    if(options.reportType === "year" ){
+      content.push(
+        { text: "Estadísticas Generales de las Asignaciones a Empleados", style: "sectionTitle" },
+        {
+          table: {
+            widths: ["50%", "50%"],
+            body: [
+              [
+                { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
+                { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
               ],
-            },
-            layout: {
-              hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
-              vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
-              hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
-              vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
-              paddingLeft: (i, node) => 10,
-              paddingRight: (i, node) => 10,
-              paddingTop: (i, node) => 5,
-              paddingBottom: (i, node) => 5,
-            },
-            margin: [0, 10, 0, 20],
+              //Asignaciones del año:
+              [
+                { text: `Asignaciones del Año (Registro):`, style: "tableCellLabel" },
+                { text: assignmentStats.registryAssignmentsYear.toString(), style: "metricValue" },
+              ],
+                [
+                { text: `Total de Productos Asignados en el Año:`, style: "tableCellLabel" },
+                { text: assignmentStats.totalProductsAssignedYear.toString(), style: "tableCellValue" },
+              ], 
+              //Asignaciones del mes:
+              [
+                { text: `Asignaciones del Mes (Registro):`, style: "tableCellLabel" },
+                { text: assignmentStats.assignmentsThisMonth.toString(), style: "tableCellValue" },
+              ],
+              [
+                { text: `Total de Productos Asignados del Mes:`, style: "tableCellLabel" },
+                { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
+              ],
+            ],
           },
-        )
-    }else{
+          layout: {
+            hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+            vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+            hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+            vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+            paddingLeft: (i, node) => 10,
+            paddingRight: (i, node) => 10,
+            paddingTop: (i, node) => 5,
+            paddingBottom: (i, node) => 5,
+          },
+          margin: [0, 10, 0, 20],
+        },
+      )
+    }
+    if(options.reportType === "month" ){
 
         content.push(
-          { text: "Estadísticas Generales de Asignaciones a Empleados", style: "sectionTitle" },
+          { text: "Estadísticas Generales de las Asignaciones a Empleados", style: "sectionTitle" },
           {
             table: {
               widths: ["50%", "50%"],
@@ -735,6 +825,50 @@ console.log('endOfDay:', endOfDay);
           },
         )
     }
+    if(options.reportType === "day" ){
+        content.push(
+          { text: "Estadísticas Generales de las Asignaciones a Empleados", style: "sectionTitle" },
+          {
+            table: {
+              widths: ["50%", "50%"],
+              body: [
+                [
+                  { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
+                  { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
+                ],
+/*                 [
+                  { text: `Asignaciones ${periodLabel} (Registro)`, style: "tableCellLabel" },
+                  { text: assignmentStats.assignmentsThisMonth.toString(), style: "metricValue" },
+                ], */
+                [
+                  { text: `Asignaciones de ${periodLabel} (Registro):`, style: "tableCellLabel" },
+                  { text: assignmentStats.assignmentsToday.toString(), style: "metricValue" },
+                ],
+                // [
+                //   { text: "Total de Productos Asignados:", style: "tableCellLabel" },
+                //   { text: assignmentStats.totalProductsAssigned.toString(), style: "tableCellValue" },
+                // ],
+                [
+                  { text: `Total de Productos Asignados ${periodLabel}:`, style: "tableCellLabel" },
+                  { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+              vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+              hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+              vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+              paddingLeft: (i, node) => 10,
+              paddingRight: (i, node) => 10,
+              paddingTop: (i, node) => 5,
+              paddingBottom: (i, node) => 5,
+            },
+            margin: [0, 10, 0, 20],
+          },
+        )
+    }
+
   }
 
   /**
@@ -840,11 +974,21 @@ console.log('endOfDay:', endOfDay);
           margin: [0, 10, 0, 20],
         })
     }else {
+
+      let titleN="No se registraron asignaciones en el año actual.";
+      if(reportType==='month'){
+        titleN="No se registraron asignaciones en el mes actual.";
+      }
+      if(reportType==='day'){
+        titleN="No se registraron asignaciones el dia de hoy.";
+      }
+
       content.push(
         { text: "Distribución por Tipo de Producto", style: "sectionTitle" },
         {
         //   text: "No se registraron asignaciones en el mes actual.",
-          text: reportType==='day'? "No se registraron asignaciones el dia de hoy." : "No se registraron asignaciones en el mes actual.",
+        // text: reportType==='day'? "No se registraron asignaciones el dia de hoy." : "No se registraron asignaciones en el mes actual.",
+          text: titleN,
           style: "paragraph",
           alignment: "center",
           color: "#666666",
@@ -929,104 +1073,123 @@ console.log('endOfDay:', endOfDay);
     reportType:string
   ): void {
 
-        if (assignmentStats.monthlyAssignments && assignmentStats.monthlyAssignments.length > 0) {
-          content.push({ 
-            text: reportType==='day'? "Detalle de las Asignaciones de Hoy" : "Detalle de las Asignaciones del Mes Actual",
-            style: "sectionTitle" 
-          })
+    let title="Detalles de las Asignaciones a Empleados en el Año Actual ("+assignmentStats.assignmentDetails.length+")";
+    if(reportType==='month'){
+      title="Detalles de las Asignaciones a Empleados en el Mes Actual ("+assignmentStats.assignmentDetails.length+")";
+    }
+    if(reportType==='day'){
+      title="Detalle de las Asignaciones a Empleados de Hoy";
+    }
     
-          const assignmentTableBody = [
-            [
-              { text: "Fecha", style: "tableHeader" },
-              { text: "Empleado", style: "tableHeader" },
-              { text: "Familiar", style: "tableHeader" },
-              { text: "Producto", style: "tableHeader" },
-              { text: "Tipo", style: "tableHeader" },
-              { text: "Cantidad", style: "tableHeader" },
-            ],
-          ]
+    let titleN="No se registraron asignaciones en el año actual.";
+    if(reportType==='month'){
+      titleN="No se registraron asignaciones en el mes actual.";
+    }
+    if(reportType==='day'){
+      titleN="No se registraron asignaciones el dia de hoy.";
+    }
     
-          // Limitar a las primeras 50 asignaciones para evitar PDFs muy largos
-          const limitedAssignments = assignmentStats.monthlyAssignments.slice(0, 50)
-    
-          limitedAssignments.forEach((assignment) => {
-            assignmentTableBody.push([
-              { text: this.dashboardReportService.formatDate(assignment.createdAt), style: "tableCellValue" },
-              { text: this.dashboardReportService.getValidContent(assignment.employeeName), style: "tableCellValue" },
-              {
-                text: this.dashboardReportService.getValidContent(assignment.familyName || "N/A"),
-                style: "tableCellValue",
-              },
-              { text: this.dashboardReportService.getValidContent(assignment.productName), style: "tableCellValue" },
-              { text: this.dashboardReportService.getValidContent(assignment.typeName), style: "tableCellValue" },
-              { text: assignment.assignedProducts.toString(), style: "tableCellValue" },
-            ])
-          })
-    
-          if (assignmentStats.monthlyAssignments.length > 50) {
-            assignmentTableBody.push([
-              {
-                text: "...",
-                style: "tableCellValue",
-                colSpan: 6,
-                alignment: "center",
-              } as any,
-              {},
-              {},
-              {},
-              {},
-              {},
-            ])
-            assignmentTableBody.push([
-              {
-                text: `Mostrando las primeras 50 de ${assignmentStats.monthlyAssignments.length} asignaciones`,
-                style: "paragraph",
-                colSpan: 6,
-                alignment: "center",
-                color: "#666666",
-              } as any,
-              {},
-              {},
-              {},
-              {},
-              {},
-            ])
-          }
-    
-          content.push({
-            table: {
-              widths: ["12%", "20%", "15%", "25%", "15%", "13%"],
-              body: assignmentTableBody,
-            },
-            layout: {
-              hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
-              vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
-              hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
-              vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
-              paddingLeft: (i, node) => 3,
-              paddingRight: (i, node) => 3,
-              paddingTop: (i, node) => 2,
-              paddingBottom: (i, node) => 2,
-            },
-            margin: [0, 10, 0, 20],
-          })
-        } else {
-          content.push(
-            { 
-                // text: `Detalle de Asignaciones de ${labelTypeReport}`, 
-                text: reportType==='day'? "Detalle de las Asignaciones de Hoy" : "Detalle de las Asignaciones del Mes Actual",
-                style: "sectionTitle" },
-            {
-            //   text: `No se registraron asignaciones ${labelTypeReport.toLowerCase()}.`, 
-              text: reportType==='day'? "No se registraron asignaciones el dia de hoy." : "No se registraron asignaciones en el mes actual.",
-              style: "paragraph",
-              alignment: "center",
-              color: "#666666",
-              margin: [0, 10, 0, 20],
-            },
-          )
-        }
+    if (assignmentStats.assignmentDetails && assignmentStats.assignmentDetails.length > 0) {
 
+      content.push({ 
+        // text: reportType==='day'? "Detalle de las Asignaciones de Hoy" : "Detalle de las Asignaciones del Mes Actual",
+        text: title,
+        style: "sectionTitle" 
+      })
+
+      const assignmentTableBody = [
+        [
+          { text: "Fecha", style: "tableHeader" },
+          { text: "Empleado", style: "tableHeader" },
+          { text: "Familiar", style: "tableHeader" },
+          { text: "Producto", style: "tableHeader" },
+          { text: "Tipo", style: "tableHeader" },
+          { text: "Cantidad", style: "tableHeader" },
+        ],
+      ]
+
+      // Limitar a las primeras 50 asignaciones para evitar PDFs muy largos
+      const limitedAssignments = assignmentStats.assignmentDetails.slice(0, 50)
+
+      limitedAssignments.forEach((assignment) => {
+        assignmentTableBody.push([
+          { text: this.dashboardReportService.formatDate(assignment.createdAt), style: "tableCellValue" },
+          { text: this.dashboardReportService.getValidContent(assignment.employeeName), style: "tableCellValue" },
+          {
+            text: this.dashboardReportService.getValidContent(assignment.familyName || "N/A"),
+            style: "tableCellValue",
+          },
+          { text: this.dashboardReportService.getValidContent(assignment.productName), style: "tableCellValue" },
+          { text: this.dashboardReportService.getValidContent(assignment.typeName), style: "tableCellValue" },
+          { text: assignment.assignedProducts.toString(), style: "tableCellValue" },
+        ])
+      })
+
+      if (assignmentStats.assignmentDetails.length > 50) {
+        assignmentTableBody.push([
+          {
+            text: "...",
+            style: "tableCellValue",
+            colSpan: 6,
+            alignment: "center",
+          } as any,
+          {},
+          {},
+          {},
+          {},
+          {},
+        ])
+        assignmentTableBody.push([
+          {
+            text: `Mostrando las primeras 50 de ${assignmentStats.assignmentDetails.length} asignaciones`,
+            style: "paragraph",
+            colSpan: 6,
+            alignment: "center",
+            color: "#666666",
+          } as any,
+          {},
+          {},
+          {},
+          {},
+          {},
+        ])
+      }
+
+      content.push({
+        table: {
+          widths: ["12%", "20%", "15%", "25%", "15%", "13%"],
+          body: assignmentTableBody,
+        },
+        layout: {
+          hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+          vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+          hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+          vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+          paddingLeft: (i, node) => 3,
+          paddingRight: (i, node) => 3,
+          paddingTop: (i, node) => 2,
+          paddingBottom: (i, node) => 2,
+        },
+        margin: [0, 10, 0, 20],
+      })
+    } else {
+      content.push(
+        { 
+          // text: `Detalle de Asignaciones de ${labelTypeReport}`, 
+          text: title,
+          // text: reportType==='day'? "Detalle de las Asignaciones de Hoy" : "Detalle de las Asignaciones del Mes Actual",
+          style: "sectionTitle" },
+        {
+        //   text: `No se registraron asignaciones ${labelTypeReport.toLowerCase()}.`, 
+          text: titleN,
+          // text: reportType==='day'? "No se registraron asignaciones el dia de hoy." : "No se registraron asignaciones en el mes actual.",
+          style: "paragraph",
+          alignment: "center",
+          color: "#666666",
+          margin: [0, 10, 0, 20],
+        },
+      )
+    }
   }
 
   /**

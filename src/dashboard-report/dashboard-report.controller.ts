@@ -342,6 +342,64 @@ export class DashboardReportController {
       })
     }
   } */
+  @Post("pdf/register/assignments-year")
+  async pdfAssignmentsYear(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
+    const options: AssignmentReportOptions = { reportType: "year" }
+
+    this.logger.log(`Solicitud de generación de PDF para el reporte de asignaciones de insumos médicos del anio`)
+
+    try {
+      // Obtener las estadísticas completas de las asignaciones a empleados en el año actual 
+      const assignmentStats = await this.assignmentReportMonthService.getCompleteAssignmentStats(options)
+      this.logger.log(`Estadísticas de asignaciones del anio obtenidas:`, assignmentStats)
+
+      // Determinar si el PDF debe descargarse o mostrarse en el navegador
+      const isDownload = download === "true" || download === "1"
+
+      const today = new Date()
+      const year = today.getFullYear()
+      const month = (today.getMonth() + 1).toString().padStart(2, "0")
+      const filename = `reporte-estadistico-registros-de-asignaciones-a-empleados-${year}.pdf`
+
+      // Configurar encabezados de respuesta
+      res.setHeader("Content-Type", "application/pdf")
+      res.setHeader(
+        "Content-Disposition",
+        isDownload ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
+      )
+
+      // Crear datos del reporte
+      const reportData = {
+        title: "Registros Anuales de las Asignaciones de Insumos Médicos a Empleados",
+        value: assignmentStats.assignmentsThisMonth,
+        type: "Registro Anual de las Asignaciones de Insumos Médicos a Empleados",
+        date: today.toISOString(),
+        additionalInfo: {
+          totalAssignments: assignmentStats.totalAssignments,
+          totalProductsAssigned: assignmentStats.totalProductsAssignedYear,
+          generatedBy: user?.email || "Sistema",
+          generatedAt: new Date().toISOString(),
+        },
+      }
+
+      // Generar PDF personalizado para asignaciones del mes
+      await this.assignmentReportMonthService.generateCustomAssignmentsPdf(reportData, res, options)
+
+      this.logger.log(`PDF de asignaciones del anio generado exitosamente`)
+    } catch (error) {
+      this.logger.error(`Error al generar PDF de asignaciones del anio:`, error)
+
+      if (res.headersSent) {
+        this.logger.warn(`Los encabezados ya fueron enviados, no se puede enviar respuesta de error`)
+        return
+      }
+
+      res.status(500).json({
+        statusCode: 500,
+        message: `Error al generar PDF: ${error.message || "Error desconocido"}`,
+      })
+    }
+  }
 
   @Post("pdf/register/assignments-month")
   async pdfAssignmentsMonth(@Res() res: Response, @Usersesion() user: IJwtPayload, @Query('download') download?: string) {
@@ -360,7 +418,7 @@ export class DashboardReportController {
       const today = new Date()
       const year = today.getFullYear()
       const month = (today.getMonth() + 1).toString().padStart(2, "0")
-      const filename = `reporte-estadistico-registro-asignaciones(Mes)-${year}-${month}.pdf`
+      const filename = `reporte-estadistico-de-registros-asignaciones-a-empleados-${year}-${month}.pdf`
 
       // Configurar encabezados de respuesta
       res.setHeader("Content-Type", "application/pdf")
@@ -371,13 +429,13 @@ export class DashboardReportController {
 
       // Crear datos del reporte
       const reportData = {
-        title: "Asignaciones de Insumos Médicos (Mes)",
+        title: "Registros de las Asignaciones de Insumos Médicos a Empleados(Mes)",
         value: assignmentStats.assignmentsThisMonth,
-        type: "Registros de Asignaciones Médicas Mensuales",
+        type: "Registro Mensual de las Asignaciones de Insumos Médicos a Empleados",
         date: today.toISOString(),
         additionalInfo: {
           totalAssignments: assignmentStats.totalAssignments,
-          totalProductsAssigned: assignmentStats.totalProductsAssigned,
+          totalProductsAssigned: assignmentStats.totalProductsAssignedThisMonthOrToday,
           generatedBy: user?.email || "Sistema",
           generatedAt: new Date().toISOString(),
         },
@@ -420,7 +478,7 @@ export class DashboardReportController {
       const year = today.getFullYear()
       const month = (today.getMonth() + 1).toString().padStart(2, "0")
       const day = today.getDate().toString().padStart(2, "0")
-      const filename = `reporte-estadistico-registro-asignaciones-${year}-${month}-${day}.pdf`
+      const filename = `reporte-estadistico-de-registros-asignaciones-a-empleados-${year}-${month}-${day}.pdf`
 
       // Configurar encabezados de respuesta
       res.setHeader("Content-Type", "application/pdf")
@@ -431,13 +489,13 @@ export class DashboardReportController {
 
       // Crear datos del reporte
       const reportData = {
-        title: "Asignaciones de Insumos Médicos (Día)",
+        title: "Registros de las Asignaciones de Insumos Médicos a Empleados(Hoy)",
         value: assignmentStats.assignmentsToday,
-        type: "Registros de Asignaciones Médicas Diarias",
+        type: "Registros en el día de las Asignaciones de Insumos Médicos a Empleados",
         date: today.toISOString(),
         additionalInfo: {
           totalAssignments: assignmentStats.totalAssignments,
-          totalProductsAssigned: assignmentStats.totalProductsAssigned,
+          totalProductsAssigned: assignmentStats.totalProductsAssignedThisMonthOrToday,
           generatedBy: user?.email || "Sistema",
           generatedAt: new Date().toISOString(),
         },

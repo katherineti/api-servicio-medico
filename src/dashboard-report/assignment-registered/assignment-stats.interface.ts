@@ -32,13 +32,16 @@ export interface CompleteAssignmentStats {
   totalAssignments: number
   assignmentsToday: number
   assignmentsThisMonth: number
-  totalProductsAssigned: number
+  // totalProductsAssigned: number //no se usa, en su lugar: totalProductsAssignedThisMonthOrToday
   totalProductsAssignedThisMonthOrToday: number
   assignmentsByEmployee: AssignmentsByEmployee[]
   assignmentsByProductType: AssignmentsByProductType[]
   assignmentsByFamily: AssignmentsByFamily[]
   registrationsByDay: AssignmentRegistrationByDay[]
-  monthlyAssignments: any[] // Asignaciones específicas del mes
+  // monthlyAssignments: any[], // Asignaciones específicas del mes
+  assignmentDetails: any[], // Asignaciones específicas del mes
+  registryAssignmentsYear?:number,
+  totalProductsAssignedYear?:number,
 }
 
 export interface AssignmentReportDto {
