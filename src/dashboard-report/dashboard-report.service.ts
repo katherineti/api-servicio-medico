@@ -67,12 +67,20 @@ export class DashboardReportService {
   constructor(  @Inject(PG_CONNECTION) private db: NeonDatabase  ) {
     try {
       // Define fuentes
-      this.fonts = {
+/*       this.fonts = {
         Roboto: {
           normal: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Regular.ttf"),
           bold: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Medium.ttf"),
           italics: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Italic.ttf"),
           bolditalics: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-MediumItalic.ttf"),
+        },
+      } */
+      this.fonts = {
+        Roboto: {
+          normal: "Helvetica",
+          bold: "Helvetica-Bold",
+          italics: "Helvetica-Oblique",
+          bolditalics: "Helvetica-BoldOblique",
         },
       }
       // Verifica que las fuentes existen

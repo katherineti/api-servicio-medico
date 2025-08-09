@@ -23,12 +23,20 @@ export class PdfDashboardService {
 
   constructor() {
     try {
-      this.fonts = {
+/*       this.fonts = {
         Roboto: {
           normal: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Regular.ttf"),
           bold: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Medium.ttf"),
           italics: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-Italic.ttf"),
           bolditalics: path.join(process.cwd(), "src", "assets", "fonts", "Roboto-MediumItalic.ttf"),
+        },
+      } */
+      this.fonts = {
+        Roboto: {
+          normal: "Helvetica",
+          bold: "Helvetica-Bold",
+          italics: "Helvetica-Oblique",
+          bolditalics: "Helvetica-BoldOblique",
         },
       }
 
