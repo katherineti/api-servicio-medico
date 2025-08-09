@@ -1,4 +1,4 @@
-import { Controller, Post, Query, Logger, Get, Param, HttpStatus, Res } from "@nestjs/common"
+import { Controller, Post, Query, Logger, Get, Param, HttpStatus, Res, DefaultValuePipe, ParseBoolPipe, HttpCode } from "@nestjs/common"
 import  { Response } from "express"
 import  { PdfDashboardService } from "./pdf-dasboard.service"
 import  { DashboardReportService } from "./dashboard-report.service"
@@ -40,14 +40,13 @@ export class DashboardReportController {
   ) {}
 
   //1-PDF para reporte estadistico de usuarios
-  // @Post("pdf/:id")
   @Post("pdf")
+  @HttpCode(HttpStatus.OK) // Si la operación es exitosa, la respuesta HTTP tendrá el código de estado 200 OK.
   async generatePdfUsers(
-    // id: number,
-    // @Body() reportDto: any,
     @Res() res: Response,
     @Usersesion() user: IJwtPayload,
-    @Query('download') download?: string,
+    // @Query('download') download?: string,
+    @Query('download', new DefaultValuePipe(false), ParseBoolPipe) download: boolean
   ) {
     this.logger.log(`Solicitud de generación de PDF para el reporte de estadísticas de usuarios`)
 
@@ -57,24 +56,26 @@ export class DashboardReportController {
       this.logger.log(`Estadísticas obtenidas:`, userStats)
 
       // Determinar si el PDF debe descargarse o mostrarse en el navegador
-      const isDownload = download === "true" || download === "1"
+      // const isDownload = download === "true" || download === "1"
 
       const today = new Date()
       const year = today.getFullYear()
       const month = (today.getMonth() + 1).toString().padStart(2, "0")
       const day = today.getDate().toString().padStart(2, "0")
-      // const filename = `reporte-estadisticas-usuarios-${new Date().toISOString().split("T")[0]}.pdf`
-      const filename = `reporte-estadistico-de-usuarios-${year}-${month}-${day}.pdf`
+      // const filename = `reporte-estadistico-de-usuarios-${year}-${month}-${day}.pdf`
+      const filename = `reporte-estadistico-de-usuarios-${year}.pdf`
 
       // Configurar encabezados de respuesta
       res.setHeader("Content-Type", "application/pdf")
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+      res.setHeader('Pragma', 'no-cache')
+      res.setHeader('Expires', '0')
       res.setHeader(
         "Content-Disposition",
-        isDownload ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
+        download ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
       )
 
       // Generar PDF con las estadísticas
-      // await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, reportDto, res)
       await this.pdfGeneratorDashboardService.generateUserStatsPdf(userStats, res, user)
 
       this.logger.log(`PDF de estadísticas generado exitosamente`)

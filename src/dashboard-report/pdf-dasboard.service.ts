@@ -405,8 +405,13 @@ export class PdfDashboardService {
         })
       }
 
+            // Crea una nueva instancia de Date
+      const fechaActual = new Date();
+      // Obtiene el año de la fecha actual
+      const anioActual = fechaActual.getFullYear();
+
       content.push({
-        text: "REPORTE DE ESTADÍSTICAS DE USUARIOS",
+        text: `REPORTE ESTADÍSTICO DE USUARIOS EN EL AÑO ${anioActual}`,
         style: "reportTitle",
       })
 
@@ -449,7 +454,7 @@ export class PdfDashboardService {
         pageSize: "A4",
         pageMargins: [40, 50, 40, 50],
         footer: (currentPage, pageCount) => ({
-          text: `Reporte de Estadísticas de Usuarios - Página ${currentPage} de ${pageCount}`,
+          text: `Reporte anual de usuarios - Página ${currentPage} de ${pageCount}`,
           style: "footer",
         }),
         header: ((currentPage, pageCount, pageSize) => {
@@ -505,6 +510,9 @@ export class PdfDashboardService {
    */
   // private addGeneralInfoTable(content: any[], reportDto: any, styles: StyleDictionary): void {
   private addGeneralInfoTable(content: any[], styles: StyleDictionary, user: IJwtPayload): void {
+    const today = new Date()
+    const year = today.getFullYear()
+
     const currentDate = new Date().toLocaleDateString("es-ES", {
       year: "numeric",
       month: "long",
@@ -534,7 +542,7 @@ export class PdfDashboardService {
             { text: "Fecha de Generación", style: "tableHeader" },
           ],
           [
-            { text: "Estadísticas de Usuarios", style: "tableCellValue" },
+            { text: `Estadísticas de Usuarios en ${year}`, style: "tableCellValue" },
             // { text: reportDto?.role || "Sistema", style: "tableCellValue" },
             { text: "Sistema", style: "tableCellValue" },
             // { text: user?.role || "Sistema", style: "tableCellValue" },
@@ -556,16 +564,16 @@ export class PdfDashboardService {
           widths: ["50%", "50%"],
           body: [
             [
-              { text: "Total de Usuarios:", style: "tableCellLabel" },
+              { text: "Total de Usuarios en el Año:", style: "tableCellLabel" },
               { text: userStats.totalUsers.toString(), style: "tableCellValue" },
+            ],
+            [
+              { text: "Usuarios Registrados en el Mes:", style: "tableCellLabel" },
+              { text: userStats.usersThisMonth.toString(), style: "tableCellValue" },
             ],
             [
               { text: "Usuarios Registrados Hoy:", style: "tableCellLabel" },
               { text: userStats.usersToday.toString(), style: "tableCellValue" },
-            ],
-            [
-              { text: "Usuarios Registrados Este Mes:", style: "tableCellLabel" },
-              { text: userStats.usersThisMonth.toString(), style: "tableCellValue" },
             ],
             [
               { text: "Usuarios Activos:", style: "tableCellLabel" },

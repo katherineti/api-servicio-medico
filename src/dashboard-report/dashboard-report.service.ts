@@ -699,17 +699,23 @@ export class DashboardReportService {
       const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0));
       const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
 
+      const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+      const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+
       // console.log("PROBANDO. INICIO DEL DÍA ACTUAL (UTC): ", startOfDay.toISOString(), " , FIN DEL DÍA (UTC): ", endOfDay.toISOString());
       // console.log("PROBANDO. INICIO DEL MES ACTUAL (UTC): ", startOfMonth.toISOString(), " , FIN DE MES (UTC): ", endOfMonth.toISOString());
 
       // --- CAMBIO CLAVE: Se reemplazo count(condition) por count(sql`CASE WHEN ... THEN 1 ELSE NULL END`) ---
       const [generalStats] = await this.db
         .select({
-          totalUsers: count(), // Este sigue siendo el conteo total sin condiciones
-          usersToday: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfDay} AND ${usersTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
+          // totalUsers: count(), 
+          //Usuarios del año:
+          totalUsers: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfYear} AND ${usersTable.createdAt} <= ${endOfYear} THEN 1 ELSE NULL END)`,
           usersThisMonth: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfMonth} AND ${usersTable.createdAt} <= ${endOfMonth} THEN 1 ELSE NULL END)`,
-          activeUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = TRUE THEN 1 ELSE NULL END)`,
-          inactiveUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = FALSE THEN 1 ELSE NULL END)`,
+          usersToday: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfDay} AND ${usersTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
+          // ¡Se añade el filtro por año a los usuarios activos e inactivos!
+          activeUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = TRUE AND (${usersTable.createdAt} >= ${startOfYear} AND ${usersTable.createdAt} <= ${endOfYear}) THEN 1 ELSE NULL END)`,
+          inactiveUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = FALSE AND (${usersTable.createdAt} >= ${startOfYear} AND ${usersTable.createdAt} <= ${endOfYear}) THEN 1 ELSE NULL END)`,
         })
         .from(usersTable);
       // --- FIN CAMBIO CLAVE ---
@@ -722,7 +728,15 @@ export class DashboardReportService {
           userCount: count(usersTable.id), // Contar usuarios, si no hay se devolverá 0 por el LEFT JOIN
         })
         .from(rolesTable) 
-        .leftJoin(usersTable, eq(usersTable.role, rolesTable.id)) 
+        .leftJoin( usersTable, 
+          and(
+            eq(usersTable.role, rolesTable.id),
+            and(
+              gte(usersTable.createdAt, startOfYear),
+              lte(usersTable.createdAt, endOfYear),
+            )
+          )
+        ) 
         .groupBy(rolesTable.id, rolesTable.name) 
         .orderBy(rolesTable.id); // Ordenar por el ID del rol para consistencia
 
@@ -785,8 +799,8 @@ export class DashboardReportService {
       return completeStats;
 
     } catch (error) {
-      this.logger.error("Error al obtener estadísticas de usuarios:", error);
-      throw new Error("Error al obtener estadísticas completas de usuarios");
+      this.logger.error("Error al obtener las estadísticas de usuarios:", error);
+      throw new Error("Error al obtener las estadísticas de usuarios");
     }
   }
 

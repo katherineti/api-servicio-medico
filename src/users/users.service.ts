@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
 import { usersTable } from 'src/db/schema';
-import { and, count, desc, eq, ilike, ne, sql } from 'drizzle-orm'
+import { and, count, desc, eq, gte, ilike, lte, ne, sql } from 'drizzle-orm'
 import * as argon2 from "argon2";
 import { CreateUser, User } from 'src/db/types/users.types';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -206,9 +206,21 @@ export class UsersService {
 
   //Para el contador de usuarios en el dashboard
   async countAllUsers(): Promise<{ count: number }> {
+    const now = new Date();
+    const nowUtc = new Date(now.toISOString());
+    const currentYear = nowUtc.getUTCFullYear();
+    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+    
     const [result] = await 
     this.db.select({ count: count() })
     .from(usersTable)
+    .where(
+      and(
+        gte(usersTable.createdAt, startOfYear),
+        lte(usersTable.createdAt, endOfYear),
+      )
+    )
     
     return result ? result : { count: 0 };
   }
