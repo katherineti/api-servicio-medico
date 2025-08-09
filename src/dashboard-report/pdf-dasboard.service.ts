@@ -321,14 +321,6 @@ export class PdfDashboardService {
         this.logger.warn("No se pudo cargar el logo:", error.message)
       }
 
-      // Generar gráfico de registros
-      let chartBuffer = null
-      try {
-        chartBuffer = await this.generateRegistrationChart(userStats)
-      } catch (error) {
-        this.logger.warn("No se pudo generar el gráfico:", error.message)
-      }
-
       // Definir estilos
       const styles: StyleDictionary = {
         headerSection: {
@@ -405,7 +397,7 @@ export class PdfDashboardService {
         })
       }
 
-            // Crea una nueva instancia de Date
+      // Crea una nueva instancia de Date
       const fechaActual = new Date();
       // Obtiene el año de la fecha actual
       const anioActual = fechaActual.getFullYear();
@@ -448,7 +440,16 @@ export class PdfDashboardService {
       // NUEVO: tabla detallada por mes 
       this.addRegistrationsByMonthSection(content, userStats, styles)
 
-/*       // 5) AGREGAR GRÁFICO DE REGISTROS POR DÍA
+/*     // 5) AGREGAR GRÁFICO DE REGISTROS POR DÍA
+
+      // Generar gráfico de registros por dia
+      let chartBuffer = null
+      try {
+        chartBuffer = await this.generateRegistrationChart(userStats)
+      } catch (error) {
+        this.logger.warn("No se pudo generar el gráfico:", error.message)
+      }
+
       if (chartBuffer) {
         content.push({
           image: `data:image/png;base64,${chartBuffer.toString("base64")}`,
@@ -911,7 +912,7 @@ export class PdfDashboardService {
     }
   }
 
-  // NUEVO: Tabla detallada por mes del año actual
+  // NUEVO: Tabla Detallada de Registros por Mes
   private addRegistrationsByMonthSection(
     content: any[],
     userStats: CompleteUserStats,
@@ -928,6 +929,7 @@ export class PdfDashboardService {
       [
         { text: "Mes", style: "tableHeader" },
         { text: "Usuarios Registrados", style: "tableHeader" },
+        { text: "Porcentaje", style: "tableHeader" },
       ],
     ]
 
@@ -941,17 +943,21 @@ export class PdfDashboardService {
     for (let month = 1; month <= 12; month++) {
       const count = byMonth.get(month) ?? 0
       // getMonthName espera índice 0-11
-      const monthName = this.getMonthName(month - 1)
+      const monthName = this.getMonthName(month - 1);
+
+      const percentage = userStats.totalUsers > 0 ? ((count / userStats.totalUsers) * 100).toFixed(1) : "0"
 
       tableBody.push([
         { text: monthName, style: "tableCellValue" },
         { text: count.toString(), style: "tableCellValue" },
+        { text: `${percentage}%`, style: "tableCellValue" },
       ])
     }
 
     content.push({
       table: {
-        widths: ["60%", "40%"],
+        // widths: ["60%", "40%"],
+        widths: ["40%", "30%", "30%"],
         body: tableBody,
       },
       layout: {
