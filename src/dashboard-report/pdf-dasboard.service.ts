@@ -419,13 +419,36 @@ export class PdfDashboardService {
       // this.addGeneralInfoTable(content, reportDto, styles)
       this.addGeneralInfoTable(content, styles, user)
 
-      // Estadísticas generales
+      // 1) Estadísticas generales
       this.addGeneralStatsSection(content, userStats, styles)
 
-      // Usuarios por rol
+      // 2) Usuarios por rol
       this.addUsersByRoleSection(content, userStats, styles)
 
-      // AGREGAR GRÁFICO DE REGISTROS POR DÍA
+      // 3) NUEVO: Generar e insertar el gráfico anual por meses (AÑO ACTUAL). Ejemplo titulo del grafico: 'Registro de Usuarios - Año 2025'
+      let yearlyChartBuffer = null
+      try {
+        yearlyChartBuffer = await this.generateYearlyRegistrationChart(userStats);
+      } catch (error) {
+        this.logger.warn("No se pudo generar el gráfico anual de usuarios:", (error as any)?.message)
+      }
+
+      if (yearlyChartBuffer) {
+/*         const anioActual = new Date().getFullYear()
+        // Título del gráfico anual (opcional, usando estilos existentes)
+        content.push({ text: `Registros de Usuarios por Mes - ${anioActual}`, style: "sectionTitle" }) */
+        content.push({
+          image: `data:image/png;base64,${yearlyChartBuffer.toString("base64")}`,
+          width: 500,
+          alignment: "center",
+          margin: [0, 10, 0, 20],
+        })
+      }
+
+      // NUEVO: tabla detallada por mes 
+      this.addRegistrationsByMonthSection(content, userStats, styles)
+
+/*       // 5) AGREGAR GRÁFICO DE REGISTROS POR DÍA
       if (chartBuffer) {
         content.push({
           image: `data:image/png;base64,${chartBuffer.toString("base64")}`,
@@ -434,11 +457,10 @@ export class PdfDashboardService {
           margin: [0, 10, 0, 20],
         })
       }
+     //... Sección “Tabla Detallada de Registros por Día”
+      this.addRegistrationsByDaySection(content, userStats, styles) */
 
-      // Registros por día (tabla)
-      this.addRegistrationsByDaySection(content, userStats, styles)
-
-      // Información del sistema
+      // 6)Información del sistema
       // this.addSystemInfoSection(content, reportDto, styles)
       this.addSystemInfoSection(content, styles, user)
 
@@ -787,5 +809,162 @@ export class PdfDashboardService {
       }
     }
     return null
+  }
+
+  // NUEVO grafico anual de usuarios: Gráfico por MES del año actual
+  private async generateYearlyRegistrationChart(userStats: CompleteUserStats): Promise<Buffer | null> {
+    try {
+      const now = new Date()
+      const currentYear = now.getFullYear()
+
+      // Si no hay datos mensuales, devolvemos null
+      if (!userStats.registrationsByMonth || userStats.registrationsByMonth.length === 0) {
+        this.logger.warn("No hay datos de registros por mes para generar el gráfico anual")
+        return null
+      }
+
+      // Asegurar 12 meses (1..12) con 0 por defecto
+      const monthCounts: number[] = Array.from({ length: 12 }, () => 0)
+      for (const m of userStats.registrationsByMonth) {
+        // asumiendo que m.month es 1..12
+        if (m.month >= 1 && m.month <= 12) {
+          monthCounts[m.month - 1] = Number(m.count || 0)
+        }
+      }
+
+      // Etiquetas en español
+      const labels = [
+        "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+      ]
+      const data = monthCounts
+
+      const configuration: ChartConfiguration<"bar", number[], string> = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Usuarios Registrados",
+              data,
+              backgroundColor: "#003366",
+              borderColor: "#003366",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: `Registros de Usuarios en el ${currentYear}`,
+              font: { size: 14, weight: "bold" as const },
+              color: "#003366",
+            },
+            legend: {
+              display: true,
+              position: "top",
+              labels: { color: "#333333", font: { size: 12 } },
+            },
+            tooltip: {
+              callbacks: {
+                title: (ctx) => `${ctx[0].label} ${currentYear}`,
+                label: (ctx) => `Usuarios registrados: ${ctx.parsed.y}`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: `Meses del Año ${currentYear}`,
+                color: "#666666",
+                font: { size: 12, weight: "bold" as const },
+              },
+              grid: { color: "#e0e0e0" },
+              ticks: { color: "#666666", font: { size: 10 } },
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Cantidad de Usuarios",
+                color: "#666666",
+                font: { size: 12, weight: "bold" as const },
+              },
+              grid: { color: "#e0e0e0" },
+              ticks: { color: "#666666", font: { size: 10 }, stepSize: 1 },
+            },
+          },
+        },
+      }
+
+      const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration)
+      this.logger.log(`Gráfico anual de usuarios generado exitosamente para el año ${currentYear}`)
+
+      return imageBuffer
+    } catch (error) {
+      this.logger.error("Error al generar gráfico de registros anual de usuarios:", error)
+      return null
+    }
+  }
+
+  // NUEVO: Tabla detallada por mes del año actual
+  private addRegistrationsByMonthSection(
+    content: any[],
+    userStats: CompleteUserStats,
+    styles: StyleDictionary
+  ): void {
+    if (!userStats.registrationsByMonth || userStats.registrationsByMonth.length === 0) {
+      this.logger.warn("No hay datos de registros por mes para construir la tabla")
+      return
+    }
+
+    content.push({ text: "Tabla Detallada de Registros por Mes", style: "sectionTitle" })
+
+    const tableBody: any[] = [
+      [
+        { text: "Mes", style: "tableHeader" },
+        { text: "Usuarios Registrados", style: "tableHeader" },
+      ],
+    ]
+
+    // Mapa (mes -> cantidad)
+    const byMonth = new Map<number, number>()
+    for (const m of userStats.registrationsByMonth) {
+      byMonth.set(Number(m.month), Number(m.count || 0))
+    }
+
+    // Rellenar 1..12 y mantener orden
+    for (let month = 1; month <= 12; month++) {
+      const count = byMonth.get(month) ?? 0
+      // getMonthName espera índice 0-11
+      const monthName = this.getMonthName(month - 1)
+
+      tableBody.push([
+        { text: monthName, style: "tableCellValue" },
+        { text: count.toString(), style: "tableCellValue" },
+      ])
+    }
+
+    content.push({
+      table: {
+        widths: ["60%", "40%"],
+        body: tableBody,
+      },
+      layout: {
+        hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+        vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+        hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+        vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+        paddingLeft: (i, node) => 6,
+        paddingRight: (i, node) => 6,
+        paddingTop: (i, node) => 3,
+        paddingBottom: (i, node) => 3,
+      },
+      margin: [0, 5, 0, 15],
+    })
   }
 }

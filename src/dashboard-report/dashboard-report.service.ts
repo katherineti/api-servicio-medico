@@ -23,6 +23,13 @@ export interface DashboardReportDto {
   role: string
   additionalInfo?: any
 }
+
+export interface UserRegistrationByMonth {
+  month: number // 1-12
+  label: string // "Enero", "Febrero", ...
+  count: number // Cantidad de usuarios registrados en el mes
+}
+
 export interface UserRegistrationByDay {
   day: number
   date: string // Fecha en formato YYYY-MM-DD
@@ -43,6 +50,7 @@ export interface CompleteUserStats {
   inactiveUsers: number
   usersByRole: UsersByRole[]
   registrationsByDay: UserRegistrationByDay[]
+  registrationsByMonth: UserRegistrationByMonth[] // NUEVO
 }
 
 type CustomHeader = (currentPage: number, pageCount: number, pageSize: any) => any
@@ -740,7 +748,7 @@ export class DashboardReportService {
         .groupBy(rolesTable.id, rolesTable.name) 
         .orderBy(rolesTable.id); // Ordenar por el ID del rol para consistencia
 
-      // 3. Registros por día del mes actual 
+      // 3. Registros por día del mes actual. Ejemplo titulo del grafico: Registros de Usuarios - Agosto 2025 
       const registrationsByDayResult = await this.db
         .select({
           createdAt: usersTable.createdAt,
@@ -785,6 +793,43 @@ export class DashboardReportService {
 
       registrationsByDay.sort((a, b) => a.day - b.day);
 
+// 4. Registros por mes del año actual
+const registrationsByMonthResult = await this.db
+  .select({
+    month: sql<number>`EXTRACT(MONTH FROM ${usersTable.createdAt})`,
+    userCount: count(),
+  })
+  .from(usersTable)
+  .where(
+    and(
+      gte(usersTable.createdAt, startOfYear),
+      lte(usersTable.createdAt, endOfYear),
+    )
+  )
+  .groupBy(sql`EXTRACT(MONTH FROM ${usersTable.createdAt})`)
+  .orderBy(sql`EXTRACT(MONTH FROM ${usersTable.createdAt})`)
+
+const monthsEs = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
+
+// Inicializa los 12 meses con 0
+const monthCounts: number[] = Array.from({ length: 12 }, () => 0)
+
+registrationsByMonthResult.forEach((row) => {
+  const m = Number(row.month) // 1-12
+  if (m >= 1 && m <= 12) {
+    monthCounts[m - 1] = Number(row.userCount)
+  }
+})
+
+const registrationsByMonth: UserRegistrationByMonth[] = monthCounts.map((count, idx) => ({
+  month: idx + 1,
+  label: monthsEs[idx],
+  count,
+}))
+
       const completeStats: CompleteUserStats = {
         totalUsers: Number(generalStats.totalUsers),
         usersToday: Number(generalStats.usersToday),
@@ -793,6 +838,7 @@ export class DashboardReportService {
         inactiveUsers: Number(generalStats.inactiveUsers),
         usersByRole,
         registrationsByDay,
+        registrationsByMonth, // NUEVO
       };
 
       this.logger.log("Estadísticas completas de usuarios:", JSON.stringify(completeStats, null, 2));
