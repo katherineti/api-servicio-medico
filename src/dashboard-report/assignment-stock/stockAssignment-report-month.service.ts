@@ -198,6 +198,11 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         startRange = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
         endRange = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
       } */
+        const now = new Date()
+        const nowUtc = new Date(now.toISOString())
+        const currentYear = nowUtc.getUTCFullYear()
+        const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+        const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
 
     if (options.reportType === "day") {
         // 1. Obtener la fecha objetivo (hoy, en tu zona horaria local)
@@ -224,10 +229,10 @@ export class AssignmentReportMonthByMedicalSuppliesService {
 
         startRange = startOfDay;
         endRange = endOfDay;
-      } else {
-        const now = new Date()
-        const nowUtc = new Date(now.toISOString())
 
+      } else {
+        // const now = new Date()
+        // const nowUtc = new Date(now.toISOString())
         startOfDay = new Date(Date.UTC(
             nowUtc.getUTCFullYear(), 
             nowUtc.getUTCMonth(), 
@@ -237,19 +242,19 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             nowUtc.getUTCMonth(), 
             nowUtc.getUTCDate(), 23, 59, 59, 999));
 
-        const currentYear = nowUtc.getUTCFullYear()
+        // const currentYear = nowUtc.getUTCFullYear()
         const currentMonth = nowUtc.getUTCMonth()
+        
         startRange = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
         endRange = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
       } 
 
-console.log('*****************************getCompleteAssignmentStats:');
-console.log('startOfDay:', startOfDay);
-console.log('endOfDay:', endOfDay);
       // 1. Estadísticas generales de asignaciones
       const [generalStats] = await this.db
         .select({
-          totalAssignments: sum(assignmentTable.products),
+          // totalAssignments: sum(assignmentTable.products),
+          totalAssignments: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startOfYear} AND ${assignmentTable.createdAt} <= ${endOfYear} THEN ${assignmentTable.products} ELSE 0 END)`,
+
           assignmentsToday: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfDay} AND ${assignmentTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
           assignmentsThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE NULL END)`,
           totalProductsAssigned: sql<number>`sum(${assignmentTable.products})`,//por a hora no se usa porque es la suma de todos los registros
@@ -441,14 +446,14 @@ console.log('endOfDay:', endOfDay);
       registrationsByDay.sort((a, b) => a.day - b.day)
 
       const completeStats: CompleteAssignmentStats = {
-        totalAssignments: Number(generalStats.totalAssignments),
+        totalAssignments: Number(generalStats.totalAssignments), //se usa en Estadísticas Generales
         // assignmentsToday: Number(generalStats.assignmentsToday),
         assignmentsToday:  (await this.assignmentService.totalAssignmentOfTheDay()).count,
         // assignmentsThisMonth: Number(generalStats.assignmentsThisMonth),
         assignmentsThisMonth: (await this.assignmentService.totalAssignmentOfMonth()).count,
         totalProductsAssigned: Number(generalStats.totalProductsAssigned) || 0, //no se usa
         // totalProductsAssignedThisMonth: Number(generalStats.totalProductsAssignedThisMonth) || 0,
-        totalProductsAssignedThisMonthOrToday: options.reportType === "day"? Number( (await this.assignmentService.countProductsAssignmentOfTheDay()).count ) : Number( (await this.assignmentService.countProductsAssignmentOfMonth([options.supplyType])).count ),
+        totalProductsAssignedThisMonthOrToday: options.reportType === "day"? Number( (await this.assignmentService.countProductsAssignmentOfTheDay()).count ) : Number( (await this.assignmentService.countProductsAssignmentOfMonth([options.supplyType])).count ), //se usa en Estadísticas Generales
         assignmentsByEmployee,
         assignmentsByProductType,
         assignmentsByFamily,
@@ -675,7 +680,7 @@ console.log('endOfDay:', endOfDay);
               widths: ["50%", "50%"],
               body: [
                 [
-                  { text: `Total de ${supplyType} Asignados:`, style: "tableCellLabel" },
+                  { text: `Total de ${supplyType} Asignados en el Año:`, style: "tableCellLabel" },
                   { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
                 ],
 /*                 [
@@ -692,7 +697,7 @@ console.log('endOfDay:', endOfDay);
                 // ],
                 [
                   { text: `Total de ${supplyType} Asignados ${periodLabel}:`, style: "tableCellLabel" },
-                  { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
+                  { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "metricValue" },
                 ],
               ],
             },
@@ -718,7 +723,7 @@ console.log('endOfDay:', endOfDay);
               widths: ["50%", "50%"],
               body: [
                 [
-                  { text: `Total de ${supplyType} Asignados:`, style: "tableCellLabel" },
+                  { text: `Total de ${supplyType} Asignados en el Año:`, style: "tableCellLabel" },
                   { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
                 ],
 /*                 [
@@ -735,7 +740,7 @@ console.log('endOfDay:', endOfDay);
                 // ],
                 [
                   { text: `Total de ${supplyType} Asignados ${periodLabel}:`, style: "tableCellLabel" },
-                  { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "tableCellValue" },
+                  { text: assignmentStats.totalProductsAssignedThisMonthOrToday.toString(), style: "metricValue" },
                 ],
               ],
             },

@@ -168,6 +168,14 @@ export class MedicalSuppliesReportTodayService {
     try {
       const now = new Date()
       const nowUtc = new Date(now.toISOString())
+      const currentYear = nowUtc.getUTCFullYear()
+      const currentMonth = nowUtc.getUTCMonth()
+
+      const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+      const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+
+      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
+      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
 
       const startOfDay = new Date(
         Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate(), 0, 0, 0, 0),
@@ -176,15 +184,11 @@ export class MedicalSuppliesReportTodayService {
         Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate(), 23, 59, 59, 999),
       )
 
-      const currentYear = nowUtc.getUTCFullYear()
-      const currentMonth = nowUtc.getUTCMonth()
-      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
-      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
-
       // 1. Estadísticas generales de productos 
       const [generalStats] = await this.db
         .select({
-          totalProducts: count(),
+          // totalProducts: count(),
+          totalProducts: sql<number>`count(CASE WHEN ${productsTable.createdAt} >= ${startOfYear} AND ${productsTable.createdAt} <= ${endOfYear} THEN 1 ELSE NULL END)`,
           productsToday: sql<number>`count(CASE WHEN ${productsTable.createdAt} >= ${startOfDay} AND ${productsTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
         })
         .from(productsTable)
@@ -553,7 +557,7 @@ console.log("REGISTROS GENERALES " , generalStats)
           widths: ["50%", "50%"],
           body: [
             [
-              { text: "Registros de Inventario almacén:", style: "tableCellLabel" },
+              { text: "Registros de Inventario almacén en el Año:", style: "tableCellLabel" },
               { text: medicalSupplyStats.totalProducts.toString(), style: "tableCellValue" },
             ],
             [

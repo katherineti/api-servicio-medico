@@ -771,7 +771,8 @@ console.log("-> lowStockAvailableDetails " ,  stats.lowStockAvailableDetails)
         recommendations.push(`  - ${this.toSentenceCase(product.name)}: Solicitar ${needed} unidades adicionales al proveedor ${product.provider}`)
       })
     } else {
-      recommendations.push(`✓ Todos los ${supplyType.toLowerCase()} disponibles tienen stock adecuado`)
+      // recommendations.push(`✓ Todos los ${supplyType.toLowerCase()} disponibles tienen stock adecuado`)
+      recommendations.push(`Todos los ${supplyType.toLowerCase()} disponibles tienen stock adecuado`)
     }
 
     // Próximos a vencer (solo medicamentos)
