@@ -389,6 +389,7 @@ export class MedicalSuppliesReportAllService {
       .from(productsTable)
       .where(
         and(
+          inArray(productsTable.statusId, [1,2,3,4]),
           gte(productsTable.createdAt, startOfYear),
           lte(productsTable.createdAt, endOfYear),
         )

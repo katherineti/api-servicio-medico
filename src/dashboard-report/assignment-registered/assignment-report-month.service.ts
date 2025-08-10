@@ -19,9 +19,12 @@ import type {
   AssignmentsByEmployee,
   AssignmentsByProductType,
   AssignmentsByFamily,
+  AssignmentRegistrationByMonth,
 } from "./assignment-stats.interface"
 import { PG_CONNECTION } from "src/constants"
 import { AssignmentService } from "src/assignment/assignment.service"
+import type { ChartConfiguration } from "chart.js"
+import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 
 export interface AssignmentReportOptions {
   reportType: "day" | "month" | "year"
@@ -31,6 +34,7 @@ export interface AssignmentReportOptions {
 @Injectable()
 export class AssignmentReportMonthService {
   private readonly logger = new Logger(AssignmentReportMonthService.name)
+  private readonly chartJSNodeCanvas: ChartJSNodeCanvas
 
   constructor(
     @Inject(PG_CONNECTION) private db: NeonDatabase,
@@ -38,7 +42,19 @@ export class AssignmentReportMonthService {
     @Inject(forwardRef(() => DashboardReportService))
     private readonly dashboardReportService: DashboardReportService,
     private readonly assignmentService: AssignmentService
-  ) {}
+  ) {
+      // Inicializar ChartJS para generar gráficos
+      this.chartJSNodeCanvas = new ChartJSNodeCanvas({
+        width: 600,
+        height: 400,
+        backgroundColour: "white",
+        chartCallback: (ChartJS) => {
+          // Registrar plugins necesarios
+          ChartJS.defaults.responsive = true
+          ChartJS.defaults.maintainAspectRatio = false
+        },
+      })
+  }
 
   /**
    * Genera un PDF personalizado específico para asignaciones del mes
@@ -316,7 +332,8 @@ console.log("antes de 1.generalStats")
       //Consulta para dia y mes actual:
       generalStats = await this.db
         .select({
-          totalAssignments: count(),
+          // totalAssignments: count(),
+          totalAssignments: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfYear} AND ${assignmentTable.createdAt} <= ${endOfYear} THEN 1 ELSE NULL END)`,
           assignmentsThisMonth: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN 1 ELSE NULL END)`,
           totalProductsAssignedThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE 0 END)`,
         })
@@ -407,7 +424,7 @@ console.log("antes de 1.generalStats")
         .groupBy(familyTable.id, familyTable.name, familyTable.cedula, employeeTable.name)
         .orderBy(desc(sql<number>`count(${assignmentTable.id})`));
 
-      // 5. Registros por día del mes actual
+      // 5. Registros por día del mes actual // no se esta usando en el anual
       const registrationsByDayResult = await this.db
         .select({
           createdAt: assignmentTable.createdAt,
@@ -504,6 +521,42 @@ console.log("antes de 1.generalStats")
 
       registrationsByDay.sort((a, b) => a.day - b.day)
 
+    // 7. Registros por mes del año actual (Para el gráfico de registros anuales de las asignaciones de insumos medicos a empleados)
+    const registrationsByMonthResult = await this.db
+      .select({
+        month: sql<number>`EXTRACT(MONTH FROM ${assignmentTable.createdAt})`,
+        assignmentCount: count(),
+      })
+      .from(assignmentTable)
+      .innerJoin(productsTable, eq(assignmentTable.productId, productsTable.id))
+      .where(
+        and(
+          gte(assignmentTable.createdAt, startOfYear),
+          lte(assignmentTable.createdAt, endOfYear),
+            inArray(productsTable.type, [1, 2, 3]),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
+        )
+      )
+      .groupBy(sql`EXTRACT(MONTH FROM ${assignmentTable.createdAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${assignmentTable.createdAt})`);
+      const monthsEs = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+      ];
+      // Inicializa los 12 meses con 0
+      const monthCounts: number[] = Array.from({ length: 12 }, () => 0);
+      registrationsByMonthResult.forEach((row) => {
+        const m = Number(row.month) // 1-12
+        if (m >= 1 && m <= 12) {
+          monthCounts[m - 1] = Number(row.assignmentCount)
+        }
+      });
+      const registrationsByMonth: AssignmentRegistrationByMonth[] = monthCounts.map((count, idx) => ({
+        month: idx + 1,
+        label: monthsEs[idx],
+        count,
+      }));
+
       const completeStats: CompleteAssignmentStats = {
         totalAssignments: Number(generalStats.totalAssignments),
 
@@ -516,7 +569,9 @@ console.log("antes de 1.generalStats")
         assignmentsByEmployee,
         assignmentsByProductType,
         assignmentsByFamily,
+
         registrationsByDay,
+        registrationsByMonth,
 
         registryAssignmentsYear: Number(generalStats.registryAssignmentsYear),
         totalProductsAssignedYear: Number(generalStats.totalProductsAssignedYear),
@@ -625,7 +680,10 @@ console.log("antes de 1.generalStats")
         options.reportType === "day"
           ? "REPORTE DE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
           : "REPORTE DE REGISTROS MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS" */
-      let reportTitle = "REPORTE REGISTROS ANUALES DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      
+      let reportTitle = `REPORTE REGISTROS ANUALES DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS ${currentYear}`;
       if(options.reportType === "month"){
        reportTitle = "REPORTE REGISTROS MENSUALES DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
       }
@@ -665,9 +723,32 @@ console.log("antes de 1.generalStats")
 
       // Asignaciones a familiares
       this.addAssignmentsByFamilySection(content, assignmentStats, styles, options.reportType)
-
+      
+      // NUEVO: Generar e insertar el gráfico anual por meses (AÑO ACTUAL). Ejemplo titulo del grafico: 'Registro de Insumos medicos - Año 2025'
+      if(options.reportType === "year"){
+        let yearlyChartBuffer = null
+        try {
+          yearlyChartBuffer = await this.generateYearlyRegistrationChart(assignmentStats);
+        } catch (error) {
+          this.logger.warn("No se pudo generar el gráfico anual de usuarios:", (error as any)?.message)
+        }
+  
+        if (yearlyChartBuffer) {
+          /*      // Título del gráfico anual (opcional, usando estilos existentes)
+          content.push({ text: `Registros de Usuarios por Mes - ${new Date().getFullYear()}`, style: "sectionTitle" }) */
+          content.push({
+            image: `data:image/png;base64,${yearlyChartBuffer.toString("base64")}`,
+            width: 500,
+            alignment: "center",
+            margin: [0, 10, 0, 20],
+          })
+        }
+      }
       // Detalle de Asignaciones
       this.addAssignmentDetailSection(content, assignmentStats, styles, options.reportType)
+      // NUEVO: tabla detallada por mes 
+      // this.addRegistrationsByMonthSection(content, medicalSupplyStats, styles);
+
 
       // Información del sistema
       this.addSystemInfoSection(content, reportData, styles)
@@ -790,7 +871,7 @@ console.log("antes de 1.generalStats")
               widths: ["50%", "50%"],
               body: [
                 [
-                  { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
+                  { text: "Total de Asignaciones en el Año (Registro):", style: "tableCellLabel" },
                   { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
                 ],
                 [
@@ -833,7 +914,7 @@ console.log("antes de 1.generalStats")
               widths: ["50%", "50%"],
               body: [
                 [
-                  { text: "Total de Asignaciones (Registro):", style: "tableCellLabel" },
+                  { text: "Total de Asignaciones en el Año (Registro):", style: "tableCellLabel" },
                   { text: assignmentStats.totalAssignments.toString(), style: "tableCellValue" },
                 ],
 /*                 [
@@ -1104,7 +1185,8 @@ console.log("antes de 1.generalStats")
           { text: "Familiar", style: "tableHeader" },
           { text: "Producto", style: "tableHeader" },
           { text: "Tipo", style: "tableHeader" },
-          { text: "Cantidad", style: "tableHeader" },
+          // { text: "Cantidad", style: "tableHeader" },
+          { text: "Stock asignado", style: "tableHeader" },
         ],
       ]
 
@@ -1121,7 +1203,7 @@ console.log("antes de 1.generalStats")
           },
           { text: this.dashboardReportService.getValidContent(assignment.productName), style: "tableCellValue" },
           { text: this.dashboardReportService.getValidContent(assignment.typeName), style: "tableCellValue" },
-          { text: assignment.assignedProducts.toString(), style: "tableCellValue" },
+          { text: assignment.assignedProducts.toString(), style: "tableCellValue" }, // = assignmentTable.products,
         ])
       })
 
@@ -1218,4 +1300,105 @@ console.log("antes de 1.generalStats")
       },
     )
   }
+
+  // NUEVO grafico anual: Gráfico por MES del año actual
+  private async generateYearlyRegistrationChart(medicalSupplyStats: CompleteAssignmentStats): Promise<Buffer | null> {
+    try {
+      const now = new Date()
+      const currentYear = now.getFullYear()
+
+      // Si no hay datos mensuales, devolvemos null
+      if (!medicalSupplyStats.registrationsByMonth || medicalSupplyStats.registrationsByMonth.length === 0) {
+        this.logger.warn("No hay datos de registros por mes para generar el gráfico anual")
+        return null
+      }
+
+      // Asegurar 12 meses (1..12) con 0 por defecto
+      const monthCounts: number[] = Array.from({ length: 12 }, () => 0)
+      for (const m of medicalSupplyStats.registrationsByMonth) {
+        // asumiendo que m.month es 1..12
+        if (m.month >= 1 && m.month <= 12) {
+          monthCounts[m.month - 1] = Number(m.count || 0)
+        }
+      }
+
+      // Etiquetas en español
+      const labels = [
+        "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+      ]
+      const data = monthCounts
+
+      const configuration: ChartConfiguration<"bar", number[], string> = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Registros de Asignaciones de Insumos médicos a Empleados",
+              data,
+              backgroundColor: "#003366",
+              borderColor: "#003366",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: `Registros de Asignaciones de Insumos médicos a Empleados en el ${currentYear}`,
+              font: { size: 14, weight: "bold" as const },
+              color: "#003366",
+            },
+            legend: {
+              display: true,
+              position: "top",
+              labels: { color: "#333333", font: { size: 12 } },
+            },
+            tooltip: {
+              callbacks: {
+                title: (ctx) => `${ctx[0].label} ${currentYear}`,
+                label: (ctx) => `Registros de Asignaciones de Insumos médicos a Empleados: ${ctx.parsed.y}`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: `Meses del Año ${currentYear}`,
+                color: "#666666",
+                font: { size: 12, weight: "bold" as const },
+              },
+              grid: { color: "#e0e0e0" },
+              ticks: { color: "#666666", font: { size: 10 } },
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Registros",
+                color: "#666666",
+                font: { size: 12, weight: "bold" as const },
+              },
+              grid: { color: "#e0e0e0" },
+              ticks: { color: "#666666", font: { size: 10 }, stepSize: 1 },
+            },
+          },
+        },
+      }
+
+      const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration)
+      this.logger.log(`Gráfico anual de asignaciones de inventario almacen a empleados, generado exitosamente para el año ${currentYear}`)
+
+      return imageBuffer
+    } catch (error) {
+      this.logger.error("Error al generar gráfico de registros anual de asignaciones de inventario almacen a empleados,:", error)
+      return null
+    }
+  }
+
 }

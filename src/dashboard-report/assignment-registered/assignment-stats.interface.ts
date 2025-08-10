@@ -1,3 +1,8 @@
+export interface AssignmentRegistrationByMonth {
+  month: number // 1-12
+  label: string // "Enero", "Febrero", ...
+  count: number // Cantidad de usuarios registrados en el mes
+}
 export interface AssignmentRegistrationByDay {
   day: number
   date: string
@@ -38,6 +43,7 @@ export interface CompleteAssignmentStats {
   assignmentsByProductType: AssignmentsByProductType[]
   assignmentsByFamily: AssignmentsByFamily[]
   registrationsByDay: AssignmentRegistrationByDay[]
+  registrationsByMonth: AssignmentRegistrationByMonth[] // NUEVO
   // monthlyAssignments: any[], // Asignaciones específicas del mes
   assignmentDetails: any[], // Asignaciones específicas del mes
   registryAssignmentsYear?:number,
