@@ -7,11 +7,18 @@ import  { NeonDatabase } from "drizzle-orm/neon-serverless"
 // import  { DashboardReportService, DashboardReportDto } from "./dashboard-report.service"
 import { PG_CONNECTION } from "src/constants"
 import { DashboardReportDto, DashboardReportService } from "../dashboard-report.service"
+import type { ChartConfiguration } from "chart.js"
+import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 
 export interface MedicalSupplyReportDto extends Omit<DashboardReportDto, "role"> {
   // Extender la interfaz base removiendo 'role' que no es necesario para medicamentos
 }
 
+export interface ProductRegistrationByMonth {
+  month: number // 1-12
+  label: string // "Enero", "Febrero", ...
+  count: number // Cantidad de usuarios registrados en el mes
+}
 export interface ProductRegistrationByDay {
   day: number
   date: string
@@ -44,19 +51,33 @@ export interface CompleteMedicalSupplyStats {
   productsByCategory: ProductsByCategory[]
   productsByStatus: ProductsByStatus[]
   productsByType: ProductsByType[]
-  registrationsByDay: ProductRegistrationByDay[]
   todayProducts: any[] // Productos específicos creados en el año
+  registrationsByDay: ProductRegistrationByDay[]
+  registrationsByMonth: ProductRegistrationByMonth[] // NUEVO
 }
 
 @Injectable()
 export class MedicalSuppliesReportAllService {
   private readonly logger = new Logger(MedicalSuppliesReportAllService.name)
+  private readonly chartJSNodeCanvas: ChartJSNodeCanvas
 
   constructor(
     @Inject(PG_CONNECTION) private db: NeonDatabase,
     @Inject(forwardRef(() => DashboardReportService))
     private readonly dashboardReportService: DashboardReportService
-  ) {}
+  ) {
+      // Inicializar ChartJS para generar gráficos
+      this.chartJSNodeCanvas = new ChartJSNodeCanvas({
+        width: 600,
+        height: 400,
+        backgroundColour: "white",
+        chartCallback: (ChartJS) => {
+          // Registrar plugins necesarios
+          ChartJS.defaults.responsive = true
+          ChartJS.defaults.maintainAspectRatio = false
+        },
+      })
+  }
 
   /**
    * Genera un PDF para el reporte de medicamentos usando el servicio base
@@ -359,6 +380,39 @@ export class MedicalSuppliesReportAllService {
 
       registrationsByDay.sort((a, b) => a.day - b.day)
 
+    // 7. Registros por mes del año actual (Para el gráfico de registros anuales de insumos medicos)
+    const registrationsByMonthResult = await this.db
+      .select({
+        month: sql<number>`EXTRACT(MONTH FROM ${productsTable.createdAt})`,
+        medicalSuppliesCount: count(),
+      })
+      .from(productsTable)
+      .where(
+        and(
+          gte(productsTable.createdAt, startOfYear),
+          lte(productsTable.createdAt, endOfYear),
+        )
+      )
+      .groupBy(sql`EXTRACT(MONTH FROM ${productsTable.createdAt})`)
+      .orderBy(sql`EXTRACT(MONTH FROM ${productsTable.createdAt})`);
+      const monthsEs = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+      ];
+      // Inicializa los 12 meses con 0
+      const monthCounts: number[] = Array.from({ length: 12 }, () => 0);
+      registrationsByMonthResult.forEach((row) => {
+        const m = Number(row.month) // 1-12
+        if (m >= 1 && m <= 12) {
+          monthCounts[m - 1] = Number(row.medicalSuppliesCount)
+        }
+      });
+      const registrationsByMonth: ProductRegistrationByMonth[] = monthCounts.map((count, idx) => ({
+        month: idx + 1,
+        label: monthsEs[idx],
+        count,
+      }));
+
       const completeStats: CompleteMedicalSupplyStats = {
         totalProducts: Number(generalStats.totalProducts),
         productsMonth: Number(generalStats.productsMonth),
@@ -369,6 +423,7 @@ export class MedicalSuppliesReportAllService {
         productsByType,
         registrationsByDay,
         todayProducts: todayProductsResult,
+        registrationsByMonth
       }
 
       this.logger.log("Estadísticas completas de inventario almacén(anio):", JSON.stringify(completeStats, null, 2))
@@ -502,6 +557,27 @@ export class MedicalSuppliesReportAllService {
       // Distribución por tipo
       this.addProductsByTypeSection(content, medicalSupplyStats, styles)
 
+      // NUEVO: Generar e insertar el gráfico anual por meses (AÑO ACTUAL). Ejemplo titulo del grafico: 'Registro de Insumos medicos - Año 2025'
+      let yearlyChartBuffer = null
+      try {
+        yearlyChartBuffer = await this.generateYearlyRegistrationChart(medicalSupplyStats);
+      } catch (error) {
+        this.logger.warn("No se pudo generar el gráfico anual de usuarios:", (error as any)?.message)
+      }
+
+      if (yearlyChartBuffer) {
+/*      // Título del gráfico anual (opcional, usando estilos existentes)
+        content.push({ text: `Registros de Usuarios por Mes - ${new Date().getFullYear()}`, style: "sectionTitle" }) */
+        content.push({
+          image: `data:image/png;base64,${yearlyChartBuffer.toString("base64")}`,
+          width: 500,
+          alignment: "center",
+          margin: [0, 10, 0, 20],
+        })
+      }
+      // NUEVO: tabla detallada por mes 
+      this.addRegistrationsByMonthSection(content, medicalSupplyStats, styles);
+
       // Información del sistema
       this.addSystemInfoSection(content, reportData, styles)
 
@@ -518,6 +594,48 @@ export class MedicalSuppliesReportAllService {
           text: `Reporte anual del inventario almacén - Página ${currentPage} de ${pageCount}`,
           style: "footer",
         }),
+/*         header: ((currentPage, pageCount, pageSize) => {
+          if (currentPage === 1) return null
+
+          return {
+            stack: [
+              {
+                columns: [
+                  logoData
+                    ? {
+                        image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+                        width: 60,
+                        margin: [40, 10, 0, 0],
+                      }
+                    : {},
+                  {
+                    stack: [
+                      {
+                        text: `Estadísticas de Usuarios - Página: ${currentPage} de ${pageCount}`,
+                        style: "headerSection",
+                      },
+                    ],
+                    alignment: "right",
+                    margin: [0, 10, 40, 0],
+                  },
+                ],
+              },
+              {
+                canvas: [
+                  {
+                    type: "line",
+                    x1: 40,
+                    y1: 50,
+                    x2: pageSize.width - 40,
+                    y2: 50,
+                    lineWidth: 1,
+                    lineColor: "#cccccc",
+                  },
+                ],
+              },
+            ],
+          }
+        }).bind(this), */
       }
     } catch (error) {
       throw new Error(`Error al crear la definición del documento: ${error.message}`)
@@ -899,5 +1017,185 @@ export class MedicalSuppliesReportAllService {
         color: "#666666",
       },
     )
+  }
+
+  // NUEVO grafico anual de usuarios: Gráfico por MES del año actual
+  private async generateYearlyRegistrationChart(medicalSupplyStats: CompleteMedicalSupplyStats): Promise<Buffer | null> {
+    try {
+      const now = new Date()
+      const currentYear = now.getFullYear()
+
+      // Si no hay datos mensuales, devolvemos null
+      if (!medicalSupplyStats.registrationsByMonth || medicalSupplyStats.registrationsByMonth.length === 0) {
+        this.logger.warn("No hay datos de registros por mes para generar el gráfico anual")
+        return null
+      }
+
+      // Asegurar 12 meses (1..12) con 0 por defecto
+      const monthCounts: number[] = Array.from({ length: 12 }, () => 0)
+      for (const m of medicalSupplyStats.registrationsByMonth) {
+        // asumiendo que m.month es 1..12
+        if (m.month >= 1 && m.month <= 12) {
+          monthCounts[m.month - 1] = Number(m.count || 0)
+        }
+      }
+
+      // Etiquetas en español
+      const labels = [
+        "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+      ]
+      const data = monthCounts
+
+      const configuration: ChartConfiguration<"bar", number[], string> = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Inventario Almacén Registrado",
+              data,
+              backgroundColor: "#003366",
+              borderColor: "#003366",
+              borderWidth: 1,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            title: {
+              display: true,
+              text: `Registros de Inventario Almacén en el ${currentYear}`,
+              font: { size: 14, weight: "bold" as const },
+              color: "#003366",
+            },
+            legend: {
+              display: true,
+              position: "top",
+              labels: { color: "#333333", font: { size: 12 } },
+            },
+            tooltip: {
+              callbacks: {
+                title: (ctx) => `${ctx[0].label} ${currentYear}`,
+                label: (ctx) => `Inventario almacén registrado: ${ctx.parsed.y}`,
+              },
+            },
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: `Meses del Año ${currentYear}`,
+                color: "#666666",
+                font: { size: 12, weight: "bold" as const },
+              },
+              grid: { color: "#e0e0e0" },
+              ticks: { color: "#666666", font: { size: 10 } },
+            },
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Cantidad de Inventario Almacén",
+                color: "#666666",
+                font: { size: 12, weight: "bold" as const },
+              },
+              grid: { color: "#e0e0e0" },
+              ticks: { color: "#666666", font: { size: 10 }, stepSize: 1 },
+            },
+          },
+        },
+      }
+
+      const imageBuffer = await this.chartJSNodeCanvas.renderToBuffer(configuration)
+      this.logger.log(`Gráfico anual de inventario almacen generado exitosamente para el año ${currentYear}`)
+
+      return imageBuffer
+    } catch (error) {
+      this.logger.error("Error al generar gráfico de registros anual de inventario almacen:", error)
+      return null
+    }
+  }
+
+  // NUEVO: Tabla Detallada de Registros por Mes
+  private addRegistrationsByMonthSection(
+    content: any[],
+    medicalSupplyStats: CompleteMedicalSupplyStats,
+    styles: StyleDictionary
+  ): void {
+    if (!medicalSupplyStats.registrationsByMonth || medicalSupplyStats.registrationsByMonth.length === 0) {
+      this.logger.warn("No hay datos de registros por mes para construir la tabla")
+      return
+    }
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    content.push({ text: `Tabla Detallada de Registros por Mes en el ${currentYear}`, style: "sectionTitle" })
+
+    const tableBody: any[] = [
+      [
+        { text: "Mes", style: "tableHeader" },
+        { text: "Inventario Almacén Registrado", style: "tableHeader" },
+        { text: "Porcentaje", style: "tableHeader" },
+      ],
+    ]
+
+    // Mapa (mes -> cantidad)
+    const byMonth = new Map<number, number>()
+    for (const m of medicalSupplyStats.registrationsByMonth) {
+      byMonth.set(Number(m.month), Number(m.count || 0))
+    }
+
+    for (let month = 1; month <= 12; month++) {
+      const count = byMonth.get(month) ?? 0
+      // getMonthName espera índice 0-11
+      const monthName = this.getMonthName(month - 1);
+
+      const percentage = medicalSupplyStats.productsYear > 0 ? ((count / medicalSupplyStats.productsYear) * 100).toFixed(1) : "0"
+
+      tableBody.push([
+        { text: monthName, style: "tableCellValue" },
+        { text: count.toString(), style: "tableCellValue" },
+        { text: `${percentage}%`, style: "tableCellValue" },
+      ])
+    }
+
+    content.push({
+      table: {
+        widths: ["40%", "30%", "30%"],
+        body: tableBody,
+      },
+      layout: {
+        hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+        vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+        hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+        vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+        paddingLeft: (i, node) => 6,
+        paddingRight: (i, node) => 6,
+        paddingTop: (i, node) => 3,
+        paddingBottom: (i, node) => 3,
+      },
+      margin: [0, 5, 0, 15],
+    })
+  }
+
+  private getMonthName(monthIndex: number): string {
+    const months = [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre",
+    ]
+    return months[monthIndex] || "Mes"
   }
 }

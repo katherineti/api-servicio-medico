@@ -446,7 +446,7 @@ export class PdfDashboardService {
       }
 
       // NUEVO: tabla detallada por mes 
-      this.addRegistrationsByMonthSection(content, userStats, styles)
+      this.addRegistrationsByMonthSection(content, userStats, styles);
 
 /*     // 5) AGREGAR GRÁFICO DE REGISTROS POR DÍA
 
@@ -728,13 +728,18 @@ export class PdfDashboardService {
       minute: "2-digit",
     })
 
+    // Crea una nueva instancia de Date
+    const fechaActual = new Date();
+    // Obtiene el año de la fecha actual
+    const anioActual = fechaActual.getFullYear();
+
     content.push(
       { text: "\n\n" },
-      // { text: `Generado por: ${reportDto?.role || "Sistema"}`, style: "paragraph" },
-      { text: `Generado por: ${"Sistema"}`, style: "paragraph" },
+      // { text: `Generado por: ${reportDto?.role || "Sistema de Gestión Médica"}`, style: "paragraph" },
+      { text: `Generado por: ${"Sistema de Gestión Médica"}`, style: "paragraph" },
       // { text: `Generado por: ${user?.role || "Sistema"}`, style: "paragraph" },
       { text: `Fecha y hora de generación: ${currentDate}`, style: "paragraph" },
-      { text: "Tipo de reporte: Estadísticas de Usuarios", style: "paragraph" },
+      { text: `Tipo de reporte: Estadísticas de Usuarios en ${anioActual}`, style: "paragraph" },
       { text: "\n" },
       {
         text: "Este reporte fue generado automáticamente por el sistema de gestión médica.",
@@ -931,7 +936,9 @@ export class PdfDashboardService {
       return
     }
 
-    content.push({ text: "Tabla Detallada de Registros por Mes", style: "sectionTitle" })
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    content.push({ text: `Tabla Detallada de Registros por Mes en el ${currentYear}`, style: "sectionTitle" })
 
     const tableBody: any[] = [
       [
