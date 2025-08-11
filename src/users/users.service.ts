@@ -204,6 +204,30 @@ export class UsersService {
     }
   }
 
+  //Para el modulo de asignaciones de insumos medicos a medico(a inventario movil)
+  async getUsersbyRol(id: number): Promise<IUser[]> {
+    try{
+      const result = await this.db.select({
+          id:  usersTable.id,
+          name: usersTable.name,
+          cedula: usersTable.cedula,
+          email: usersTable.email,
+          // role: usersTable.role,
+          role: rolesTable.name,
+          isActivate: usersTable.isActivate
+        })
+        .from(usersTable)
+        .leftJoin(rolesTable, eq(usersTable.id, rolesTable.id))
+        .where(eq( usersTable.role, id ))
+  
+      return result || null;
+      
+    }catch(err){
+      console.error("Error en la base de datos al buscar el usuario por rol" + id + ": ", err);
+      throw new Error("Error al obtener el usuario por rol" + id + " " + err);
+    }
+  }
+
   //Para el contador de usuarios en el dashboard
   async countAllUsers(): Promise<{ count: number }> {
     const now = new Date();

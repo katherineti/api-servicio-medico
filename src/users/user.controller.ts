@@ -65,4 +65,9 @@ export class UserController {
   getUser(@Param('id', ParseIntPipe) id: number): Promise<IUser> {
     return this.userService.getUserbyId(id);
   }
+
+  @Get('getAllByRol/:id')
+  getUserByRol(@Param('id', ParseIntPipe) id: number): Promise<IUser[]> {
+    return this.userService.getUsersbyRol(id);
+  }
 }
