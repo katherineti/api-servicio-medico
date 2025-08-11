@@ -2,9 +2,16 @@ import { IsString, IsNotEmpty, IsOptional, IsNumber } from 'class-validator';
 
 export class CreateAssignmentDto{
 
-    @IsNotEmpty()
+/*     @IsNotEmpty()
+    @IsNumber()
+    employeeId: number; */
+    @IsOptional()
     @IsNumber()
     employeeId: number;
+
+    @IsOptional()
+    @IsNumber()
+    medicoId: number;
 
     @IsOptional()
     @IsNumber()

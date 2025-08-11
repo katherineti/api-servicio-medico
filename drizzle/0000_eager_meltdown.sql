@@ -2,7 +2,8 @@ CREATE TYPE "public"."ProductType" AS ENUM('Medicamentos', 'Uniformes', 'Equipos
 CREATE TYPE "public"."roles_enum" AS ENUM('admin', 'almacen', 'medico', 'auditor');--> statement-breakpoint
 CREATE TABLE "assignment" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"employeeId" integer NOT NULL,
+	"employeeId" integer,
+	"medicoId" integer,
 	"familyId" integer,
 	"type" integer NOT NULL,
 	"observation" varchar(200) DEFAULT '',
@@ -200,6 +201,7 @@ CREATE TABLE "users" (
 );
 --> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_employeeId_employee_id_fk" FOREIGN KEY ("employeeId") REFERENCES "public"."employee"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "assignment" ADD CONSTRAINT "assignment_medicoId_users_id_fk" FOREIGN KEY ("medicoId") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_familyId_family_id_fk" FOREIGN KEY ("familyId") REFERENCES "public"."family"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_type_typesAssignment_id_fk" FOREIGN KEY ("type") REFERENCES "public"."typesAssignment"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "assignment" ADD CONSTRAINT "assignment_productId_products_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint

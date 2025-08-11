@@ -1,5 +1,5 @@
 {
-  "id": "614eb700-0af6-4d48-a99a-d96fa6408d00",
+  "id": "d7e43fe5-7284-4190-8061-8828097a276b",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -18,7 +18,13 @@
           "name": "employeeId",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "medicoId": {
+          "name": "medicoId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
         },
         "familyId": {
           "name": "familyId",
@@ -75,6 +81,19 @@
           "tableTo": "employee",
           "columnsFrom": [
             "employeeId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "assignment_medicoId_users_id_fk": {
+          "name": "assignment_medicoId_users_id_fk",
+          "tableFrom": "assignment",
+          "tableTo": "users",
+          "columnsFrom": [
+            "medicoId"
           ],
           "columnsTo": [
             "id"

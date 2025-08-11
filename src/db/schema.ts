@@ -107,7 +107,9 @@ export const typesAssignmentTable = table("typesAssignment" , {
 
 export const assignmentTable = table("assignment", {
     id: t.serial().primaryKey(),
-    employeeId: t.integer().notNull().references(() => employeeTable.id),
+    // employeeId: t.integer().notNull().references(() => employeeTable.id),
+    employeeId: t.integer().references(() => employeeTable.id),
+    medicoId: t.integer().references(() => usersTable.id), //nuevo para almacen movil
     familyId: t.integer().references(() => familyTable.id),
     type: t.integer().notNull().references(() => typesAssignmentTable.id),
     observation: t.varchar({ length: 200 }).default(""),
