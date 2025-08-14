@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import type { Response } from "express"
 import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
-import { and, count, desc, eq, gte, lte, sql, inArray, ne, or, sum } from "drizzle-orm"
+import { and, count, desc, eq, gte, lte, sql, inArray, ne, or, sum, isNotNull } from "drizzle-orm"
 import {
   assignmentTable,
   employeeTable,
@@ -264,6 +264,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             eq(productsTable.type, options.supplyType), 
             // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
             inArray(productsTable.statusId, [1, 2, 3, 4]),
@@ -284,6 +285,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         .leftJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
@@ -307,6 +309,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         .leftJoin(assignmentTable, eq(assignmentTable.productId, productsTable.id))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type,  options.supplyType),
@@ -337,6 +340,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         .leftJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
@@ -357,6 +361,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
@@ -389,6 +394,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         .innerJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),

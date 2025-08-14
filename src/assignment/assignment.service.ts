@@ -6,7 +6,7 @@ import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
 import { typesAssignment } from 'src/db/types/type-assignment.types';
-import { eq, and, count, sql, gte, lt, inArray, ne, sum, lte } from 'drizzle-orm'
+import { eq, and, count, sql, gte, lt, inArray, ne, sum, lte, isNotNull } from 'drizzle-orm'
 import { CreateFamilyDto } from './dto/create-family.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { Product } from 'src/db/types/products.types';
@@ -212,6 +212,8 @@ export class AssignmentService {
             inArray(productsTable.type, [1, 2, 3]),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
             // ne(productsTable.statusId, 4)
+            // Aquí se agrega la condición para que employee no sea nulo
+            isNotNull(assignmentTable.employeeId)
         );
     
         const [assignmentsCount] = await this.db
@@ -231,6 +233,7 @@ export class AssignmentService {
             endOfDay.setHours(23, 59, 59, 999);
         
             let whereConditions = and(
+                isNotNull(assignmentTable.employeeId),
                 gte(assignmentTable.createdAt, today),
                 lt(assignmentTable.createdAt, endOfDay),
             // Nuevas condiciones
@@ -269,6 +272,7 @@ export class AssignmentService {
             .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
             .where(
                 and(
+                    isNotNull(assignmentTable.employeeId),
                     sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
                     // inArray(productsTable.type, [1, 2, 3]),
                     inArray(productsTable.type, typesMedicalSuppliesArray),
@@ -299,6 +303,7 @@ export class AssignmentService {
           .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
           .where(
             and(
+                isNotNull(assignmentTable.employeeId),
                 sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
                 inArray(productsTable.type, [1, 2, 3]),
                 // ne(productsTable.statusId, 4)
@@ -320,6 +325,7 @@ export class AssignmentService {
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
             and(
+                isNotNull(assignmentTable.employeeId),
                 inArray(productsTable.type, [1, 2, 3]),
                 // ne(productsTable.statusId, 4)
                 inArray(productsTable.statusId, [1, 2, 3, 4]),
@@ -348,6 +354,7 @@ export class AssignmentService {
       .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
       .where(
         and(
+            isNotNull(assignmentTable.employeeId),
             inArray(productsTable.type, [1, 2, 3]),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
             gte(productsTable.createdAt, dateRanges.startOfMonth),

@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common"
 import type { Response } from "express"
 import type { StyleDictionary, TDocumentDefinitions } from "pdfmake/interfaces"
-import { and, count, desc, eq, gte, lte, sql, inArray, ne } from "drizzle-orm"
+import { and, count, desc, eq, gte, lte, sql, inArray, ne, isNotNull } from "drizzle-orm"
 import {
   assignmentTable,
   employeeTable,
@@ -324,6 +324,7 @@ console.log("antes de 1.generalStats")
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             inArray(productsTable.type, [1, 2, 3]), 
             inArray(productsTable.statusId, [1, 2, 3, 4]), 
           )
@@ -341,6 +342,7 @@ console.log("antes de 1.generalStats")
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             inArray(productsTable.type, [1, 2, 3]), 
             inArray(productsTable.statusId, [1, 2, 3, 4]), 
           )
@@ -363,6 +365,7 @@ console.log("antes de 1.generalStats")
         .leftJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
@@ -386,6 +389,7 @@ console.log("antes de 1.generalStats")
         .leftJoin(assignmentTable, eq(assignmentTable.productId, productsTable.id))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
@@ -415,6 +419,7 @@ console.log("antes de 1.generalStats")
         .leftJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
@@ -434,6 +439,7 @@ console.log("antes de 1.generalStats")
         .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
@@ -466,6 +472,7 @@ console.log("antes de 1.generalStats")
         .innerJoin(typesOfProductsTable, eq(productsTable.type, typesOfProductsTable.id))
         .where(
           and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
@@ -531,6 +538,7 @@ console.log("antes de 1.generalStats")
       .innerJoin(productsTable, eq(assignmentTable.productId, productsTable.id))
       .where(
         and(
+          isNotNull(assignmentTable.employeeId),
           gte(assignmentTable.createdAt, startOfYear),
           lte(assignmentTable.createdAt, endOfYear),
             inArray(productsTable.type, [1, 2, 3]),
