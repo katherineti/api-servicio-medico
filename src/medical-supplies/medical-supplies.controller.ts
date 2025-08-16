@@ -27,7 +27,7 @@ export class MedicalSuppliesController {
         return this.medicalSuppliesService.delete(id);
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.almacen)
     @Post('newProduct')
     @UseInterceptors(FileInterceptor('url_image', {
       storage: memoryStorage(), 

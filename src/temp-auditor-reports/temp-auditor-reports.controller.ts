@@ -20,7 +20,7 @@ export class TempAuditorReportsController {
       private readonly pdfGeneratorService: PdfGeneratorService
     ) { }
     @Post()
-    @Roles(TypesRoles.admin,TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @UsePipes(ValidationPipe)
     async create(
       @Body() reportDto: ReportCreateDto,
@@ -28,7 +28,7 @@ export class TempAuditorReportsController {
   
       return this.tempAuditorReportsService.create(reportDto);
     }
-        @Roles(TypesRoles.admin, TypesRoles.auditor)
+        @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
         @Get('getAllAuditores')
         @UsePipes(ValidationPipe)
         getAllAuditores(): Promise<any> {
@@ -42,7 +42,7 @@ export class TempAuditorReportsController {
     }
 
     @Put(':id')
-    @Roles(TypesRoles.admin,TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @UsePipes(ValidationPipe)
     update(
       @Param('id') id: number,
@@ -53,7 +53,7 @@ export class TempAuditorReportsController {
     }
 
     @Put('images/:id')
-    @Roles(TypesRoles.admin, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @UseInterceptors(
       FileFieldsInterceptor([
         { name: 'images', maxCount: 10 }, // Especifica el nombre del campo 'images'

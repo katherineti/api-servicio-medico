@@ -73,7 +73,7 @@ export class MedicalReportsController {
     return this.medicalReportsService.getById(id)
   }
 
-  @Roles(TypesRoles.admin, TypesRoles.medico)
+  @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.medico)
   @Post("create")
   @UsePipes(ValidationPipe)
   async create(@Body() createMedicalReportsDto: CreateMedicalReportDto): Promise<any> {
@@ -83,7 +83,7 @@ export class MedicalReportsController {
 
   // Generate PDF
   @Get("pdf/:id")
-//   @Roles(TypesRoles.admin, TypesRoles.medico) // Restrict access as needed
+//   @Roles(TypesRoles.admin, TypesRoles.medico) 
   async generateMedicalReportPdf(
     @Param('id') id: number,
     @Res() res: Response,

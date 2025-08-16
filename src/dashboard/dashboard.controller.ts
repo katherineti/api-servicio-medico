@@ -10,31 +10,31 @@ import { UsersService } from 'src/users/users.service';
 export class DashboardController {
   constructor(private readonly usersService: UsersService , private readonly medicalSuppliesService: MedicalSuppliesService, private readonly assignmentService: AssignmentService, private readonly medicalSuppliesExpiredService: MedicalSuppliesExpiredService) { }
 
-    @Roles(TypesRoles.admin, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @Get('totalUsers')
     totalUsers(): Promise<{ count: number }> {
     return this.usersService.countAllUsers();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @Get('totalProductsOfTheDay')
     totalProductsOfTheDay(): Promise<{ count: number }> {
       return this.medicalSuppliesService.totalProductsOfTheDay();
     }
     
-    @Roles(TypesRoles.admin, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @Get('totalProductsOfMonth')
     totalProductsOfMonth(): Promise<{ count: number }> {
     return this.medicalSuppliesService.totalProductsOfMonth();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.almacen, TypesRoles.auditor)
     @Get('totalAssignmentOfTheDay')
     totalAssignmentOfTheDay(): Promise<{ count: number }> {
     return this.assignmentService.totalAssignmentOfTheDay();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.almacen, TypesRoles.auditor)
     @Get('totalAssignmentOfMonth')
     totalAssignmentOfMonth(): Promise<{ count: number }> {
     return this.assignmentService.totalAssignmentOfMonth();
@@ -51,13 +51,13 @@ export class DashboardController {
       return this.assignmentService.totalAssignments();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.almacen)
     @Get('totalAvailableProductsByType')
     TotalAvailableProductsByType(): Promise<any> {
     return this.medicalSuppliesService.getAccumulatedStockByType();
     }
 
-    @Roles(TypesRoles.admin, TypesRoles.almacen)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.almacen)
     @Get('totalOfProductAssignmentsByType')
     totalOfProductAssignmentsByType(): Promise<any> {
     return this.assignmentService.getAccumulatedAssignmentProductsByType();

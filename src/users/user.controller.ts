@@ -27,7 +27,7 @@ export class UserController {
 
   constructor(private readonly userService: UsersService, private readonly authService: AuthService) { }
   
-  @Roles(TypesRoles.admin, TypesRoles.auditor)
+  @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
   @Post('getAll')
   @UsePipes(ValidationPipe)
   getUsers(@Body() body: SearchUserDto, @Usersesion() user: IJwtPayload): Promise<ResultGetAll> {
@@ -35,7 +35,7 @@ export class UserController {
   }
 
   @Post('/createAccount')
-  @Roles(TypesRoles.admin)
+  @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
   @UsePipes(ValidationPipe)
   async createAccount(
     @Body() signupDto: SignupDto,
@@ -45,7 +45,7 @@ export class UserController {
   }
 
   @Patch(':userId')
-  @Roles(TypesRoles.admin)
+  @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
   @UsePipes(ValidationPipe)
   updateUser(
     @Param('userId', ParseIntPipe) userId: number,
@@ -55,7 +55,7 @@ export class UserController {
     return this.userService.update(userId, user);
   }
 
-  @Roles(TypesRoles.admin)
+  @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
   @Delete(':id')
   deleteUser(@Param('id', ParseIntPipe) id: number): Promise<IUser> {
     return this.userService.delete(id);

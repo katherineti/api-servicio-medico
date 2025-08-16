@@ -10,7 +10,7 @@ import { RoleDto } from './dto/role.dto';
 export class RolesController {
   constructor(private readonly rolesService: RolesService) { }
 
-    @Roles(TypesRoles.admin, TypesRoles.auditor)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
     @Post('getAll')
     @UsePipes(ValidationPipe)
     get(@Body() body: SearchRolesDto): Promise<ResultGetAllRoles> {
@@ -18,14 +18,14 @@ export class RolesController {
     }
 
     @Post('/create')
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
     @UsePipes(ValidationPipe)
     async create(@Body() body: RoleDto): Promise<any> {
         return this.rolesService.create(body);
     }
 
     @Put(':id')
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
     @UsePipes(ValidationPipe)
     update(
     @Param('id', ParseIntPipe) id: number,
@@ -35,7 +35,7 @@ export class RolesController {
     return this.rolesService.update(id, role);
     }
 
-    @Roles(TypesRoles.admin)
+    @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
     @Delete(':id')
     delete(@Param('id', ParseIntPipe) id: number): Promise<any> {
     return this.rolesService.delete(id);
