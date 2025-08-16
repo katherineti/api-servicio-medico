@@ -45,13 +45,12 @@ export class DashboardController {
       return this.medicalSuppliesService.countAllProducts();
     }
 
-    //Solo médico
+    //Solo para el rol: Médico. Corresponde al Card en el dashboard: 'Registro Anual de las Asignaciones de Insumos Médicos a Empleados'
     @Get('totalAssignments')
     totalAssignments(): Promise<any> {
       return this.assignmentService.totalAssignments();
     }
 
-    // Nuevos
     @Roles(TypesRoles.admin, TypesRoles.almacen)
     @Get('totalAvailableProductsByType')
     TotalAvailableProductsByType(): Promise<any> {

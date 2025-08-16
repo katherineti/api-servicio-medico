@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { PG_CONNECTION } from 'src/constants';
-import { assignmentTable, employeeFamilyTable, employeeTable, familyTable, productsTable, typesAssignmentTable } from 'src/db/schema';
+import { assignmentTable, employeeFamilyTable, employeeTable, familyTable, productsTable, typesAssignmentTable, typesOfProductsTable } from 'src/db/schema';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { Assignment, CreateAssignment } from 'src/db/types/assignment.types';
 import { Employee } from 'src/db/types/employee.types';
@@ -206,14 +206,11 @@ export class AssignmentService {
         endOfDay.setHours(23, 59, 59, 999);
     
         let whereConditions = and(
+            isNotNull(assignmentTable.employeeId),
             gte(assignmentTable.createdAt, today),
             lt(assignmentTable.createdAt, endOfDay),
-           // Nuevas condiciones
             inArray(productsTable.type, [1, 2, 3]),
-            inArray(productsTable.statusId, [1, 2, 3, 4]),
-            // ne(productsTable.statusId, 4)
-            // Aquí se agrega la condición para que employee no sea nulo
-            isNotNull(assignmentTable.employeeId)
+            inArray(productsTable.statusId, [1, 2, 3, 4])
         );
     
         const [assignmentsCount] = await this.db
@@ -222,70 +219,66 @@ export class AssignmentService {
           .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
           .where(whereConditions);
         
-        Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
+        Logger.debug("Contador de registros de asignaciones de insumos medicos al empleado, del dia, en el dashboard" , JSON.stringify(assignmentsCount))
         return assignmentsCount;
-      }
+    }
 
-          async countProductsAssignmentOfTheDay(): Promise<{ count: number }> {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00.000
-            const endOfDay = new Date(today);
-            endOfDay.setHours(23, 59, 59, 999);
+    /*Suma los numeros de productos asignados a empleados, hoy, en el dashboard*/
+    async countProductsAssignmentOfTheDay(): Promise<{ count: number }> {
+        const today = new Date();   today.setHours(0, 0, 0, 0); // Establece la hora a 00:00:00.000
+        const endOfDay = new Date(today);   endOfDay.setHours(23, 59, 59, 999);
+    
+        let whereConditions = and(
+            isNotNull(assignmentTable.employeeId),
+            gte(assignmentTable.createdAt, today),
+            lt(assignmentTable.createdAt, endOfDay),
+            inArray(productsTable.type, [1, 2, 3]),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
+        );
+    
+        const [assignmentSum] = await this.db
+        .select({
+            count: sql<number>`sum(${assignmentTable.products})`.as('count'),
+        })
+        .from(assignmentTable)
+        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+        .where(whereConditions);
         
-            let whereConditions = and(
+        return assignmentSum;
+    }
+
+    /*Suma los numeros de productos asignados a empleados, en el mes actual */
+    async countProductsAssignmentOfMonth(typesMedicalSuppliesArray:Array<number>): Promise<{ count: number }> {
+        const nowCaracas = new Date();
+        const year = nowCaracas.getFullYear();
+        const month = nowCaracas.getMonth();
+    
+        // Obtener el primer día del mes actual en Caracas
+        const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
+    
+        // Obtener el último día del mes actual en Caracas
+        const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    
+        const [assignmentSum] = await this.db
+        .select({
+            count: sql<number>`sum(${assignmentTable.products})`.as('count'),
+        })
+        .from(assignmentTable)
+        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+        .where(
+            and(
                 isNotNull(assignmentTable.employeeId),
-                gte(assignmentTable.createdAt, today),
-                lt(assignmentTable.createdAt, endOfDay),
-            // Nuevas condiciones
-                inArray(productsTable.type, [1, 2, 3]),
-                // ne(productsTable.statusId, 4)
+                sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
+                // inArray(productsTable.type, [1, 2, 3]),
+                inArray(productsTable.type, typesMedicalSuppliesArray),
                 inArray(productsTable.statusId, [1, 2, 3, 4]),
-            );
+            )
+        );
         
-            const [assignmentsCount] = await this.db
-            .select({
-                count: sql<number>`sum(${assignmentTable.products})`.as('count'),
-            })
-            .from(assignmentTable)
-            .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
-            .where(whereConditions);
-            
-            Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
-            return assignmentsCount;
-        }
-          async countProductsAssignmentOfMonth(typesMedicalSuppliesArray:Array<number>): Promise<{ count: number }> {
-            const nowCaracas = new Date();
-            const year = nowCaracas.getFullYear();
-            const month = nowCaracas.getMonth();
-        
-            // Obtener el primer día del mes actual en Caracas
-            const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
-        
-            // Obtener el último día del mes actual en Caracas
-            const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
-        
-            const [assignmentsCount] = await this.db
-            .select({
-                count: sql<number>`sum(${assignmentTable.products})`.as('count'),
-            })
-            .from(assignmentTable)
-            .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
-            .where(
-                and(
-                    isNotNull(assignmentTable.employeeId),
-                    sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
-                    // inArray(productsTable.type, [1, 2, 3]),
-                    inArray(productsTable.type, typesMedicalSuppliesArray),
-                    // ne(productsTable.statusId, 4)
-                    inArray(productsTable.statusId, [1, 2, 3, 4]),
-                )
-            );
-            
-            Logger.debug("Contador asignaciones del dia, en el dashboard" , JSON.stringify(assignmentsCount))
-            return assignmentsCount;
-        }
+        return assignmentSum;
+    }
 
-   //Para el contador de registros de asignaciones de insumos medicos al empleado,en el mes. Excepto insumos medicos caducados
+   //Para el contador de registros de asignaciones de insumos medicos al empleado,en el mes. 
     async totalAssignmentOfMonth(): Promise<{ count: number }> {
         const nowCaracas = new Date();
         const year = nowCaracas.getFullYear();
@@ -306,19 +299,19 @@ export class AssignmentService {
                 isNotNull(assignmentTable.employeeId),
                 sql`${assignmentTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${assignmentTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
                 inArray(productsTable.type, [1, 2, 3]),
-                // ne(productsTable.statusId, 4)
                 inArray(productsTable.statusId, [1, 2, 3, 4]),
             )
            );
-        Logger.debug("Contador registros de asignaciones del mes, en el dashboard" , JSON.stringify(result))
     
         return result || { count: 0 };
     }
 
-    //Solo médico
-    //Para el contador de registros de asignaciones de insumos medicos al empleado, en el dashboard de medico. //Excepto insumos medicos caducados(Ya no)
+    /* Solo para el rol: Médico
+    Corresponde al Card en el dashboard: 'Registro Anual de las Asignaciones de Insumos Médicos a Empleados'
+    Para el contador de registros de asignaciones de insumos medicos al empleado, en el dashboard de medico. */ //Excepto insumos medicos caducados(Ya no) : ne(productsTable.statusId, 4)
     async totalAssignments(): Promise<{ count: number }> {
- 
+    const dateRanges = this.getYear();
+
         const [result] = await this
         .db.select({ count: count() })
         .from(assignmentTable)
@@ -326,25 +319,28 @@ export class AssignmentService {
         .where(
             and(
                 isNotNull(assignmentTable.employeeId),
+                gte(assignmentTable.createdAt, dateRanges.startOfYear),
+                lte(assignmentTable.createdAt, dateRanges.endOfYear),
                 inArray(productsTable.type, [1, 2, 3]),
-                // ne(productsTable.statusId, 4)
                 inArray(productsTable.statusId, [1, 2, 3, 4]),
             )
         );
-        Logger.debug("Contador registros de asignaciones, para el dashboard" , JSON.stringify(result));
     
         return result || { count: 0 };
     }
 
-    //Nuevo. Incluye asignaciones de productos que ya no existen
+    /**
+     * getAccumulatedAssignmentProductsByType()
+     * @returns Asignaciones a empleados en el mes: Suma el numero de insumos medicos asignados, por tipo 
+       result[0] = {
+            sumAsig_medicamentos: '4',
+            sumAsig_uniformes: '2',
+            sumAsig_equiposOdontologicos: '1'
+        }
+     */
     async getAccumulatedAssignmentProductsByType() {
     const dateRanges = this.calculateCurrentMonthRange()
     const result = await this.db
-/*       .select({
-        sumAsig_medicamentos: sql<number>`SUM(CASE WHEN ${productsTable.type} = 1 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_medicamentos'),
-        sumAsig_uniformes: sql<number>`SUM(CASE WHEN ${productsTable.type} = 2 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_uniformes'),
-        sumAsig_equiposOdontologicos: sql<number>`SUM(CASE WHEN ${productsTable.type} = 3 THEN ${assignmentTable.products} ELSE 0 END)`.as('sumAsig_equiposOdontologicos'),
-      }) */
         .select({
         sumAsig_medicamentos: sql<number>`COALESCE(SUM(CASE WHEN ${productsTable.type} = 1 THEN ${assignmentTable.products} ELSE 0 END), 0)`.as('sumAsig_medicamentos'),
         sumAsig_uniformes: sql<number>`COALESCE(SUM(CASE WHEN ${productsTable.type} = 2 THEN ${assignmentTable.products} ELSE 0 END), 0)`.as('sumAsig_uniformes'),
@@ -352,20 +348,20 @@ export class AssignmentService {
         })
       .from(assignmentTable)
       .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+      .innerJoin(typesOfProductsTable, eq(typesOfProductsTable.id, productsTable.type))
       .where(
         and(
             isNotNull(assignmentTable.employeeId),
             inArray(productsTable.type, [1, 2, 3]),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
-            gte(productsTable.createdAt, dateRanges.startOfMonth),
-            lte(productsTable.createdAt, dateRanges.endOfMonth),
+            gte(assignmentTable.createdAt, dateRanges.startOfMonth),
+            lte(assignmentTable.createdAt, dateRanges.endOfMonth),
         )
     );
-console.log("result asignaciones de productos en el mes",result)
     return result[0];
   }
 
-      /**
+   /**
    * Calculate date range for current month in UTC
    */
   public calculateCurrentMonthRange() {
@@ -381,6 +377,17 @@ console.log("result asignaciones de productos en el mes",result)
     return {
       startOfMonth,
       endOfMonth,
+    }
+  }
+  public getYear() {
+    const now = new Date();
+    const currentYear = now.getUTCFullYear();
+    const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
+    const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
+
+    return {
+      startOfYear,
+      endOfYear,
     }
   }
 }

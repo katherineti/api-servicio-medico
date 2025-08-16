@@ -289,24 +289,7 @@ this.logger.log('año prueba antes:', startOfYear," ",endOfYear);
 this.logger.log('startOfDay:', startOfDay);
 this.logger.log('endOfDay:', endOfDay);
 console.log("antes de 1.generalStats")
-/*     // 1. Estadísticas generales de asignaciones
-      const [generalStats] = await this.db
-        .select({
-          totalAssignments: count(),
-          assignmentsToday: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfDay} AND ${assignmentTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
-          assignmentsThisMonth: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN 1 ELSE NULL END)`,
-          totalProductsAssigned: sql<number>`sum(${assignmentTable.products})`,//por a hora no se usa porque es la suma de todos los registros
-          totalProductsAssignedThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE 0 END)`,
-        })
-        .from(assignmentTable)
-        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
-        // .where(and(inArray(productsTable.type, [1, 2, 3]), ne(productsTable.statusId, 4)))
-        .where(
-          and(
-            inArray(productsTable.type, [1, 2, 3]), 
-            inArray(productsTable.statusId, [1, 2, 3, 4]), 
-          )
-        ) */
+
       // 1. Estadísticas generales de asignaciones
       let generalStats=null
       if(options.reportType === "year"){
@@ -333,7 +316,6 @@ console.log("antes de 1.generalStats")
       //Consulta para dia y mes actual:
       generalStats = await this.db
         .select({
-          // totalAssignments: count(),
           totalAssignments: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfYear} AND ${assignmentTable.createdAt} <= ${endOfYear} THEN 1 ELSE NULL END)`,
           assignmentsThisMonth: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN 1 ELSE NULL END)`,
           totalProductsAssignedThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE 0 END)`,
@@ -351,7 +333,7 @@ console.log("antes de 1.generalStats")
 
       generalStats = generalStats[0]
 
-      // 2. Asignaciones por empleado (del dia,mes o año actual)
+      // 2. Asignaciones por empleado (del dia, mes o año actual)
       const assignmentsByEmployeeResult = await this.db
         .select({
           employeeId: employeeTable.id,
@@ -369,14 +351,13 @@ console.log("antes de 1.generalStats")
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             inArray(productsTable.type, [1, 2, 3]),
-            // ne(productsTable.statusId, 4),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
         .groupBy(employeeTable.id, employeeTable.name, employeeTable.cedula)
         .orderBy(desc(sql<number>`count(${assignmentTable.id})`));
 
-      // 3. Asignaciones por tipo de producto (del dia,mes o año actual)
+      // 3. Asignaciones por tipo de insumo medico (del dia, mes o año actual). typesOfProductsTable 1 medicamentos, 2 uniformes, 3 equipo odontologico
       const assignmentsByProductTypeResult = await this.db
         .select({
           typeId: typesOfProductsTable.id,
@@ -399,7 +380,7 @@ console.log("antes de 1.generalStats")
         .groupBy(typesOfProductsTable.id, typesOfProductsTable.type)
         .orderBy(typesOfProductsTable.id);
 
-      // 4. Asignaciones a familiares (del dia,mes o año actual)
+      // 4. Asignaciones a familiares (del dia, mes o año actual)
       const assignmentsByFamilyResult = await this.db
         .select({
           familyId: familyTable.id,
@@ -601,16 +582,14 @@ console.log("antes de 1.generalStats")
     assignmentStats: CompleteAssignmentStats,
     options: AssignmentReportOptions = { reportType: "month" },
   ): Promise<TDocumentDefinitions> {
-    try {console.log("--------------options",options)
-      // Cargar logo usando el método del DashboardReportService
+    try {
       let logoData = null;
-      // let labelReportType = options.reportType === "day"? 'del Dia':'del Mes';
-      let labelReportType = "del Año Actual";
+      let labelReportType = "en el Año Actual";
       if(options.reportType === "month"){
-        labelReportType = 'del Mes';
+        labelReportType = 'en el Mes';
       }
       if(options.reportType === "day"){
-        labelReportType = 'del Dia';
+        labelReportType = 'en el Dia';
       }
 
       try {
@@ -628,10 +607,12 @@ console.log("antes de 1.generalStats")
           margin: [0, 5, 0, 0],
         },
         reportTitle: {
-          fontSize: 14,
+          // fontSize: 14,
+          fontSize: 12,
           bold: true,
           alignment: "center",
-          margin: [0, 15, 0, 10],
+          // margin: [0, 15, 0, 10],
+          margin: [40, 5, 40, 10],
           color: "#003366",
         },
         sectionTitle: {
@@ -684,10 +665,6 @@ console.log("antes de 1.generalStats")
       // Crear contenido del documento
       const content: any[] = []
 
-/*       const reportTitle =
-        options.reportType === "day"
-          ? "REPORTE DE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS"
-          : "REPORTE DE REGISTROS MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS" */
       const now = new Date();
       const currentYear = now.getFullYear();
       
@@ -698,7 +675,7 @@ console.log("antes de 1.generalStats")
       if(options.reportType === "day"){
       reportTitle = "REPORTE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
       }
-
+/*
       // Logo y título principal
       if (logoData) {
         content.push({
@@ -709,11 +686,12 @@ console.log("antes de 1.generalStats")
           margin: [0, 0, 0, 20],
         })
       }
-
-      content.push({
-        text: reportTitle,
-        style: "reportTitle",
-      })
+ */
+    // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
+    content.push({
+      text: reportTitle,
+      style: "reportTitle",
+    });
 
       console.log("options.reportType " , options.reportType)
 
@@ -757,24 +735,43 @@ console.log("antes de 1.generalStats")
       // NUEVO: tabla detallada por mes 
       // this.addRegistrationsByMonthSection(content, medicalSupplyStats, styles);
 
-
       // Información del sistema
       this.addSystemInfoSection(content, reportData, styles)
 
-      // Crear definición del documento
-      return {
-        content: content,
-        styles: styles,
-        defaultStyle: {
-          font: "Roboto",
-        },
-        pageSize: "A4",
-        pageMargins: [40, 60, 40, 60],
-        footer: (currentPage, pageCount) => ({
-          text: `Reporte de Asignaciones ${labelReportType} - Página ${currentPage} de ${pageCount}`,
-          style: "footer",
-        }),
-      }
+    // Crear definición del documento
+    return {
+      content: content,
+      styles: styles,
+      defaultStyle: {
+        font: "Roboto",
+      },
+      pageSize: "A4",
+      pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
+
+      background: function(currentPage, pageSize)  {
+        // El logo en el fondo de cada página
+        if (logoData) {
+          return {
+            image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+            maxWidth: 515,
+            maxHeight: 80,
+            alignment: "center",
+            margin: [0, 20, 0, 0], // Margen del logo
+          };
+        }
+         return '' // Devuelve un texto vacío si no hay logo
+      },
+      
+      header: (currentPage, pageCount, pageSize) => {
+        // El header está vacío para no interferir con el contenido
+        return [];
+      },
+      
+      footer: (currentPage, pageCount) => ({
+        text: `Registros de Asignaciones a Empleados ${labelReportType} - Página ${currentPage} de ${pageCount}`,
+        style: "footer",
+      }),
+    };
     } catch (error) {
       throw new Error(`Error al crear la definición del documento: ${error.message}`)
     }
@@ -1407,6 +1404,26 @@ console.log("antes de 1.generalStats")
       this.logger.error("Error al generar gráfico de registros anual de asignaciones de inventario almacen a empleados,:", error)
       return null
     }
+  }
+
+  async showCintilloCiip(content){
+      let logoData = null;
+      try {
+        logoData = await this.dashboardReportService.loadLogoWithRetry()
+      } catch (error) {
+        this.logger.warn("No se pudo cargar el logo:", error.message)
+      }
+      // Logo y título principal
+      if (logoData) {
+        content.push({
+          image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+          maxWidth: 515,
+          maxHeight: 150,
+          alignment: "center",
+          margin: [0, 0, 0, 20],
+        })
+      }
+      return content
   }
 
 }

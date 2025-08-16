@@ -12,23 +12,11 @@ import {
 } from "src/db/schema"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { DashboardReportService } from "../dashboard-report.service"
-// import type {
-//   AssignmentReportDto,
-//   CompleteAssignmentStats,
-//   AssignmentRegistrationByDay,
-//   AssignmentsByEmployee,
-//   AssignmentsByProductType,
-//   AssignmentsByFamily,
-// } from "./stockAssignment-stats.interface"
 import { PG_CONNECTION } from "src/constants"
 import { AssignmentService } from "src/assignment/assignment.service"
 import { AssignmentRegistrationByDay, AssignmentReportDto, AssignmentsByEmployee, AssignmentsByFamily, AssignmentsByProductType, CompleteAssignmentStats } from "./stockAssignment-stats.interface"
 import { MedicalSupplyType } from "../medical-supplies-available/medical-supplies-report.interface"
 
-/* export interface AssignmentReportOptions {
-  reportType: "day" | "month"
-  date?: Date // Fecha específica para reportes del día
-} */
 export interface AssignmentReportByTypeSuppliesOptions {
   reportType: "day" | "month"
   date?: Date // Fecha específica para reportes del día
@@ -122,82 +110,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
       // Determinar el rango de fechas según el tipo de reporte
       let startRange: Date, endRange: Date, startOfDay: Date, endOfDay: Date
 
-/*        if (options.reportType === "day") {
-        const targetDate = options.date || new Date()
-        const targetUtc = new Date(targetDate.toISOString())
-
-        startOfDay = new Date(
-          Date.UTC(targetUtc.getUTCFullYear(), targetUtc.getUTCMonth(), targetUtc.getUTCDate(), 0, 0, 0, 0),
-        )
-        endOfDay = new Date(
-          Date.UTC(targetUtc.getUTCFullYear(), targetUtc.getUTCMonth(), targetUtc.getUTCDate(), 23, 59, 59, 999),
-        )
-
-        startRange = startOfDay
-        endRange = endOfDay
-      } else {
-        const now = new Date()
-        const nowUtc = new Date(now.toISOString())
-
-        startOfDay = new Date(Date.UTC(
-            nowUtc.getUTCFullYear(), 
-            nowUtc.getUTCMonth(), 
-            nowUtc.getUTCDate(), 0, 0, 0, 0));
-        endOfDay = new Date( Date.UTC(
-            nowUtc.getUTCFullYear(), 
-            nowUtc.getUTCMonth(), 
-            nowUtc.getUTCDate(), 23, 59, 59, 999));
-
-        const currentYear = nowUtc.getUTCFullYear()
-        const currentMonth = nowUtc.getUTCMonth()
-        startRange = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
-        endRange = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
-      }  */
-/*       if (options.reportType === "day") {
-        const targetDate = options.date || new Date()
-        const targetUtc = new Date(targetDate.toISOString())
-
-        startOfDay = new Date(
-            targetDate.getFullYear(),
-            targetDate.getMonth(),
-            targetDate.getDate(),
-            0, // Horas
-            0, // Minutos
-            0, // Segundos
-            0  // Milisegundos
-        )
-
-        endOfDay = new Date(
-            targetDate.getFullYear(),
-            targetDate.getMonth(),
-            targetDate.getDate(),
-            23, // Horas
-            59, // Minutos
-            59, // Segundos
-            999 // Milisegundos
-        )
-
-        startRange = startOfDay
-        endRange = endOfDay
-        
-      } else {
-        const now = new Date()
-        const nowUtc = new Date(now.toISOString())
-
-        startOfDay = new Date(Date.UTC(
-            nowUtc.getUTCFullYear(), 
-            nowUtc.getUTCMonth(), 
-            nowUtc.getUTCDate(), 0, 0, 0, 0));
-        endOfDay = new Date( Date.UTC(
-            nowUtc.getUTCFullYear(), 
-            nowUtc.getUTCMonth(), 
-            nowUtc.getUTCDate(), 23, 59, 59, 999));
-
-        const currentYear = nowUtc.getUTCFullYear()
-        const currentMonth = nowUtc.getUTCMonth()
-        startRange = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
-        endRange = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
-      } */
         const now = new Date()
         const nowUtc = new Date(now.toISOString())
         const currentYear = nowUtc.getUTCFullYear()
@@ -231,8 +143,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         endRange = endOfDay;
 
       } else {
-        // const now = new Date()
-        // const nowUtc = new Date(now.toISOString())
+
         startOfDay = new Date(Date.UTC(
             nowUtc.getUTCFullYear(), 
             nowUtc.getUTCMonth(), 
@@ -242,7 +153,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             nowUtc.getUTCMonth(), 
             nowUtc.getUTCDate(), 23, 59, 59, 999));
 
-        // const currentYear = nowUtc.getUTCFullYear()
         const currentMonth = nowUtc.getUTCMonth()
         
         startRange = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
@@ -252,9 +162,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
       // 1. Estadísticas generales de asignaciones
       const [generalStats] = await this.db
         .select({
-          // totalAssignments: sum(assignmentTable.products),
           totalAssignments: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startOfYear} AND ${assignmentTable.createdAt} <= ${endOfYear} THEN ${assignmentTable.products} ELSE 0 END)`,
-
           assignmentsToday: sql<number>`count(CASE WHEN ${assignmentTable.createdAt} >= ${startOfDay} AND ${assignmentTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
           assignmentsThisMonth: sql<number>`sum(CASE WHEN ${assignmentTable.createdAt} >= ${startRange} AND ${assignmentTable.createdAt} <= ${endRange} THEN ${assignmentTable.products} ELSE NULL END)`,
           totalProductsAssigned: sql<number>`sum(${assignmentTable.products})`,//por a hora no se usa porque es la suma de todos los registros
@@ -266,7 +174,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           and(
             isNotNull(assignmentTable.employeeId),
             eq(productsTable.type, options.supplyType), 
-            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           )
         )
@@ -289,7 +196,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
@@ -313,7 +219,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type,  options.supplyType),
-            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
@@ -344,7 +249,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
@@ -365,7 +269,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
@@ -398,7 +301,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             gte(assignmentTable.createdAt, startRange),
             lte(assignmentTable.createdAt, endRange),
             eq(productsTable.type, options.supplyType),
-            // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ),
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
@@ -452,11 +354,9 @@ export class AssignmentReportMonthByMedicalSuppliesService {
       registrationsByDay.sort((a, b) => a.day - b.day)
 
       const completeStats: CompleteAssignmentStats = {
-        totalAssignments: Number(generalStats.totalAssignments), //se usa en Estadísticas Generales
-        // assignmentsToday: Number(generalStats.assignmentsToday),
-        assignmentsToday:  (await this.assignmentService.totalAssignmentOfTheDay()).count,
-        // assignmentsThisMonth: Number(generalStats.assignmentsThisMonth),
-        assignmentsThisMonth: (await this.assignmentService.totalAssignmentOfMonth()).count,
+        totalAssignments: Number(generalStats.totalAssignments), 
+        assignmentsToday:  (await this.assignmentService.totalAssignmentOfTheDay()).count, // assignmentsToday: Number(generalStats.assignmentsToday),
+        assignmentsThisMonth: (await this.assignmentService.totalAssignmentOfMonth()).count, // assignmentsThisMonth: Number(generalStats.assignmentsThisMonth),
         totalProductsAssigned: Number(generalStats.totalProductsAssigned) || 0, //no se usa
         // totalProductsAssignedThisMonth: Number(generalStats.totalProductsAssignedThisMonth) || 0,
         totalProductsAssignedThisMonthOrToday: options.reportType === "day"? Number( (await this.assignmentService.countProductsAssignmentOfTheDay()).count ) : Number( (await this.assignmentService.countProductsAssignmentOfMonth([options.supplyType])).count ), //se usa en Estadísticas Generales
@@ -484,9 +384,8 @@ export class AssignmentReportMonthByMedicalSuppliesService {
     options: AssignmentReportByTypeSuppliesOptions = { reportType: "month", supplyType:1 },
   ): Promise<TDocumentDefinitions> {
     try {
-      // Cargar logo usando el método del DashboardReportService
       let logoData = null;
-      let labelReportType = options.reportType === "day"? 'del Dia':'del Mes';
+      let labelReportType = options.reportType === "day"? 'en el Dia':'en el Mes';
       try {
         logoData = await this.dashboardReportService.loadLogoWithRetry()
       } catch (error) {
@@ -502,10 +401,12 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           margin: [0, 5, 0, 0],
         },
         reportTitle: {
-          fontSize: 14,
+          // fontSize: 14,
+          fontSize: 12,
           bold: true,
           alignment: "center",
-          margin: [0, 15, 0, 10],
+          // margin: [0, 15, 0, 10],
+          margin: [40, 5, 40, 10],
           color: "#003366",
         },
         sectionTitle: {
@@ -558,10 +459,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
       // Crear contenido del documento
       const content: any[] = []
 
-/*       const reportTitle =
-        options.reportType === "day"
-          ? "REPORTE DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS DE HOY"
-          : "REPORTE MENSUAL DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS" */
      let reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE MEDICAMENTOS A EMPLEADOS"
 
      if(options.supplyType===1){
@@ -574,7 +471,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
       reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE EQUIPOS ODONTOLÓGICOS A EMPLEADOS"
      }
 
-      // Logo y título principal
+/*       // Logo y título principal
       if (logoData) {
         content.push({
           image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
@@ -583,14 +480,13 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           alignment: "center",
           margin: [0, 0, 0, 20],
         })
-      }
+      } */
 
+      // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
       content.push({
         text: reportTitle,
         style: "reportTitle",
-      })
-
-      console.log("options.reportType " , options.reportType)
+      });
 
       // Información general del reporte
       this.addGeneralInfoTable(content, reportData, styles)
@@ -621,9 +517,27 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           font: "Roboto",
         },
         pageSize: "A4",
-        pageMargins: [40, 60, 40, 60],
+        pageMargins: [40, 80, 40, 60],
+        background: function(currentPage, pageSize)  {
+          // El logo en el fondo de cada página
+          if (logoData) {
+            return {
+              image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+              maxWidth: 515,
+              maxHeight: 80,
+              alignment: "center",
+              margin: [0, 20, 0, 0], // Margen del logo
+            };
+          }
+          return '' // Devuelve un texto vacío si no hay logo
+        },
+        
+        header: (currentPage, pageCount, pageSize) => {
+          // El header está vacío para no interferir con el contenido
+          return [];
+        },
         footer: (currentPage, pageCount) => ({
-          text: `Reporte de Asignaciones ${labelReportType} - Página ${currentPage} de ${pageCount}`,
+          text: `Reporte de Asignaciones a Empleados ${labelReportType} - Página ${currentPage} de ${pageCount}`,
           style: "footer",
         }),
       }
