@@ -79,7 +79,6 @@ export class PdfDashboardService {
       this.validateUserStats(userStats)
 
       // Crear definición del documento
-      // const docDefinition = await this.createUserStatsDocumentDefinition(userStats, reportDto)
       const docDefinition = await this.createUserStatsDocumentDefinition(userStats, user)
 
       // Crear instancia de PdfPrinter
@@ -508,7 +507,6 @@ export class PdfDashboardService {
   /**
    * Agrega la tabla de información general
    */
-  // private addGeneralInfoTable(content: any[], reportDto: any, styles: StyleDictionary): void {
   private addGeneralInfoTable(content: any[], styles: StyleDictionary, user: IJwtPayload): void {
     const today = new Date()
     const year = today.getFullYear()
