@@ -16,7 +16,7 @@ import { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { MedicalSuppliesService } from "src/medical-supplies/medical-supplies.service"
 import { DashboardReportService } from "../dashboard-report.service"
 
-// Interfaces mejoradas para estadísticas detalladas
+// Interfaces para estadísticas detalladas
 export interface EnhancedMedicationStatistics {
   // Estadísticas básicas de productos DISPONIBLES
   totalAvailableProducts_sumStock: number
@@ -97,7 +97,7 @@ export class MedicalSuppliesReportService extends BaseReportService {
     }
   }
 
-  // Método principal mejorado para obtener estadísticas detalladas
+  // Método principal para obtener estadísticas detalladas
   async getEnhancedMedicalSupplyStats(options: MedicalSupplyReportOptions): Promise<EnhancedMedicationStatistics> {
     try {
       switch (options.supplyType) {
@@ -116,7 +116,7 @@ export class MedicalSuppliesReportService extends BaseReportService {
     }
   }
 
-  // Estadísticas mejoradas para MEDICAMENTOS DISPONIBLES
+  // Estadísticas para MEDICAMENTOS DISPONIBLES
   private async getEnhancedMedicationStatistics(): Promise<EnhancedMedicationStatistics> {
     const now = new Date()
     const thirtyDaysFromNow = new Date()
@@ -264,7 +264,7 @@ console.log("systemTotals " , systemTotals)
     }
   }
 
-  // Estadísticas mejoradas para UNIFORMES DISPONIBLES
+  // Estadísticas para UNIFORMES DISPONIBLES
   private async getEnhancedUniformStatistics(): Promise<EnhancedMedicationStatistics> {
     //Mes actual
     const dateRanges = this.medicalSuppliesService.calculateCurrentMonthRange()
@@ -314,10 +314,10 @@ console.log("systemTotals " , systemTotals)
       .groupBy(productStatusTable.status);
       
     const lowStockThreshold = 15 // Menor threshold para uniformes
-    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0)
-    const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_uniformes);
-    const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 )
-    const countRegistryAvailableProducts = availableProducts.length;
+    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0); // Filtro por mes
+    const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_uniformes); // Filtro por mes
+    const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 ) // Filtro por mes
+    const countRegistryAvailableProducts = availableProducts.length; // Filtro por mes
       
     // Distribución por categorías (solo productos disponibles)
     const categoryMap = new Map()
@@ -360,7 +360,7 @@ console.log("systemTotals " , systemTotals)
     }
   }
 
-  // Estadísticas mejoradas para EQUIPOS ODONTOLÓGICOS DISPONIBLES
+  // Estadísticas para EQUIPOS ODONTOLÓGICOS DISPONIBLES
   private async getEnhancedDentalEquipmentStatistics(): Promise<EnhancedMedicationStatistics> {
     const dateRanges = this.medicalSuppliesService.calculateCurrentMonthRange()
 
@@ -408,10 +408,10 @@ console.log("systemTotals " , systemTotals)
       .groupBy(productStatusTable.status);
 
     const lowStockThreshold = 15 
-    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0)
-    const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_equiposOdontologicos);
-    const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 )
-    const countRegistryAvailableProducts = availableProducts.length;
+    const totalInSystem = systemTotals.reduce((sum, item) => sum + Number(item.total), 0); // Filtro por mes
+    const totalAvailableProducts_sumStock = Number((await this.medicalSuppliesService.getAccumulatedStockByType()).sum_equiposOdontologicos);//consulta filtrada por el mes actual
+    const notAvailableSumStock = Number( systemTotals.find((item) => item.status === "No Disponible")?.total || 0 ); // Filtro por mes
+    const countRegistryAvailableProducts = availableProducts.length; // Filtro por mes
       
     // Distribución por categorías (solo productos disponibles)
     const categoryMap = new Map()
@@ -426,10 +426,10 @@ console.log("systemTotals " , systemTotals)
     }));
 
     return {
-      totalAvailableProducts_sumStock,
-      availableWithLowStock: availableProducts.filter((p) => p.stock <= lowStockThreshold).length,
+      totalAvailableProducts_sumStock, // Filtrado por mes
+      availableWithLowStock: availableProducts.filter((p) => p.stock <= lowStockThreshold).length, // Filtrado por mes
       availableNearExpiry: 0, // Uniformes no vencen
-      lowStockAvailableDetails: availableProducts
+      lowStockAvailableDetails: availableProducts // Filtrado por mes
         .filter((p) => p.stock <= lowStockThreshold)
         .map((p) => ({
           id: p.id,
@@ -441,20 +441,20 @@ console.log("systemTotals " , systemTotals)
           provider: p.providerName || "Sin proveedor",
         })),
       nearExpiryAvailableDetails: [], // No aplica para uniformes
-      categoryDistribution, 
+      categoryDistribution, // Filtrado por mes
       availabilityAnalysis: {
-        totalProductsInSystem: systemTotals.reduce((sum, item) => sum + Number(item.total), 0),
-        availableProducts: totalAvailableProducts_sumStock,
-        notAvailableProducts: notAvailableSumStock,
+        totalProductsInSystem: systemTotals.reduce((sum, item) => sum + Number(item.total), 0), // Filtrado por mes
+        availableProducts: totalAvailableProducts_sumStock,// Filtrado por mes
+        notAvailableProducts: notAvailableSumStock,// Filtrado por mes
         expiredProducts: 0,
         availabilityPercentage: totalInSystem > 0 ? (totalAvailableProducts_sumStock / totalInSystem) * 100 : 0,
         noAvailabilityPercentage: totalInSystem > 0 ? (notAvailableSumStock / totalInSystem) * 100 : 0,
       },
-      countRegistryAvailableProducts
+      countRegistryAvailableProducts // Filtrado por mes
     }
   }
 
-  // Método mejorado para crear documento PDF con más información
+  // Método para crear documento PDF con más información
   private async createEnhancedDocumentDefinition(
     reportData: MedicalSupplyReportData,
     stats: EnhancedMedicationStatistics,
@@ -480,7 +480,7 @@ console.log("systemTotals " , systemTotals)
     // Información general
     this.addGeneralInfoTable(content, reportData, styles)
 
-    // Estadísticas mejoradas de productos disponibles
+    // Estadísticas de productos disponibles
     this.addEnhancedStatsSection(content, stats, styles, options)
 
     // Análisis de disponibilidad
@@ -499,7 +499,7 @@ console.log("systemTotals " , systemTotals)
       this.addCategoryDistributionSection(content, stats, styles, options)
     }
 
-    // Recomendaciones mejoradas
+    // Recomendaciones
     this.addEnhancedRecommendationsSection(content, stats, styles, options)
 
     const docDefinition: TDocumentDefinitions = {
@@ -535,7 +535,7 @@ console.log("systemTotals " , systemTotals)
     return docDefinition
   }
 
-  // Sección mejorada de estadísticas
+  // Sección de estadísticas
   private addEnhancedStatsSection(
     content: any[],
     stats: EnhancedMedicationStatistics,
@@ -543,7 +543,7 @@ console.log("systemTotals " , systemTotals)
     options: MedicalSupplyReportOptions,
   ) {
     const supplyType = this.getSupplyTypeName(options.supplyType)
-    content.push({ text: `Estadísticas de ${supplyType} Disponibles`, style: "sectionTitle" })
+    content.push({ text: `Estadísticas de ${supplyType} Disponibles en el Mes`, style: "sectionTitle" })
 
     const baseStats = [
       [
@@ -727,7 +727,7 @@ console.log("systemTotals " , systemTotals)
     })
   }
 
-  // Recomendaciones mejoradas y específicas
+  // Recomendaciones específicas
   private addEnhancedRecommendationsSection(
     content: any[],
     stats: EnhancedMedicationStatistics,
@@ -751,7 +751,7 @@ console.log("systemTotals " , systemTotals)
     }
   }
 
-  // Recomendaciones mejoradas
+  // Recomendaciones 
   private generateEnhancedRecommendations(
     stats: EnhancedMedicationStatistics,
     options: MedicalSupplyReportOptions,
@@ -819,7 +819,7 @@ console.log("-> lowStockAvailableDetails " ,  stats.lowStockAvailableDetails)
   async getMedicalSupplyStats(options: MedicalSupplyReportOptions): Promise<MedicalSupplyStats> {
     const enhancedStats = await this.getEnhancedMedicalSupplyStats(options)
 
-    // Convertir estadísticas mejoradas al formato original para compatibilidad
+    // Convertir estadísticas al formato original para compatibilidad
     return {
       totalItems: enhancedStats.totalAvailableProducts_sumStock,
       availableItems: enhancedStats.totalAvailableProducts_sumStock,

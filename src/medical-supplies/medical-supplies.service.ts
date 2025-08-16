@@ -386,13 +386,9 @@ export class MedicalSuppliesService {
           lte(productsTable.createdAt, dateRanges.endOfMonth),
         )
       );
-      // return result[0];
-      console.log("result eq odontologico disponible",result)
-      // Extrae el primer (y único) elemento del array de resultados.
-      // Si el array está vacío, `data` será `undefined`.
+ 
       const data = result[0];
-      // Crea un objeto base con todos los valores en 0.
-      // Esto asegura que siempre se devuelva una estructura completa.
+
       // Crea un objeto base con todos los valores en 0.
       // Esto asegura que siempre se devuelva una estructura completa.
       const finalResult: stockMedicalSuppliesAvailables = {
