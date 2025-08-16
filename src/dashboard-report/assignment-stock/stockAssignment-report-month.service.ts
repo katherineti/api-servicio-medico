@@ -385,7 +385,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
   ): Promise<TDocumentDefinitions> {
     try {
       let logoData = null;
-      let labelReportType = options.reportType === "day"? 'en el Dia':'en el Mes';
+      let labelReportType = options.reportType === "day"? 'en el dia':'en el mes';
       try {
         logoData = await this.dashboardReportService.loadLogoWithRetry()
       } catch (error) {
@@ -401,11 +401,9 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           margin: [0, 5, 0, 0],
         },
         reportTitle: {
-          // fontSize: 14,
           fontSize: 12,
           bold: true,
           alignment: "center",
-          // margin: [0, 15, 0, 10],
           margin: [40, 5, 40, 10],
           color: "#003366",
         },
@@ -471,17 +469,6 @@ export class AssignmentReportMonthByMedicalSuppliesService {
       reportTitle = "REPORTE MENSUAL DE LAS ASIGNACIONES DE EQUIPOS ODONTOLÓGICOS A EMPLEADOS"
      }
 
-/*       // Logo y título principal
-      if (logoData) {
-        content.push({
-          image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
-          maxWidth: 515,
-          maxHeight: 150,
-          alignment: "center",
-          margin: [0, 0, 0, 20],
-        })
-      } */
-
       // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
       content.push({
         text: reportTitle,
@@ -537,7 +524,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           return [];
         },
         footer: (currentPage, pageCount) => ({
-          text: `Reporte de Asignaciones a Empleados ${labelReportType} - Página ${currentPage} de ${pageCount}`,
+          text: `Reporte de asignaciones a empleados ${labelReportType} - Página ${currentPage} de ${pageCount}`,
           style: "footer",
         }),
       }
@@ -985,7 +972,8 @@ export class AssignmentReportMonthByMedicalSuppliesService {
     })
 
     content.push(
-      { text: "\n\n" },
+      // { text: "\n\n" },
+      { text: "\n" },
       { text: `Generado por: Sistema de Gestión Médica`, style: "paragraph" },
       { text: `Fecha y hora de generación: ${currentDate}`, style: "paragraph" },
       { text: `Tipo de reporte: ${reportData.type}`, style: "paragraph" },

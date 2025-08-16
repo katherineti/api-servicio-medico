@@ -584,12 +584,12 @@ console.log("antes de 1.generalStats")
   ): Promise<TDocumentDefinitions> {
     try {
       let logoData = null;
-      let labelReportType = "en el Año Actual";
+      let labelReportType = "en el año actual";
       if(options.reportType === "month"){
-        labelReportType = 'en el Mes';
+        labelReportType = 'en el mes';
       }
       if(options.reportType === "day"){
-        labelReportType = 'en el Dia';
+        labelReportType = 'en el dia';
       }
 
       try {
@@ -675,23 +675,12 @@ console.log("antes de 1.generalStats")
       if(options.reportType === "day"){
       reportTitle = "REPORTE REGISTROS DIARIOS DE LAS ASIGNACIONES DE INSUMOS MÉDICOS A EMPLEADOS";
       }
-/*
-      // Logo y título principal
-      if (logoData) {
-        content.push({
-          image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
-          maxWidth: 515,
-          maxHeight: 150,
-          alignment: "center",
-          margin: [0, 0, 0, 20],
-        })
-      }
- */
-    // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
-    content.push({
-      text: reportTitle,
-      style: "reportTitle",
-    });
+
+      // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
+      content.push({
+        text: reportTitle,
+        style: "reportTitle",
+      });
 
       console.log("options.reportType " , options.reportType)
 
@@ -720,7 +709,7 @@ console.log("antes de 1.generalStats")
         }
   
         if (yearlyChartBuffer) {
-          /*      // Título del gráfico anual (opcional, usando estilos existentes)
+          /*  // Título del gráfico anual (opcional, usando estilos existentes)
           content.push({ text: `Registros de Usuarios por Mes - ${new Date().getFullYear()}`, style: "sectionTitle" }) */
           content.push({
             image: `data:image/png;base64,${yearlyChartBuffer.toString("base64")}`,
@@ -768,7 +757,7 @@ console.log("antes de 1.generalStats")
       },
       
       footer: (currentPage, pageCount) => ({
-        text: `Registros de Asignaciones a Empleados ${labelReportType} - Página ${currentPage} de ${pageCount}`,
+        text: `Registros de asignaciones a empleados ${labelReportType} - Página ${currentPage} de ${pageCount}`,
         style: "footer",
       }),
     };
@@ -1292,7 +1281,8 @@ console.log("antes de 1.generalStats")
     })
 
     content.push(
-      { text: "\n\n" },
+      // { text: "\n\n" },
+      { text: "\n" },
       { text: `Generado por: Sistema de Gestión Médica`, style: "paragraph" },
       { text: `Fecha y hora de generación: ${currentDate}`, style: "paragraph" },
       { text: `Tipo de reporte: ${reportData.type}`, style: "paragraph" },

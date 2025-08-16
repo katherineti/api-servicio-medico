@@ -338,10 +338,10 @@ export class PdfDashboardService {
           margin: [0, 5, 0, 0],
         },
         reportTitle: {
-          fontSize: 14,
+          fontSize: 12,
           bold: true,
           alignment: "center",
-          margin: [0, 15, 0, 10],
+          margin: [40, 5, 40, 10],
           color: "#003366",
         },
         sectionTitle: {
@@ -394,26 +394,18 @@ export class PdfDashboardService {
       // Crear contenido del documento
       const content: any[] = []
 
-      // Logo y título principal
-      if (logoData) {
-        content.push({
-          image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
-          maxWidth: 515,
-          maxHeight: 150,
-          alignment: "center",
-          margin: [0, 0, 0, 20],
-        })
-      }
-
       // Crea una nueva instancia de Date
       const fechaActual = new Date();
       // Obtiene el año de la fecha actual
       const anioActual = fechaActual.getFullYear();
 
+      let reportTitle = `REPORTE ESTADÍSTICO DE USUARIOS EN EL AÑO ${anioActual}`;
+      
+      // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
       content.push({
-        text: `REPORTE ESTADÍSTICO DE USUARIOS EN EL AÑO ${anioActual}`,
+        text: reportTitle,
         style: "reportTitle",
-      })
+      });
 
       // Información general del reporte
       // this.addGeneralInfoTable(content, reportDto, styles)
@@ -470,7 +462,6 @@ export class PdfDashboardService {
       this.addRegistrationsByDaySection(content, userStats, styles) */
 
       // 6)Información del sistema
-      // this.addSystemInfoSection(content, reportDto, styles)
       this.addSystemInfoSection(content, styles, user)
 
       // Crear definición del documento
@@ -483,53 +474,31 @@ export class PdfDashboardService {
           lineHeight: 1.2,
         },
         pageSize: "A4",
-        pageMargins: [40, 50, 40, 50],
+        // pageMargins: [40, 50, 40, 50],
+        pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
+        background: function(currentPage, pageSize)  {
+          // El logo en el fondo de cada página
+          if (logoData) {
+            return {
+              image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+              maxWidth: 515,
+              maxHeight: 80,
+              alignment: "center",
+              margin: [0, 20, 0, 0], // Margen del logo
+            };
+          }
+          return '' // Devuelve un texto vacío si no hay logo
+        },
+        
+        header: (currentPage, pageCount, pageSize) => {
+          // El header está vacío para no interferir con el contenido
+          return [];
+        },
         footer: (currentPage, pageCount) => ({
           text: `Reporte anual de usuarios - Página ${currentPage} de ${pageCount}`,
           style: "footer",
         }),
-        header: ((currentPage, pageCount, pageSize) => {
-          if (currentPage === 1) return null
 
-          return {
-            stack: [
-              {
-                columns: [
-                  logoData
-                    ? {
-                        image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
-                        width: 60,
-                        margin: [40, 10, 0, 0],
-                      }
-                    : {},
-                  {
-                    stack: [
-                      {
-                        text: `Estadísticas de Usuarios - Página: ${currentPage} de ${pageCount}`,
-                        style: "headerSection",
-                      },
-                    ],
-                    alignment: "right",
-                    margin: [0, 10, 40, 0],
-                  },
-                ],
-              },
-              {
-                canvas: [
-                  {
-                    type: "line",
-                    x1: 40,
-                    y1: 50,
-                    x2: pageSize.width - 40,
-                    y2: 50,
-                    lineWidth: 1,
-                    lineColor: "#cccccc",
-                  },
-                ],
-              },
-            ],
-          }
-        }).bind(this),
       }
     } catch (error) {
       throw new Error(`Error al crear la definición del documento: ${error.message}`)
@@ -734,7 +703,7 @@ export class PdfDashboardService {
     const anioActual = fechaActual.getFullYear();
 
     content.push(
-      { text: "\n\n" },
+      { text: "\n" },
       // { text: `Generado por: ${reportDto?.role || "Sistema de Gestión Médica"}`, style: "paragraph" },
       { text: `Generado por: ${"Sistema de Gestión Médica"}`, style: "paragraph" },
       // { text: `Generado por: ${user?.role || "Sistema"}`, style: "paragraph" },

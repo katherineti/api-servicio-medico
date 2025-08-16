@@ -16,10 +16,12 @@ export abstract class BaseReportService {
         margin: [0, 5, 0, 0],
       },
       reportTitle: {
-        fontSize: 14,
+        // fontSize: 14,
+        fontSize: 12,
         bold: true,
         alignment: "center",
-        margin: [0, 15, 0, 10],
+        // margin: [0, 15, 0, 10],
+        margin: [40, 5, 40, 10],
         color: "#003366",
       },
       sectionTitle: {
@@ -315,5 +317,4 @@ export abstract class BaseReportService {
     }
   }
 
-  
 }

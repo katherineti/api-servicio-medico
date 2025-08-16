@@ -198,8 +198,8 @@ console.log("systemTotals " , systemTotals)
         category: p.categoryName || "Sin categoría",
         provider: p.providerName || "Sin proveedor",
       }))
-console.log("**availableProducts",availableProducts)
-console.log("**lowStockAvailableDetails",lowStockAvailableDetails)
+    console.log("**availableProducts",availableProducts)
+    console.log("**lowStockAvailableDetails",lowStockAvailableDetails)
     // Detalles de productos disponibles próximos a vencer
     const nearExpiryAvailableDetails = availableProducts
       .filter(
@@ -247,11 +247,11 @@ console.log("**lowStockAvailableDetails",lowStockAvailableDetails)
       notAvailableProducts: notAvailableSumStock,
       expiredProducts: expiredCount,
     }
-console.log("availabilityPercentage ", availabilityAnalysis.availabilityPercentage)
-console.log("totalAvailableProducts_sumStock", totalAvailableProducts_sumStock )
-console.log("totalInSystem", totalInSystem )
-console.log("sum med disponibles o prox a vencer", totalAvailableProducts_sumStock, " , solo disponibles:", _AvailableSumStock )
-console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPercentage  ",availabilityAnalysis.noAvailabilityPercentage)
+    console.log("availabilityPercentage ", availabilityAnalysis.availabilityPercentage)
+    console.log("totalAvailableProducts_sumStock", totalAvailableProducts_sumStock )
+    console.log("totalInSystem", totalInSystem )
+    console.log("sum med disponibles o prox a vencer", totalAvailableProducts_sumStock, " , solo disponibles:", _AvailableSumStock )
+    console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPercentage  ",availabilityAnalysis.noAvailabilityPercentage)
     return {
       totalAvailableProducts_sumStock,
       availableWithLowStock,
@@ -460,34 +460,22 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
     stats: EnhancedMedicationStatistics,
     options: MedicalSupplyReportOptions,
   ): Promise<TDocumentDefinitions> {
-      // Cargar logo usando el método del DashboardReportService
-      let logoData = null
-      try {
-        logoData = await this.dashboardReportService.loadLogoWithRetry()
-      } catch (error) {
-        this.logger.warn("No se pudo cargar el logo:", error.message)
-      }
+    // Cargar logo usando el método del DashboardReportService
+    let logoData = null
+    try {
+      logoData = await this.dashboardReportService.loadLogoWithRetry()
+    } catch (error) {
+      this.logger.warn("No se pudo cargar el logo:", error.message)
+    }
 
-      // Definir estilos (reutilizando la estructura del DashboardReportService)
-      const styles: StyleDictionary = this.getCommonStyles()
+    // Definir estilos (reutilizando la estructura del DashboardReportService)
+    const styles: StyleDictionary = this.getCommonStyles()
 
-      // Crear contenido del documento
-      const content: any[] = []
+    // Crear contenido del documento
+    const content: any[] = []
 
-      // Logo y título principal
-      if (logoData) {
-        content.push({
-          image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
-          maxWidth: 515,
-          maxHeight: 150,
-          alignment: "center",
-          margin: [0, 0, 0, 20],
-        })
-      }
-
-    // Título mejorado
-    const title = this.getReportTitle(options.supplyType)
-    content.push({ text: title, style: "reportTitle" })
+    const reportTitle = this.getReportTitle(options.supplyType)
+    content.push({ text: reportTitle, style: "reportTitle" })
 
     // Información general
     this.addGeneralInfoTable(content, reportData, styles)
@@ -519,7 +507,25 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
       styles,
       defaultStyle: { font: "Roboto" },
       pageSize: "A4",
-      pageMargins: [40, 60, 40, 60] as [number, number, number, number],
+      // pageMargins: [40, 60, 40, 60] as [number, number, number, number],
+      pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
+      background: function(currentPage, pageSize)  {
+        // El logo en el fondo de cada página
+        if (logoData) {
+          return {
+            image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+            maxWidth: 515,
+            maxHeight: 80,
+            alignment: "center",
+            margin: [0, 20, 0, 0],
+          };
+        }
+        return '' // Devuelve un texto vacío si no hay logo
+      },
+      header: (currentPage, pageCount, pageSize) => {
+        // El header está vacío para no interferir con el contenido
+        return [];
+      },
       footer: (currentPage: number, pageCount: number) => ({
         text: `${this.toSentenceCase(this.getReportTitle(options.supplyType))} - Página ${currentPage} de ${pageCount}`,
         style: "footer",
@@ -738,7 +744,8 @@ console.log("sum med no disponibles", notAvailableSumStock ," ,noAvailabilityPer
         content.push({
           text: `• ${recommendation}`,
           style: "paragraph",
-          margin: [10, 2, 0, 2],
+          // margin: [10, 2, 0, 2],
+          margin: [10, 2, 0, 1],
         })
       })
     }

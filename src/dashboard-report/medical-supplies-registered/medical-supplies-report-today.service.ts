@@ -396,10 +396,12 @@ console.log("REGISTROS GENERALES " , generalStats)
           margin: [0, 5, 0, 0],
         },
         reportTitle: {
-          fontSize: 14,
+          // fontSize: 14,
+          fontSize: 12,
           bold: true,
           alignment: "center",
-          margin: [0, 15, 0, 10],
+          // margin: [0, 15, 0, 10],
+          margin: [40, 5, 40, 10],
           color: "#003366",
         },
         sectionTitle: {
@@ -453,7 +455,7 @@ console.log("REGISTROS GENERALES " , generalStats)
       const content: any[] = []
 
       // Logo y título principal
-      if (logoData) {
+/*       if (logoData) {
         content.push({
           image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
           maxWidth: 515,
@@ -461,12 +463,15 @@ console.log("REGISTROS GENERALES " , generalStats)
           alignment: "center",
           margin: [0, 0, 0, 20],
         })
-      }
+      } */
 
+      let reportTitle = "REPORTE ESTADÍSTICO DEL INVENTARIO ALMACÉN REGISTRADO HOY";
+      
+      // AÑADIR EL TÍTULO AL PRINCIPIO DEL CONTENIDO
       content.push({
-        text: "REPORTE ESTADÍSTICO DEL INVENTARIO ALMACÉN REGISTRADO HOY",
+        text: reportTitle,
         style: "reportTitle",
-      })
+      });
 
       // Información general del reporte
       this.addGeneralInfoTable(content, reportData, styles)
@@ -497,7 +502,27 @@ console.log("REGISTROS GENERALES " , generalStats)
           font: "Roboto",
         },
         pageSize: "A4",
-        pageMargins: [40, 60, 40, 60],
+        // pageMargins: [40, 60, 40, 60],
+        pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
+
+        background: function(currentPage, pageSize)  {
+          // El logo en el fondo de cada página
+          if (logoData) {
+            return {
+              image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+              maxWidth: 515,
+              maxHeight: 80,
+              alignment: "center",
+              margin: [0, 20, 0, 0], // Margen del logo
+            };
+          }
+          return '' // Devuelve un texto vacío si no hay logo
+        },
+        
+        header: (currentPage, pageCount, pageSize) => {
+          // El header está vacío para no interferir con el contenido
+          return [];
+        },
         footer: (currentPage, pageCount) => ({
           text: `Reporte de inventario almacén(hoy) - Página ${currentPage} de ${pageCount}`,
           style: "footer",
@@ -977,7 +1002,7 @@ private addTodayRegistrationsChart(
     })
 
     content.push(
-      { text: "\n\n" },
+      { text: "\n" },
       { text: `Generado por: Sistema de Gestión Médica`, style: "paragraph" },
       { text: `Fecha y hora de generación: ${currentDate}`, style: "paragraph" },
       { text: `Tipo de reporte: ${reportData.type}`, style: "paragraph" },
