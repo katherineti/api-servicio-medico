@@ -27,7 +27,7 @@ export class UserController {
 
   constructor(private readonly userService: UsersService, private readonly authService: AuthService) { }
   
-  @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
+  @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor, TypesRoles.medico, TypesRoles.enfermero)
   @Post('getAll')
   @UsePipes(ValidationPipe)
   getUsers(@Body() body: SearchUserDto, @Usersesion() user: IJwtPayload): Promise<ResultGetAll> {

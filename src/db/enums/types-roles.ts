@@ -4,5 +4,6 @@ export enum TypesRoles {
     user = 'user',
     almacen = "almacen",
     medico = "medico",
+    enfermero = "enfermero(a)",
     auditor = "auditor"
 }
