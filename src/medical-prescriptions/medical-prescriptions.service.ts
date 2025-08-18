@@ -133,12 +133,12 @@ export class MedicalPrescriptionsService {
         expirationDate: sql<string>`TO_CHAR(${medicalPrescriptionsTable.expirationDate}, 'YYYY-MM-DD')`,
         recipeContent: medicalPrescriptionsTable.recipeContent,
         doctorId: usersTable.id,
-        doctorName: usersTable.name,
-        doctorCedula: usersTable.cedula,
+          doctorName: usersTable.name,
+          doctorCedula: usersTable.cedula,
         mpps: medicalPrescriptionsTable.mpps,
         patientId: patientTable.id,
-        patientName: patientTable.name,
-        patientCedula: patientTable.cedula,
+          patientName: patientTable.name,
+          patientCedula: patientTable.cedula,
         indications: medicalPrescriptionsTable.indications,
         createdAt: sql<string>`TO_CHAR(${medicalPrescriptionsTable.createdAt}, 'YYYY-MM-DD')`,
         updatedAt: sql<string>`TO_CHAR(${medicalPrescriptionsTable.updatedAt}, 'YYYY-MM-DD')`,
@@ -147,10 +147,10 @@ export class MedicalPrescriptionsService {
       .leftJoin(usersTable, eq(medicalPrescriptionsTable.doctorId, usersTable.id))
       .leftJoin(patientTable, eq(medicalPrescriptionsTable.patientId, patientTable.id))
       .where(eq(medicalPrescriptionsTable.id, id))
-      .limit(1)
+      .limit(1);
 
     if (!result.length) {
-      throw new ConflictException("El doctor especificado no existe.")
+      throw new ConflictException(`El recipe consultado ${id} no existe.`)
     }
     return result[0]
   }

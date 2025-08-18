@@ -1,12 +1,17 @@
-import { Body, Controller, Post, UsePipes, ValidationPipe } from '@nestjs/common';
-import { CreateMedicalPrescriptionDto } from './dto/create-medical-prescription.dto';
+import { Body, Controller, Post, UsePipes, ValidationPipe, Get, Param, Res, HttpStatus, Inject, forwardRef } from "@nestjs/common"
+import type { Response } from "express"
+import type { CreateMedicalPrescriptionDto } from './dto/create-medical-prescription.dto';
 import { MedicalPrescriptionsService } from './medical-prescriptions.service';
-import { SearchMedicalPrescriptionDto } from './dto/search-medical-prescription.dto';
+import type { SearchMedicalPrescriptionDto } from './dto/search-medical-prescription.dto';
 import { MedicalPrescriptionGetAll } from './dto/read-medical-prescription-dto';
+import { RecipePdfService } from "./services/medical-prescription-pdf.service"
 
 @Controller('medical-prescriptions') //Recipes
 export class MedicalPrescriptionsController {
-  constructor(private readonly medicalPrescriptionsService: MedicalPrescriptionsService) {}
+  constructor(
+    private readonly medicalPrescriptionsService: MedicalPrescriptionsService, 
+    private readonly recipePdfService: RecipePdfService
+  ) {}
 
   @Post('create')
  /*  @HttpCode(HttpStatus.CREATED)
@@ -18,9 +23,58 @@ export class MedicalPrescriptionsController {
     return this.medicalPrescriptionsService.create(createMedicalPrescriptionDto);
   }
 
+  //Para la lista de recipes medicos,  por informe medico
   @Post("getAll")
   @UsePipes(ValidationPipe)
   getAll(@Body() body: SearchMedicalPrescriptionDto): Promise<MedicalPrescriptionGetAll> {
     return this.medicalPrescriptionsService.getAll(body)
   }
+
+  //GET /medical-prescriptions/{id}/pdf - Descarga PDF del recipe
+  @Get(":id/pdf")
+  async generatePrescriptionPdf(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const prescriptionId = Number.parseInt(id)
+      const prescriptionData = await this.medicalPrescriptionsService.getById(prescriptionId)
+
+      const pdfBuffer = await this.recipePdfService.generateRecipePdf(prescriptionData)
+
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="receta-medica-${prescriptionId}.pdf"`,
+        "Content-Length": pdfBuffer.length,
+      })
+
+      res.status(HttpStatus.OK).send(pdfBuffer)
+    } catch (error) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: "Error al generar el PDF de la receta médica",
+        error: error.message,
+      })
+    }
+  }
+
+  //GET /medical-prescriptions/{id}/pdf/preview - Previsualizar en navegador
+  @Get(":id/pdf/preview")
+  async previewPrescriptionPdf(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const prescriptionId = Number.parseInt(id)
+      const prescriptionData = await this.medicalPrescriptionsService.getById(prescriptionId)
+
+      const pdfBuffer = await this.recipePdfService.generateRecipePdf(prescriptionData)
+
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline",
+      })
+
+      res.status(HttpStatus.OK).send(pdfBuffer)
+    } catch (error) {
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: "Error al generar el PDF de la receta médica",
+        error: error.message,
+      })
+    }
+  }
+  
 }
