@@ -1,9 +1,11 @@
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
-import { eq, sql } from 'drizzle-orm';
+import { count, eq, desc, sql } from 'drizzle-orm';
 import { PG_CONNECTION } from 'src/constants';
 import { medicalPrescriptionsTable, medicalReportsTable, patientTable, usersTable } from 'src/db/schema';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { CreateMedicalPrescriptionDto } from './dto/create-medical-prescription.dto';
+import { SearchMedicalPrescriptionDto } from './dto/search-medical-prescription.dto';
+import { MedicalPrescriptionGetAll } from './dto/read-medical-prescription-dto';
 
 @Injectable()
 export class MedicalPrescriptionsService {
@@ -61,8 +63,8 @@ export class MedicalPrescriptionsService {
     }
   }
 
-/*   async getAll(filter: SearchMedicalPrescriptionDto): Promise<MedicalPrescriptionGetAll> {
-    const whereConditions = []
+   async getAll(filter: SearchMedicalPrescriptionDto): Promise<MedicalPrescriptionGetAll> {
+/*     const whereConditions = []
 
     if (filter.doctorCedula) {
       whereConditions.push(ilike(usersTable.cedula, `%${filter.doctorCedula}%`))
@@ -76,7 +78,7 @@ export class MedicalPrescriptionsService {
       whereConditions.push(sql`DATE(${medicalPrescriptionsTable.createdAt}) = ${filter.createdAt}`)
     }
 
-    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
+    const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined */
 
     const rows = await this.db
       .select({
@@ -86,12 +88,12 @@ export class MedicalPrescriptionsService {
         expirationDate: sql<string>`TO_CHAR(${medicalPrescriptionsTable.expirationDate}, 'YYYY-MM-DD')`,
         recipeContent: medicalPrescriptionsTable.recipeContent,
         doctorId: usersTable.id,
-        doctorName: usersTable.name,
-        doctorCedula: usersTable.cedula,
+          doctorName: usersTable.name,
+          doctorCedula: usersTable.cedula,
         mpps: medicalPrescriptionsTable.mpps,
         patientId: patientTable.id,
-        patientName: patientTable.name,
-        patientCedula: patientTable.cedula,
+          patientName: patientTable.name,
+          patientCedula: patientTable.cedula,
         indications: medicalPrescriptionsTable.indications,
         createdAt: sql<string>`TO_CHAR(${medicalPrescriptionsTable.createdAt}, 'YYYY-MM-DD')`,
         updatedAt: sql<string>`TO_CHAR(${medicalPrescriptionsTable.updatedAt}, 'YYYY-MM-DD')`,
@@ -99,17 +101,20 @@ export class MedicalPrescriptionsService {
       .from(medicalPrescriptionsTable)
       .leftJoin(usersTable, eq(medicalPrescriptionsTable.doctorId, usersTable.id))
       .leftJoin(patientTable, eq(medicalPrescriptionsTable.patientId, patientTable.id))
-      .where(whereClause)
+      // .where(whereClause)
+      .where(
+        eq( medicalPrescriptionsTable.medicalReportId, Number(filter.medicalReportId) 
+      ))
       .orderBy(desc(medicalPrescriptionsTable.id))
       .limit(filter.take)
-      .offset(((filter.page ?? 1) - 1) * (filter.take ?? 10))
+      .offset(((filter.page ?? 1) - 1) * (filter.take ?? 10));
 
     const [{ value: total }] = await this.db
       .select({ value: count() })
       .from(medicalPrescriptionsTable)
       .leftJoin(usersTable, eq(medicalPrescriptionsTable.doctorId, usersTable.id))
       .leftJoin(patientTable, eq(medicalPrescriptionsTable.patientId, patientTable.id))
-      .where(whereClause)
+      .where(eq( medicalPrescriptionsTable.medicalReportId, Number(filter.medicalReportId) ));
 
     const result = new MedicalPrescriptionGetAll()
     result.total = total
@@ -117,7 +122,7 @@ export class MedicalPrescriptionsService {
     result.list = rows
 
     return result
-  } */
+  }
 
   async getById(id: number): Promise<any> {
     const result = await this.db
