@@ -23,7 +23,7 @@ export class MedicalPrescriptionsController {
     return this.medicalPrescriptionsService.create(createMedicalPrescriptionDto);
   }
 
-  //Para la lista de recipes medicos,  por informe medico
+  //Para la lista de recipes medicos, por informe medico
   @Post("getAll")
   @UsePipes(ValidationPipe)
   getAll(@Body() body: SearchMedicalPrescriptionDto): Promise<MedicalPrescriptionGetAll> {
@@ -32,23 +32,22 @@ export class MedicalPrescriptionsController {
 
   //GET /medical-prescriptions/{id}/pdf - Descarga PDF del recipe
   @Get(":id/pdf")
-  async generatePrescriptionPdf(@Param('id') id: string, @Res() res: Response) {
+  async generatePrescriptionPdf(@Param('id') id: number, @Res() res: Response) {
     try {
-      const prescriptionId = Number.parseInt(id)
-      const prescriptionData = await this.medicalPrescriptionsService.getById(prescriptionId)
+      const prescriptionData = await this.medicalPrescriptionsService.getById(id)
 
       const pdfBuffer = await this.recipePdfService.generateRecipePdf(prescriptionData)
 
       res.set({
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="receta-medica-${prescriptionId}.pdf"`,
+        "Content-Disposition": `attachment; filename="receta-medica-${id}.pdf"`,
         "Content-Length": pdfBuffer.length,
       })
 
       res.status(HttpStatus.OK).send(pdfBuffer)
     } catch (error) {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: "Error al generar el PDF de la receta médica",
+        message: "Error al generar el PDF del recipe médico",
         error: error.message,
       })
     }
@@ -71,7 +70,7 @@ export class MedicalPrescriptionsController {
       res.status(HttpStatus.OK).send(pdfBuffer)
     } catch (error) {
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-        message: "Error al generar el PDF de la receta médica",
+        message: "Error al generar el PDF del recipe médico",
         error: error.message,
       })
     }

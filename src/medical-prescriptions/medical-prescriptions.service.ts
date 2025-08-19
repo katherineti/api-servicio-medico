@@ -103,8 +103,8 @@ export class MedicalPrescriptionsService {
       .leftJoin(patientTable, eq(medicalPrescriptionsTable.patientId, patientTable.id))
       // .where(whereClause)
       .where(
-        eq( medicalPrescriptionsTable.medicalReportId, Number(filter.medicalReportId) 
-      ))
+        eq( medicalPrescriptionsTable.medicalReportId, filter.medicalReportId )
+      )
       .orderBy(desc(medicalPrescriptionsTable.id))
       .limit(filter.take)
       .offset(((filter.page ?? 1) - 1) * (filter.take ?? 10));
@@ -114,7 +114,7 @@ export class MedicalPrescriptionsService {
       .from(medicalPrescriptionsTable)
       .leftJoin(usersTable, eq(medicalPrescriptionsTable.doctorId, usersTable.id))
       .leftJoin(patientTable, eq(medicalPrescriptionsTable.patientId, patientTable.id))
-      .where(eq( medicalPrescriptionsTable.medicalReportId, Number(filter.medicalReportId) ));
+      .where(eq( medicalPrescriptionsTable.medicalReportId, filter.medicalReportId ));
 
     const result = new MedicalPrescriptionGetAll()
     result.total = total
@@ -213,6 +213,7 @@ export class MedicalPrescriptionsService {
     }
   } */
 
+  //metodo delete no está en uso
   async delete(id: number): Promise<any> {
     try {
       const [result] = await this.db

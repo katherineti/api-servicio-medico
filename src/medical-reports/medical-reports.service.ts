@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger } from "@nestjs/common"
 import { and, count, desc, eq, ilike, sql } from "drizzle-orm"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
-import { medicalReportsTable, patientTable, usersTable } from "src/db/schema"
+import { medicalPrescriptionsTable, medicalReportsTable, patientTable, usersTable } from "src/db/schema"
 import { MedicalReportsGetAll } from "./dto/read-medical-reports-dto"
 import type { SearchMedicalReportsDto } from "./dto/search-medical-reports.dto"
 import type { CreateMedicalReportDto } from "./dto/create-medical-reports.dto"
@@ -50,11 +50,26 @@ export class MedicalReportsService {
         patientCedula: patientTable.cedula,
         description: medicalReportsTable.description, //Informe
         createdAt: sql<string>`TO_CHAR(${medicalReportsTable.createdAt}, 'YYYY-MM-DD')`,
+        countMedicalPrescriptions: count(medicalPrescriptionsTable.id)
       })
       .from(medicalReportsTable)
       .leftJoin(usersTable, eq(medicalReportsTable.doctorId, usersTable.id))
       .leftJoin(patientTable, eq(medicalReportsTable.patientId, patientTable.id))
+      .leftJoin(medicalPrescriptionsTable, eq(medicalPrescriptionsTable.medicalReportId, medicalReportsTable.id))
       .where(whereClause)
+      .groupBy(
+          medicalReportsTable.id,
+          medicalReportsTable.apsCenter,
+          medicalReportsTable.insurance,
+          usersTable.id,
+          usersTable.name,
+          usersTable.cedula,
+          patientTable.id,
+          patientTable.name,
+          patientTable.cedula,
+          medicalReportsTable.description,
+          sql<string>`TO_CHAR(${medicalReportsTable.createdAt}, 'YYYY-MM-DD')`
+      )
       .orderBy(desc(medicalReportsTable.id))
       .limit(effectiveFilter.take)
       .offset((effectiveFilter.page - 1) * effectiveFilter.take)

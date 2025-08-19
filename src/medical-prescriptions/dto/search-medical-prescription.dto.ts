@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsInt, Min, Max, IsDateString, IsNotEmpty } from "class-validator"
+import { IsOptional, IsString, IsInt, Min, Max, IsDateString, IsNotEmpty, IsNumber } from "class-validator"
 import { Type } from "class-transformer"
 
 export class SearchMedicalPrescriptionDto {
@@ -29,6 +29,6 @@ export class SearchMedicalPrescriptionDto {
 
 
   @IsNotEmpty()
-  @IsString()
-  medicalReportId: string;
+  @IsNumber()
+  medicalReportId: number;
 }
