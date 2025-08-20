@@ -6,6 +6,7 @@ import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { CreateMedicalPrescriptionDto } from './dto/create-medical-prescription.dto';
 import { SearchMedicalPrescriptionDto } from './dto/search-medical-prescription.dto';
 import { MedicalPrescriptionGetAll } from './dto/read-medical-prescription-dto';
+import { UpdateMedicalPrescriptionDto } from './dto/update-medical-prescription.dto';
 
 @Injectable()
 export class MedicalPrescriptionsService {
@@ -155,7 +156,7 @@ export class MedicalPrescriptionsService {
     return result[0]
   }
 
-/*   async update(id: number, updateMedicalPrescriptionDto: UpdateMedicalPrescriptionDto): Promise<any> {
+   async update(id: number, updateMedicalPrescriptionDto: UpdateMedicalPrescriptionDto): Promise<any> {
     // Validar existencia de doctor si se actualiza
     if (updateMedicalPrescriptionDto.doctorId) {
       const doctorExist = await this.db
@@ -193,25 +194,27 @@ export class MedicalPrescriptionsService {
     }
 
     try {
+      let updated= {
+         ...updateMedicalPrescriptionDto,
+          updatedAt: new Date()
+          // updatedAt: sql`now()`
+      }
       const [result] = await this.db
         .update(medicalPrescriptionsTable)
-        .set({
-          ...updateMedicalPrescriptionDto,
-          updatedAt: new Date(), // Actualizar la fecha de actualización
-        })
+        .set(updated)
         .where(eq(medicalPrescriptionsTable.id, id))
         .returning()
 
       if (!result) {
-        throw new ConflictException("El doctor especificado no existe.")
+        throw new ConflictException("Error al actualizar el recipe médico")
       }
-      this.logger.debug(`Receta médica actualizada: ${JSON.stringify(result)}`)
+      this.logger.debug(`Recipe médico actualizada: ${JSON.stringify(result)}`)
       return result
     } catch (error) {
-      this.logger.error(`Error al actualizar la receta médica con ID ${id}`, error.stack)
-      throw new ConflictException("Error al actualizar la receta médica.")
+      this.logger.error(`Error al actualizar el recipe médico con ID ${id}`, error.stack)
+      throw new ConflictException("Error al actualizar el recipe médico.")
     }
-  } */
+  }
 
   //metodo delete no está en uso
   async delete(id: number): Promise<any> {

@@ -1,10 +1,11 @@
-import { Body, Controller, Post, UsePipes, ValidationPipe, Get, Param, Res, HttpStatus, Inject, forwardRef } from "@nestjs/common"
+import { Body, Controller, Post, UsePipes, ValidationPipe, Get, Param, Res, HttpStatus, Put, ParseIntPipe } from "@nestjs/common"
 import type { Response } from "express"
 import type { CreateMedicalPrescriptionDto } from './dto/create-medical-prescription.dto';
 import { MedicalPrescriptionsService } from './medical-prescriptions.service';
 import type { SearchMedicalPrescriptionDto } from './dto/search-medical-prescription.dto';
 import { MedicalPrescriptionGetAll } from './dto/read-medical-prescription-dto';
 import { RecipePdfService } from "./services/medical-prescription-pdf.service"
+import { UpdateMedicalPrescriptionDto } from "./dto/update-medical-prescription.dto";
 
 @Controller('medical-prescriptions') //Recipes
 export class MedicalPrescriptionsController {
@@ -14,13 +15,13 @@ export class MedicalPrescriptionsController {
   ) {}
 
   @Post('create')
- /*  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Crear una nueva receta médica' })
-  @ApiResponse({ status: 201, description: 'La receta médica ha sido creada exitosamente.' })
-  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
-  @ApiResponse({ status: 409, description: 'Conflicto de datos (ej. doctor/paciente no existe).' }) */
   create(@Body() createMedicalPrescriptionDto: CreateMedicalPrescriptionDto) {
     return this.medicalPrescriptionsService.create(createMedicalPrescriptionDto);
+  }
+
+  @Put(':id')
+  update(@Param('id', ParseIntPipe) id: number, @Body() updateMedicalPrescriptionDto: UpdateMedicalPrescriptionDto) {
+    return this.medicalPrescriptionsService.update(id, updateMedicalPrescriptionDto);
   }
 
   //Para la lista de recipes medicos, por informe medico
