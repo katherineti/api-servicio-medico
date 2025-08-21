@@ -139,14 +139,15 @@ export class MedicalSuppliesService {
       const filename = `product_${timestamp}_${randomString}_${file.originalname}`;
 
       // const uploadDir = join(__dirname, '../../dist/uploads'+categoryWithoutSpaces);
-      const uploadDir = join(__dirname, '../../uploads/'+categoryWithoutSpaces);
+      const uploadDir = join(process.cwd(), 'uploads/'+categoryWithoutSpaces); //join(process.cwd(), 'uploads')
+      this.logger.log( "Ruta estatica donde se guarda la imagen del insumo medicos/inventario almacen creado", uploadDir)
 
-      console.log("RUTA DESDE EL SERVER: " , join(__dirname, '../../dist/uploads'))
       const imagePath = join(uploadDir, filename);
 
       imageUrl = `/${categoryWithoutSpaces}/${filename}`;
       // imageUrl = `/${filename}`;
-      console.log("file: ",file)
+      this.logger.log( "Archivo", JSON.stringify(file))
+
       try {
         await fs.mkdir(uploadDir, { recursive: true });
         console.log(imagePath, file.buffer)
@@ -219,14 +220,15 @@ export class MedicalSuppliesService {
       const filename = `product_${timestamp}_${randomString}_${file.originalname}`;
 
       // const uploadDir = join(__dirname, '../../dist/uploads'+categoryWithoutSpaces);
-      const uploadDir = join(__dirname, '../../uploads/'+categoryWithoutSpaces);
+      // const uploadDir = join(__dirname, '../../uploads/'+categoryWithoutSpaces);
+      const uploadDir = join(process.cwd(), 'uploads/'+categoryWithoutSpaces);;
+      this.logger.log( "Ruta estatica donde se guarda la imagen del insumo medicos/inventario almacen actualizado", uploadDir);
 
-      console.log("RUTA DESDE EL SERVER: " , join(__dirname, '../../dist/uploads'))
       const imagePath = join(uploadDir, filename);
 
       imageUrl = `/${categoryWithoutSpaces}/${filename}`;
       // imageUrl = `/${filename}`;
-      console.log("file: ",file)
+      this.logger.log( "Archivo", JSON.stringify(file));
       try {
         await fs.mkdir(uploadDir, { recursive: true });
         console.log(imagePath, file.buffer)
@@ -258,7 +260,7 @@ export class MedicalSuppliesService {
       if(updateMedicalSupplyDto.expirationDate==='null'){
          updateData['expirationDate']= null;
       }
-    console.log("updateData " , updateData)
+      this.logger.log("updateData " , updateData)
       
       const updated = await this.db
       .update(productsTable)
@@ -266,6 +268,7 @@ export class MedicalSuppliesService {
       .where(eq(productsTable.id, id))
   
       return updated[0];
+      this.logger.log("updated[0] " , updated[0])
 
     } catch (error) {
       console.error('Error al actualizar el registro', error);

@@ -57,7 +57,7 @@ export class ProvidersService {
     const result = new ProvidersGetAll();
     result.total = total;
     result.list = rows;
-    this.logger.debug(`Resultado de proveedores: ${JSON.stringify(result)}`);
+    this.logger.log(`Resultado de proveedores: ${JSON.stringify(result)}`);
     return result;
     }
 
@@ -75,7 +75,7 @@ export class ProvidersService {
         try {
             console.log("createProvider" , createProvider)
             const [result] = await this.db.insert(providersTable).values(createProvider).returning();
-            this.logger.debug(`Proveedor creado: ${JSON.stringify(result)}`);
+            this.logger.log(`Proveedor creado: ${JSON.stringify(result)}`);
             return result;
 
         } catch (error) {
