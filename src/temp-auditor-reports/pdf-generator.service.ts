@@ -1026,14 +1026,14 @@ private async loadImageWithRetry(reportId: number | string, imagePath: string): 
     // Ruta principal donde Multer guarda los archivos
     path.join(process.cwd(), 'uploads', 'reports', `Id ${reportId}`, fileName),
     
-    // Ruta alternativa desde la carpeta del proyecto
-    path.join(__dirname, '..', '..', 'uploads', 'reports', `Id ${reportId}`, fileName),
+/*     // Ruta alternativa desde la carpeta del proyecto
+     path.join(__dirname, '..', '..', 'uploads', 'reports', `Id ${reportId}`, fileName), */
     
-    // Si imagePath es una ruta completa
-    path.join(process.cwd(), imagePath.replace(/^\//, ''))
+/*     // Si imagePath es una ruta completa
+    path.join(process.cwd(), imagePath.replace(/^\//, '')) */
   ];
   
-  console.log(`🔍 Buscando imagen: ${fileName} para reporte ${reportId}`);
+  console.log(`Buscando imagen: ${fileName} para reporte ${reportId}`);
   
   for (const fullPath of possiblePaths) {
     console.log(`Verificando: ${fullPath}`);

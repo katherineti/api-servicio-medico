@@ -20,7 +20,9 @@ import { PdfGeneratorService } from './pdf-generator.service';
           if (!reportId) {
             return callback(new Error('Report ID is missing in the request parameters'), null);
           }
-          const uploadFolder = join(__dirname, '..', '..', 'uploads', 'reports', 'Id '+String(reportId));
+          // const uploadFolder = join(__dirname, '..', '..', 'uploads', 'reports', 'Id '+String(reportId));
+          const uploadFolder = join( process.cwd() , 'uploads', 'reports', 'Id '+String(reportId));
+          console.log( "Ruta estatica donde se guarda la imagen del reporte de auditoria creado", uploadFolder);
           try {
             await fsPromises.mkdir(uploadFolder, { recursive: true });
             callback(null, uploadFolder);
