@@ -29,7 +29,8 @@ import { MedicalPrescriptionsModule } from './medical-prescriptions/medical-pres
     DrizzleDbConecctionModule,
     ConfigModule.forRoot({isGlobal:true,envFilePath: '.env'}),
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
+      // rootPath: join(__dirname, '..', 'uploads'),
+      rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads', // Ruta URL desde donde se servirán los archivos de imagen
     }),
     AuthModule,
