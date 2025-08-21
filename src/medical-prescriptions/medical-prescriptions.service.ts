@@ -5,7 +5,7 @@ import { medicalPrescriptionsTable, medicalReportsTable, patientTable, usersTabl
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { CreateMedicalPrescriptionDto } from './dto/create-medical-prescription.dto';
 import { SearchMedicalPrescriptionDto } from './dto/search-medical-prescription.dto';
-import { MedicalPrescriptionGetAll } from './dto/read-medical-prescription-dto';
+import { MedicalPrescription, MedicalPrescriptionGetAll } from './dto/read-medical-prescription-dto';
 import { UpdateMedicalPrescriptionDto } from './dto/update-medical-prescription.dto';
 
 @Injectable()
@@ -125,7 +125,7 @@ export class MedicalPrescriptionsService {
     return result
   }
 
-  async getById(id: number): Promise<any> {
+  async getById(id: number): Promise<MedicalPrescription> {
     const result = await this.db
       .select({
         id: medicalPrescriptionsTable.id,
@@ -140,6 +140,7 @@ export class MedicalPrescriptionsService {
         patientId: patientTable.id,
           patientName: patientTable.name,
           patientCedula: patientTable.cedula,
+          patientBirthdate: patientTable.birthdate,
         indications: medicalPrescriptionsTable.indications,
         createdAt: sql<string>`TO_CHAR(${medicalPrescriptionsTable.createdAt}, 'YYYY-MM-DD')`,
         updatedAt: sql<string>`TO_CHAR(${medicalPrescriptionsTable.updatedAt}, 'YYYY-MM-DD')`,
@@ -197,7 +198,6 @@ export class MedicalPrescriptionsService {
       let updated= {
          ...updateMedicalPrescriptionDto,
           updatedAt: new Date()
-          // updatedAt: sql`now()`
       }
       const [result] = await this.db
         .update(medicalPrescriptionsTable)
