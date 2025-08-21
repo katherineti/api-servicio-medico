@@ -191,6 +191,7 @@ export const patientTable = table("patients", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
     birthdate: t.date().default(null),
+    placeBirth : t.varchar({ length: 40 }).notNull(),
     age: t.integer().notNull(),
     cedula: t.varchar({ length: 10 }).notNull().unique(),
     email: t.varchar({ length: 100 }).notNull().unique(),

@@ -114,6 +114,7 @@ CREATE TABLE "patients" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(200) NOT NULL,
 	"birthdate" date DEFAULT null,
+	"placeBirth" varchar(40) NOT NULL,
 	"age" integer NOT NULL,
 	"cedula" varchar(10) NOT NULL,
 	"email" varchar(100) NOT NULL,

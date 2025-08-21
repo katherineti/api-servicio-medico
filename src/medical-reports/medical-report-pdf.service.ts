@@ -18,7 +18,7 @@ export class MedicalReportPdfService extends BaseReportService {
 
   async generateMedicalReportPdf(reportId: number, res: Response, download = false): Promise<void> {
     try {
-      this.logger.log(`Generando PDF para informe médico ID: ${reportId}`)
+      this.logger.log(`Generando PDF para el informe médico ID: ${reportId}`)
 
       const medicalReport = await this.medicalReportsService.getById(reportId)
       if (!medicalReport) {
@@ -35,8 +35,8 @@ export class MedicalReportPdfService extends BaseReportService {
         // console.log("Fecha a partir de ISO string (muestra en local):", localDateFromISO.toLocaleDateString());
         // }
 
-        console.log("doctor",doctor)
-        console.log("patient",patient)
+        this.logger.log("doctor",doctor)
+        this.logger.log("patient",patient)
 
       const reportData = {
         ...medicalReport,
@@ -48,10 +48,12 @@ export class MedicalReportPdfService extends BaseReportService {
         patientPlaceOfBirth: patient?.birthdate || "N/A",
         // patientDateOfBirth: patient?.dateOfBirth || "N/A",
         patientDateOfBirth: datePatient || "N/A",
+        patientPlaceBirth: patient?.placeBirth || "N/A",
         patientAge: patient?.age || "N/A",
         patientMaritalStatus: patient?.civilStatus || "N/A",
         patientSex: patient?.gender || "N/A",
       }
+        this.logger.log("reportData",reportData)
 
       const docDefinition = await this.createMedicalReportDocumentDefinition(reportData)
 
@@ -147,6 +149,15 @@ export class MedicalReportPdfService extends BaseReportService {
         color: "#000000",
         margin: [2, 2, 2, 2],
       },
+      tableCellContent_informe: {
+        fontSize: 8,
+        color: "#000000",
+        margin: [2, 2, 2, 2],
+        // @ts-ignore
+        wordWrap: 'break-word', 
+        lineBreak: 'auto',
+        alignment: 'justify',
+      },
       tableCellUnderline: {
         fontSize: 8,
         color: "#000000",
@@ -185,7 +196,7 @@ export class MedicalReportPdfService extends BaseReportService {
     const day = createdAtDate.getDate().toString()
     const month = (createdAtDate.getMonth() + 1).toString()
     const year = createdAtDate.getFullYear().toString()
-console.log('reportData...',reportData)
+    this.logger.log('reportData...',reportData)
 
     const docDefinition: TDocumentDefinitions = {
       content: [
@@ -268,13 +279,14 @@ console.log('reportData...',reportData)
           margin: [0, 5, 0, 10],
         },
         // Patient Data Section
-        { text: "Datos del Paciente", style: "headerBackground", margin: [0, 0, 0, 0] },
+        // { text: "Datos del Paciente", style: "headerBackground", margin: [0, 0, 0, 0] },
         {
           table: {
             widths: ["*", "*", "*", "*", "*", "*"],
             body: [
-              [{ text: "Nombres y Apellidos:", style: "tableHeaderBlue", colSpan: 6 }, {}, {}, {}, {}, {}],
-              [{ text: reportData.patientName, colSpan: 6, style: "tableCellUnderline" }, {}, {}, {}, {}, {}],
+              // [{ text: "Nombres y Apellidos:", style: "tableHeaderBlue", colSpan: 6 }, {}, {}, {}, {}, {}],
+              [{ text: "Datos del Paciente", style: "tableHeaderBlue", colSpan: 6 }, {}, {}, {}, {}, {}],
+              [{ text: this.toTitleCase(reportData.patientName), colSpan: 6, style: "tableCellUnderline" }, {}, {}, {}, {}, {}],
               [
                 { text: "N° Cédula de Identidad:", style: "tableHeaderBlue" },
                 {
@@ -300,8 +312,7 @@ console.log('reportData...',reportData)
                 },
                 { text: reportData.patientCedula, style: "tableCellUnderline" },
                 { text: "Lugar de Nacimiento:", style: "tableHeaderBlue" },
-                // { text: reportData.patientPlaceOfBirth, colSpan: 2, style: "tableCellUnderline" },
-                { text: '', colSpan: 2, style: "tableCellUnderline" },
+                { text: reportData.patientPlaceBirth, colSpan: 2, style: "tableCellUnderline" },
                 {},
               ],
               [
@@ -368,7 +379,7 @@ console.log('reportData...',reportData)
               [
                 {
                   text: reportData.description || "",
-                  style: "tableCellContent",
+                  style: "tableCellContent_informe",
                   minHeight: 200,
                   border: [true, true, true, true],
                 },
@@ -400,7 +411,7 @@ console.log('reportData...',reportData)
                 { text: "4. Firma y Sello", style: "tableHeaderBlue" },
               ],
               [
-                { text: reportData.doctorName, style: "tableCellUnderline", minHeight: 40 },
+                { text: this.toTitleCase(reportData.doctorName), style: "tableCellUnderline", minHeight: 40 },
                 { text: reportData.doctorCedula, style: "tableCellUnderline" },
                 { text: reportData.doctorMppsCm, style: "tableCellUnderline" },
                 { text: "", style: "tableCellUnderline" }, // For signature and stamp
@@ -451,5 +462,22 @@ console.log('reportData...',reportData)
       "Content-Disposition",
       isDownload ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
     )
+  }
+
+  //Capitaliza la primera letra de cada palabra y el resto en minúsculas
+  toTitleCase(str: string): string {
+    if (!str) {
+      return '';
+    }
+    return str
+      .toLowerCase()
+      .split(' ')
+      .map(word => {
+        if (word.length === 0) {
+          return '';
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
   }
 }

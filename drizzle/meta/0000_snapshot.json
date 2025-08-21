@@ -1,5 +1,5 @@
 {
-  "id": "d7e43fe5-7284-4190-8061-8828097a276b",
+  "id": "e8ccf6d1-979d-4207-89e6-d0a50ef92f2a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -933,6 +933,12 @@
           "primaryKey": false,
           "notNull": false,
           "default": null
+        },
+        "placeBirth": {
+          "name": "placeBirth",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
         },
         "age": {
           "name": "age",
