@@ -42,11 +42,9 @@ export class MedicalReportPdfService extends BaseReportService {
         ...medicalReport,
         doctorName: doctor?.name || "N/A",
         doctorCedula: doctor?.cedula || "N/A",
-        // doctorMppsCm: doctor?.mppsCM || "N/A",
         patientName: patient?.name || "N/A",
         patientCedula: patient?.cedula || "N/A",
         patientPlaceOfBirth: patient?.birthdate || "N/A",
-        // patientDateOfBirth: patient?.dateOfBirth || "N/A",
         patientDateOfBirth: datePatient || "N/A",
         patientPlaceBirth: patient?.placeBirth || "N/A",
         patientAge: patient?.age || "N/A",
@@ -252,7 +250,7 @@ export class MedicalReportPdfService extends BaseReportService {
             body: [
               [
                 { text: "2. Centro APS:", style: "tableHeaderBlue" },
-                { text: reportData.apsCenter || "", style: "tableCellUnderline" },
+                { text: this.toTitleCase(reportData.apsCenter) || "", style: "tableCellUnderline" },
                 { text: "1. Fecha de Elaboración:", style: "tableHeaderBlue" },
                 {
                   columns: [
@@ -269,7 +267,7 @@ export class MedicalReportPdfService extends BaseReportService {
               ],
               [
                 { text: "3. Aseguradora:", style: "tableHeaderBlue" },
-                { text: reportData.insurance || "", colSpan: 3, style: "tableCellUnderline" },
+                { text: this.toTitleCase(reportData.insurance) || "", colSpan: 3, style: "tableCellUnderline" },
                 {},
                 {},
               ],
@@ -413,7 +411,7 @@ export class MedicalReportPdfService extends BaseReportService {
               [
                 { text: this.toTitleCase(reportData.doctorName), style: "tableCellUnderline", minHeight: 40 },
                 { text: reportData.doctorCedula, style: "tableCellUnderline" },
-                { text: reportData.doctorMppsCm, style: "tableCellUnderline" },
+                { text: reportData.mppsCM, style: "tableCellUnderline" },
                 { text: "", style: "tableCellUnderline" }, // For signature and stamp
               ],
             ],
