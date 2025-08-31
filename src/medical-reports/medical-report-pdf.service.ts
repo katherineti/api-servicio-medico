@@ -112,11 +112,13 @@ export class MedicalReportPdfService extends BaseReportService {
         margin: [2, 2, 2, 2],
       },
       reportTitle: {
-        fontSize: 16,
+        // fontSize: 16,
+        fontSize: 12,
         bold: true,
         alignment: "center",
         color: "#003366",
-        margin: [0, 0, 0, 10],
+        // margin: [0, 0, 0, 10],
+         margin: [40, 5, 40, 10],
       },
       footerText: {
         fontSize: 7,
@@ -159,7 +161,7 @@ export class MedicalReportPdfService extends BaseReportService {
       tableCellUnderline: {
         fontSize: 8,
         color: "#000000",
-        decoration: "underline",
+        // decoration: "underline",
         margin: [2, 2, 2, 2],
       },
       checkboxSquare: {
@@ -170,22 +172,16 @@ export class MedicalReportPdfService extends BaseReportService {
     }
 
     let gobiernoLogo: string | null = null
-    let ciipLogo: string | null = null
 
     try {
-      const gobiernoPath = path.join(process.cwd(), "src", "assets", "gobierno.png")
-      const ciipPath = path.join(process.cwd(), "src", "assets", "logo-ciip.png")
+      const gobiernoPath = path.join(process.cwd(), "src",  "membreteCIIP.jpeg")
 
       if (fs.existsSync(gobiernoPath)) {
         gobiernoLogo = fs.readFileSync(gobiernoPath).toString("base64")
       } else {
         this.logger.warn(`Logo Gobierno no encontrado en ${gobiernoPath}`)
       }
-      if (fs.existsSync(ciipPath)) {
-        ciipLogo = fs.readFileSync(ciipPath).toString("base64")
-      } else {
-        this.logger.warn(`Logo CIIP no encontrado en ${ciipPath}`)
-      }
+
     } catch (error) {
       this.logger.error("Error al cargar los logos:", error)
     }
@@ -202,43 +198,12 @@ export class MedicalReportPdfService extends BaseReportService {
         {
           columns: [
             {
-              width: "auto",
-              stack: [
-                gobiernoLogo
-                  ? {
-                      image: `data:image/png;base64,${gobiernoLogo}`,
-                      width: 100,
-                      alignment: "left",
-                      margin: [0, 0, 0, 0],
-                    }
-                  : { text: "", width: 100 }, // Placeholder
-/*                 {
-                  text: "Gobierno Bolivariano de Venezuela\nVicepresidencia de la República\nBolivariana de Venezuela",
-                  alignment: "left",
-                  fontSize: 7,
-                  margin: [0, 5, 0, 0],
-                }, */
-              ],
-            },
-            {
               text: "INFORME MÉDICO",
               style: "reportTitle",
               width: "*",
               margin: [0, 10, 0, 0],
             },
-            {
-              width: "auto",
-              stack: [
-                ciipLogo
-                  ? {
-                      image: `data:image/png;base64,${ciipLogo}`,
-                      width: 100,
-                      alignment: "right",
-                      margin: [0, 0, 0, 0],
-                    }
-                  : { text: "", width: 100 }, // Placeholder
-              ],
-            },
+
           ],
           margin: [0, 0, 0, 10],
         },
@@ -425,8 +390,30 @@ export class MedicalReportPdfService extends BaseReportService {
         font: "Roboto",
         fontSize: 9,
       },
-      pageSize: "A4",
-      pageMargins: [40, 60, 40, 60],
+      // pageSize: "A4",
+      // pageMargins: [40, 60, 40, 60],
+        pageSize: "A4",
+        pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
+        background: function(currentPage, pageSize)  {
+        const gobiernoPath = path.join(process.cwd(), "src", "membreteCIIP.jpeg")
+        const gobiernoLogo = fs.readFileSync(gobiernoPath).toString("base64")
+
+          // El logo en el fondo de cada página
+          if (gobiernoLogo) {
+            return {
+              image: `data:image/jpeg;base64,${gobiernoLogo}`,
+              maxWidth: 515,
+              maxHeight: 80,
+              alignment: "center",
+              margin: [0, 20, 0, 0], // Margen del logo
+            };
+          }
+          return '' // Devuelve un texto vacío si no hay logo
+        },
+        header: (currentPage, pageCount, pageSize) => {
+          // El header está vacío para no interferir con el contenido
+          return [];
+        },
       footer: (currentPage: number, pageCount: number) => ({
         columns: [
           { text: "DNI-e:Informe Medico", alignment: "left", style: "footerText", margin: [40, 0, 0, 0] },
