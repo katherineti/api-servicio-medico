@@ -436,10 +436,12 @@ private async createDocumentDefinition_(
           margin: [0, 5, 0, 0]
         } as Style,
         reportTitle: {
-          fontSize: 16,
+          // fontSize: 16,
+          fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 15, 0, 10],
+          // margin: [0, 15, 0, 10],
+          margin: [40, 5, 40, 10],
           color: '#003366'
         } as Style,
         reportTitle2: {
@@ -552,13 +554,13 @@ private async createDocumentDefinition_(
       ); */
       content.push(
         //  logoData ? { image: `data:image/png;base64,${logoData.toString('base64')}`, width: 180, ...styles.coverImage } : {},
-        logoData ? { 
+/*         logoData ? { 
           image: `data:image/jpeg;base64,${logoData.toString('base64')}`, 
           maxWidth: 515,
           maxHeight: 150,
           alignment: 'center',
           margin: [0, 0, 0, 20]
-        } : {},
+        } : {}, */
         { text: 'INFORME FINAL DE AUDITORÍA', style: 'reportTitle' }
       );
 
@@ -727,7 +729,8 @@ private async createDocumentDefinition_(
               margin: [0, 10, 0, 10]
             });
             content.push({
-              text: `Figura ${img.index}: Evidencia - ${img.path.split('/').pop()}`,
+              // text: `Figura ${img.index}: Evidencia - ${img.path.split('/').pop()}`,
+              text: `Evidencia ${img.index}: ${img.path.split('/').pop()}`,
               alignment: 'center',
               fontSize: 9,
               color: '#666666',
@@ -759,15 +762,34 @@ private async createDocumentDefinition_(
         defaultStyle: {
           font: 'Roboto'
         },
-        pageSize: 'A4',
-        pageMargins: [40, 60, 40, 60], // [left, top, right, bottom]
+/*         pageSize: 'A4',
+        pageMargins: [40, 60, 40, 60], // [left, top, right, bottom] */
+        pageSize: "A4",
+        pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
+        background: function(currentPage, pageSize)  {
+          // El logo en el fondo de cada página
+          if (logoData) {
+            return {
+              image: `data:image/jpeg;base64,${logoData.toString("base64")}`,
+              maxWidth: 515,
+              maxHeight: 80,
+              alignment: "center",
+              margin: [0, 20, 0, 0], // Margen del logo
+            };
+          }
+          return '' // Devuelve un texto vacío si no hay logo
+        },
+        header: (currentPage, pageCount, pageSize) => {
+          // El header está vacío para no interferir con el contenido
+          return [];
+        },
         footer: function(currentPage, pageCount) {
           return {
             text: `Informe de Auditoría ${report.code} - Página ${currentPage} de ${pageCount}`,
             style: 'footer'
           };
         },
-        header: function(currentPage, pageCount, pageSize) {
+/*         header: function(currentPage, pageCount, pageSize) {
           // No mostrar encabezado en la primera página (portada)
           if (currentPage === 1) return null;
           
@@ -808,7 +830,7 @@ private async createDocumentDefinition_(
               }
             ]
           };
-        }.bind(this) // Asegúrate de que `this` esté ligado correctamente para acceder a `this.formatDate`
+        }.bind(this) */ // Asegúrate de que `this` esté ligado correctamente para acceder a `this.formatDate`
       };
     } catch (error) {
       throw this.handleError({
@@ -1295,7 +1317,7 @@ private async loadImageWithRetry(reportId: number | string, imagePath: string): 
    */
   private ResumenTable(content: any[], report: Reports): void { console.log("report en ResumenTable() " , report)
     content.push(
-      { text: 'Resumen', style: 'reportTitle2' },
+      { text: 'Resumen', style: 'reportTitle' },
       {
         style: 'tableExample',
         table: {
@@ -1332,7 +1354,8 @@ private async loadImageWithRetry(reportId: number | string, imagePath: string): 
 
   ConclusionesTable(content, report){
     content.push(
-        { text: 'Conclusiones', style: 'reportTitle2' },
+        // { text: 'Conclusiones', style: 'reportTitle2' },
+        { text: 'Conclusiones', style: 'reportTitle' },
         {
           style: 'tableExample',
           widths: ['100%'],
