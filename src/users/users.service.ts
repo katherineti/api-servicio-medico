@@ -36,6 +36,25 @@ export class UsersService {
     
     return result[0];
   }
+  async findOnByCedula(cedulaUser: string): Promise<IUser> {
+    const result = await 
+    this.db.select({
+        id:  usersTable.id,
+        email: usersTable.email,
+        name: usersTable.name,
+        password: usersTable.password,
+        isActivate: usersTable.isActivate,
+        // role: usersTable.role,
+        role: rolesTable.name,
+      })
+    .from(usersTable)
+    .leftJoin(rolesTable, eq(usersTable.role, rolesTable.id))
+    // .where(eq(usersTable.cedula , cedulaUser ))
+    .where(ilike(usersTable.cedula, `%${cedulaUser}%`)) 
+    .limit(1);
+    
+    return result[0];
+  }
 
   // async getUserbyId(id: number): Promise<Omit<User, 'password'|'createdAt'|'updatedAt'> | undefined> {
   async getUserbyId(id: number): Promise<IUser> {

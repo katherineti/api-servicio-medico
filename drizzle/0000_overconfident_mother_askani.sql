@@ -56,7 +56,7 @@ CREATE TABLE "employeeFamily" (
 CREATE TABLE "employee" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(200) NOT NULL,
-	"cedula" varchar(10) NOT NULL,
+	"cedula" varchar(12) NOT NULL,
 	"email" varchar(100) NOT NULL,
 	"phone" varchar(50) NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
@@ -68,7 +68,7 @@ CREATE TABLE "employee" (
 CREATE TABLE "family" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(200) NOT NULL,
-	"cedula" varchar(10) DEFAULT null,
+	"cedula" varchar(12) DEFAULT null,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now()
 );
@@ -116,12 +116,13 @@ CREATE TABLE "patients" (
 	"birthdate" date DEFAULT null,
 	"placeBirth" varchar(40) NOT NULL,
 	"age" integer NOT NULL,
-	"cedula" varchar(10) NOT NULL,
+	"cedula" varchar(12) NOT NULL,
 	"email" varchar(100) NOT NULL,
 	"phone" varchar(50) NOT NULL,
 	"gender" varchar(1) NOT NULL,
 	"civilStatus" varchar(1) NOT NULL,
 	"children" integer DEFAULT 0 NOT NULL,
+	"isActivate" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp DEFAULT now(),
 	"updatedAt" timestamp DEFAULT now(),
 	CONSTRAINT "patients_cedula_unique" UNIQUE("cedula"),
@@ -190,7 +191,7 @@ CREATE TABLE "typesProducts" (
 CREATE TABLE "users" (
 	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "users_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
 	"name" varchar(200) NOT NULL,
-	"cedula" varchar(10) NOT NULL,
+	"cedula" varchar(12) NOT NULL,
 	"email" varchar NOT NULL,
 	"password" varchar(255) NOT NULL,
 	"role" integer NOT NULL,

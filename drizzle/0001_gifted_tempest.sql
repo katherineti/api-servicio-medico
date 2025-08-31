@@ -1,1 +1,0 @@
-ALTER TABLE "patients" ADD COLUMN "isActivate" boolean DEFAULT true NOT NULL;

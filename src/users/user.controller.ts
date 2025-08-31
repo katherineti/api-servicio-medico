@@ -34,6 +34,7 @@ export class UserController {
     return this.userService.getAll(body, user);
   }
 
+  //Creacion de usuario dentro del sistema
   @Post('/createAccount')
   @Roles(TypesRoles.admin, TypesRoles.adminRRHH)
   @UsePipes(ValidationPipe)

@@ -70,6 +70,12 @@ export class AuthService {
       if (userExist) {
         throw new ConflictException('El correo ya existe.');
       }
+
+      const userExistByCedula = await this.usersService.findOnByCedula(signUp.cedula);
+
+      if (userExistByCedula) {
+        throw new ConflictException('La cédula ya existe.');
+      }
           
       await this.usersService.createUser(signUp);
 

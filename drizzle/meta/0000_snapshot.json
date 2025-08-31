@@ -1,5 +1,5 @@
 {
-  "id": "e8ccf6d1-979d-4207-89e6-d0a50ef92f2a",
+  "id": "7554cac1-ffb8-4c6d-9c6a-c9bb7ca719f0",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -476,7 +476,7 @@
         },
         "cedula": {
           "name": "cedula",
-          "type": "varchar(10)",
+          "type": "varchar(12)",
           "primaryKey": false,
           "notNull": true
         },
@@ -548,7 +548,7 @@
         },
         "cedula": {
           "name": "cedula",
-          "type": "varchar(10)",
+          "type": "varchar(12)",
           "primaryKey": false,
           "notNull": false,
           "default": null
@@ -948,7 +948,7 @@
         },
         "cedula": {
           "name": "cedula",
-          "type": "varchar(10)",
+          "type": "varchar(12)",
           "primaryKey": false,
           "notNull": true
         },
@@ -982,6 +982,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": 0
+        },
+        "isActivate": {
+          "name": "isActivate",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
         },
         "createdAt": {
           "name": "createdAt",
@@ -1462,7 +1469,7 @@
         },
         "cedula": {
           "name": "cedula",
-          "type": "varchar(10)",
+          "type": "varchar(12)",
           "primaryKey": false,
           "notNull": true
         },

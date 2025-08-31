@@ -8,7 +8,7 @@ export const ProductTypeEnum = pgEnum("ProductType", ["Medicamentos", "Uniformes
 export const usersTable = table("users", {
     id: t.integer().primaryKey().generatedAlwaysAsIdentity(),
     name: t.varchar({ length: 200 }).notNull(),
-    cedula: t.varchar({ length: 10 }).notNull().unique(),
+    cedula: t.varchar({ length: 12 }).notNull().unique(), //Ejemplo: V-1234567890
     email: t.varchar().notNull().unique(),
     password: t.varchar({ length: 255 }).notNull(),
     role: t.integer().notNull().references(() => rolesTable.id),
@@ -85,7 +85,7 @@ export const providersTable = table("providers", {
 export const employeeTable = table("employee", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
-    cedula: t.varchar({ length: 10 }).notNull().unique(),
+    cedula: t.varchar({ length: 12 }).notNull().unique(), //Ejemplo: V-1234567890
     email: t.varchar({ length: 100 }).notNull().unique(),
     phone: t.varchar({ length: 50 }).notNull(),
     createdAt: t.timestamp().defaultNow(),
@@ -95,7 +95,7 @@ export const employeeTable = table("employee", {
 export const familyTable = table("family", {
     id: t.serial().primaryKey(),
     name: t.varchar({ length: 200 }).notNull(),
-    cedula: t.varchar({length:10}).default(null),
+    cedula: t.varchar({length:12}).default(null), //Ejemplo: V-1234567890
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
@@ -193,7 +193,7 @@ export const patientTable = table("patients", {
     birthdate: t.date().default(null),
     placeBirth : t.varchar({ length: 40 }).notNull(),
     age: t.integer().notNull(),
-    cedula: t.varchar({ length: 10 }).notNull().unique(),
+    cedula: t.varchar({ length: 12 }).notNull().unique(), //Ejemplo: V-1234567890
     email: t.varchar({ length: 100 }).notNull().unique(),
     phone: t.varchar({ length: 50 }).notNull(),
     gender: t.varchar({ length: 1 }).notNull(),
