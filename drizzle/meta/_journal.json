@@ -8,6 +8,13 @@
       "when": 1755809887743,
       "tag": "0000_ordinary_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1756605626806,
+      "tag": "0001_gifted_tempest",
+      "breakpoints": true
     }
   ]
 }

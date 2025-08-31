@@ -199,6 +199,7 @@ export const patientTable = table("patients", {
     gender: t.varchar({ length: 1 }).notNull(),
     civilStatus: t.varchar({ length: 1 }).notNull(),
     children: t.integer().notNull().default(0),
+    isActivate: t.boolean('isActivate').notNull().default(true),
     createdAt: t.timestamp().defaultNow(),
     updatedAt: t.timestamp().defaultNow()
 });
