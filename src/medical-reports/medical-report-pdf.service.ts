@@ -29,14 +29,8 @@ export class MedicalReportPdfService extends BaseReportService {
       const patient = await this.medicalReportsService.getPatient(medicalReport.patientId)
 
       const datePatient=patient?.birthdate || null;
-        // if (datePatient) {
-        // const isoString = datePatient.toISOString(); // e.g., "2025-07-15T14:00:00.000Z" (UTC)
-        // const localDateFromISO = new Date(isoString); // Creates a Date object from the UTC string
-        // console.log("Fecha a partir de ISO string (muestra en local):", localDateFromISO.toLocaleDateString());
-        // }
-
-        this.logger.log("doctor",doctor)
-        this.logger.log("patient",patient)
+      this.logger.log("doctor",doctor)
+      this.logger.log("patient",patient)
 
       const reportData = {
         ...medicalReport,
@@ -219,12 +213,7 @@ export class MedicalReportPdfService extends BaseReportService {
                 { text: "1. Fecha de Elaboración:", style: "tableHeaderBlue" },
                 {
                   columns: [
-                    // { text: "Día", width: "auto", style: "tableCellContent" },
-                    { text: day+'/', width: "*", style: "tableCellUnderline" },
-                    // { text: "Mes", width: "auto", style: "tableCellContent" },
-                    { text: month+'/', width: "*", style: "tableCellUnderline" },
-                    // { text: "Año", width: "auto", style: "tableCellContent" },
-                    { text: year, width: "*", style: "tableCellUnderline" },
+                    { text: day+'/'+month+'/'+year, style: "tableCellUnderline" },
                   ],
                   margin: [0, 0, 0, 0],
                   columnGap: 2,
@@ -241,91 +230,29 @@ export class MedicalReportPdfService extends BaseReportService {
           layout: this.getTableLayout(),
           margin: [0, 5, 0, 10],
         },
-        // Patient Data Section
-        // { text: "Datos del Paciente", style: "headerBackground", margin: [0, 0, 0, 0] },
         {
           table: {
-            widths: ["*", "*", "*", "*", "*", "*"],
+            widths: ["*", "*", "*", "*"],
             body: [
-              // [{ text: "Nombres y Apellidos:", style: "tableHeaderBlue", colSpan: 6 }, {}, {}, {}, {}, {}],
-              [{ text: "Datos del Paciente", style: "tableHeaderBlue", colSpan: 6 }, {}, {}, {}, {}, {}],
-              [{ text: this.toTitleCase(reportData.patientName), colSpan: 6, style: "tableCellUnderline" }, {}, {}, {}, {}, {}],
+              [{ text: "Datos del Paciente", style: "tableHeaderBlue", colSpan: 4 }, {}, {}, {}],
+              [{ text: "Nombre y apellido:", style: "tableHeaderBlue", colSpan: 1 }, { text: this.toTitleCase(reportData.patientName), colSpan: 3, style: "tableCellUnderline" }, {}, {}],
+              [ { text: "Lugar de Nacimiento:", style: "tableHeaderBlue", colSpan: 1 }, { text: this.toTitleCase(reportData.patientPlaceBirth), colSpan: 3, style: "tableCellUnderline" }, {}, {}],
               [
                 { text: "N° Cédula de Identidad:", style: "tableHeaderBlue" },
-                {
-                  columns: [
-                    // { text: "V", width: "auto", style: "checkboxLabel" },
-                    {
-                      text: reportData.patientCedula.startsWith("V") ? "V" : "",
-                      width: "auto",
-                      style: "checkboxSquare",
-                    },
-                    { text: "", width: 20, decoration: "underline" }, // Line for input
-                    // { text: "E", width: "auto", style: "checkboxLabel" },
-                    {
-                      text: reportData.patientCedula.startsWith("E") ? "E" : "",
-                      width: "auto",
-                      style: "checkboxSquare",
-                    },
-                    { text: "", width: 20, decoration: "underline" }, // Line for input
-                  ],
-                  width: "auto",
-                  margin: [0, 0, 5, 0],
-                  columnGap: 2,
-                },
                 { text: reportData.patientCedula, style: "tableCellUnderline" },
-                { text: "Lugar de Nacimiento:", style: "tableHeaderBlue" },
-                { text: reportData.patientPlaceBirth, colSpan: 2, style: "tableCellUnderline" },
-                {},
+                { text: "Fecha de Nacimiento:", style: "tableHeaderBlue" },
+                { text: this.showDateBirth(reportData.patientDateOfBirth), style: "tableCellUnderline" },
               ],
               [
-                { text: "Fecha de Nacimiento:", style: "tableHeaderBlue" },
-                // { text: this.formatDate(reportData.patientDateOfBirth), style: "tableCellUnderline" },
-                { text: reportData.patientDateOfBirth, style: "tableCellUnderline" },
                 { text: "Edad:", style: "tableHeaderBlue" },
                 { text: reportData.patientAge.toString(), style: "tableCellUnderline" },
                 { text: "Estado Civil:", style: "tableHeaderBlue" },
-                { text: reportData.patientMaritalStatus, style: "tableCellUnderline" },
-/*                 {
-/*                   columns: [
-                    { text: `S ${reportData.patientMaritalStatus === "Soltero" ? "✓" : "□"}`, style: "checkboxSquare" },
-                    { text: `C ${reportData.patientMaritalStatus === "Casado" ? "✓" : "□"}`, style: "checkboxSquare" },
-                    { text: `V ${reportData.patientMaritalStatus === "Viudo" ? "✓" : "□"}`, style: "checkboxSquare" },
-                    {
-                      text: `D ${reportData.patientMaritalStatus === "Divorciado" ? "✓" : "□"}`,
-                      style: "checkboxSquare",
-                    },
-                  ], * /
-                  columns: [
-                    { text: `${reportData.patientMaritalStatus }`, style: "checkboxSquare" },
-                    {
-                      style: "checkboxSquare",
-                    },
-                  ],
-                  width: "*",
-                  columnGap: 2,
-                }, */
+                { text: this.getCivilStatusString(reportData.patientMaritalStatus) , style: "tableCellUnderline" },               
               ],
               [
-                { text: "Sexo:", style: "tableHeaderBlue" },
-                { text: reportData.patientSex, style: "tableCellUnderline" },
-
-/*                 {
-/*                   columns: [
-                    { text: `F ${reportData.patientSex === "Femenino" ? "✓" : "□"}`, style: "checkboxSquare" },
-                    { text: `M ${reportData.patientSex === "Masculino" ? "✓" : "□"}`, style: "checkboxSquare" },
-                  ], * /
-                  columns: [
-                    { text: `F ${reportData.patientSex === "Femenino" ? "F" : ""}`, style: "checkboxSquare" },
-                    { text: `M ${reportData.patientSex === "Masculino" ? "M" : ""}`, style: "checkboxSquare" },
-                  ],
-                  width: "auto",
-                  columnGap: 2,
-                }, */
-                { text: "", colSpan: 4, style: "tableCellContent" }, // Empty cell to fill space
-                {},
-                {},
-                {},
+                { text: "Género:", style: "tableHeaderBlue" },
+                { text: this.showSex( reportData.patientSex), style: "tableCellUnderline" },
+                { text: "", colSpan: 2, style: "tableCellContent" }, // Empty cell to fill space
               ],
             ],
           },
@@ -340,11 +267,15 @@ export class MedicalReportPdfService extends BaseReportService {
             widths: ["*"],
             body: [
               [
+                {text:'Informe', colSpan: 1, style: "tableHeaderBlue" },
+              ],
+            [
                 {
-                  text: reportData.description || "",
+                  text: this.capitalizarOracion(reportData.description) || "",
                   style: "tableCellContent_informe",
                   minHeight: 200,
                   border: [true, true, true, true],
+                  colSpan: 1,
                 },
               ],
             ],
@@ -447,6 +378,49 @@ export class MedicalReportPdfService extends BaseReportService {
       "Content-Disposition",
       isDownload ? `attachment; filename="${filename}"` : `inline; filename="${filename}"`,
     )
+  }
+
+  showSex( sex :string){
+    return sex==='M'?'Masculino':'Femenino';
+  }
+
+/**
+ * Convierte la abreviatura de un estado civil en su descripción completa.
+ * @param civilStatus El valor abreviado del estado civil (ej. 'S', 'C').
+ * @returns La descripción completa del estado civil.
+ */
+ getCivilStatusString(civilStatus) {
+  switch (civilStatus) {
+    case 'S':
+      return 'Soltero(a)';
+    case 'C':
+      return 'Casado(a)';
+    case 'D':
+      return 'Divorciado(a)';
+    case 'Sep':
+      return 'Separado(a)';
+    case 'V':
+      return 'Viudo(a)';
+    default:
+      return ''; // Retorna un string vacío o un valor por defecto si no hay coincidencia
+  }
+}
+
+  showDateBirth(dateBirth){
+    if (dateBirth) {
+      const [year, month, day] = dateBirth.split("-");
+      return day+'/'+ month + '/'+ year
+    }
+  }
+
+    /**
+   * Capitaliza la primera letra de una oración
+   */
+  capitalizarOracion(oracion: string): string {
+    if (oracion.length === 0) {
+      return ""
+    }
+    return oracion.charAt(0).toUpperCase() + oracion.slice(1)
   }
 
   //Capitaliza la primera letra de cada palabra y el resto en minúsculas
