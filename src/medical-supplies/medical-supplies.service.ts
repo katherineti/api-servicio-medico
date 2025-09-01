@@ -59,6 +59,35 @@ export class MedicalSuppliesService {
       }
   }
 
+  async getProductbyCode(code: string): Promise<any> {
+      try{
+          const result = await this.db.select({
+            id: productsTable.id,
+            url_image: productsTable.url_image,
+            description: productsTable.description,
+            code: productsTable.code,
+            stock: productsTable.stock,
+            name: productsTable.name,
+            type: productsTable.type,
+            createdAt: productsTable.createdAt,
+            updatedAt: productsTable.updatedAt,
+            categoryId: categoriesTable.id,
+            category: categoriesTable.name,
+            statusId: productsTable.statusId,
+          })
+          .from(productsTable)
+          .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+          .where(eq( productsTable.code, code ))
+          .limit(1);
+
+          return result[0] || null;
+
+      }catch(err){
+          console.error("Error en la base de datos al buscar el producto por el codigo" + code + ": ", err);
+          throw new Error("Error al obtener el producto por el codigo" + code + " " + err);
+      }
+  }
+
   async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> {
     const whereConditions = [];
     // Búsqueda por nombre (ilike) si se proporciona
@@ -128,6 +157,12 @@ export class MedicalSuppliesService {
     //recibo expirationDate: 'Sat May 03 2025 00:00:00 GMT-0400 (hora de Venezuela)'
     let imageUrl: string | null = null;
     let category:ICategory;
+
+    const existCodeMedicalSupply = await this.getProductbyCode(createMedicalSupplyDto.code);
+
+    if (existCodeMedicalSupply) {
+      throw new NotFoundException('El código del insumo médico ya existe.');
+    }
     
     if (file) {
       category = await this.categoriesService.getById(Number(createMedicalSupplyDto.category));
@@ -197,17 +232,24 @@ export class MedicalSuppliesService {
   }
 
   async update(id:number, updateMedicalSupplyDto: CreateProductDto, file?: Express.Multer.File): Promise<any> {
+    this.logger.log("updateMedicalSupplyDto",updateMedicalSupplyDto)
     let imageUrl: string | null = null;
     let category:ICategory;
 
     const prod = await this.getProductbyId(id);
 
     if (!prod) {
-      throw new NotFoundException('El producto no existe');
+      throw new NotFoundException('El producto no existe.');
     }
 
     if(prod.url_image ){
       imageUrl = prod.url_image;
+    }
+
+    const existCodeMedicalSupply = updateMedicalSupplyDto.code === prod.code ? true : false;
+
+    if (existCodeMedicalSupply) {
+      throw new NotFoundException('El código del insumo médico ya existe');
     }
     
     if (file) {
@@ -237,6 +279,10 @@ export class MedicalSuppliesService {
         console.error('Error al guardar la imagen', error);
         return { id: Date.now(), ...updateMedicalSupplyDto, url_image: null, error: 'Error al guardar la imagen' };
       }
+    }
+
+    if( updateMedicalSupplyDto.url_image==="null"){
+      imageUrl=null;
     }
 
     try {
