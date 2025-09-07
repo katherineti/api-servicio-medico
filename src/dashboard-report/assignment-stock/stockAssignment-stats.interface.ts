@@ -39,6 +39,7 @@ export interface CompleteAssignmentStats {
   assignmentsByFamily: AssignmentsByFamily[]
   registrationsByDay: AssignmentRegistrationByDay[]
   monthlyAssignments: any[] // Asignaciones específicas del mes
+  topRequestedMedicines: TopRequestedMedicine[]
 }
 
 export interface AssignmentReportDto {
@@ -47,4 +48,12 @@ export interface AssignmentReportDto {
   type: string
   date: string
   additionalInfo?: any
+}
+
+export interface TopRequestedMedicine {
+  productId: number
+  productName: string
+  productCode: string
+  totalAssignments: number
+  totalQuantity: number
 }

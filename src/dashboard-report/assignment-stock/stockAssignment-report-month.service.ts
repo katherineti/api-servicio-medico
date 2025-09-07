@@ -14,8 +14,10 @@ import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { DashboardReportService } from "../dashboard-report.service"
 import { PG_CONNECTION } from "src/constants"
 import { AssignmentService } from "src/assignment/assignment.service"
-import { AssignmentRegistrationByDay, AssignmentReportDto, AssignmentsByEmployee, AssignmentsByFamily, AssignmentsByProductType, CompleteAssignmentStats } from "./stockAssignment-stats.interface"
+import { AssignmentRegistrationByDay, AssignmentReportDto, AssignmentsByEmployee, AssignmentsByFamily, AssignmentsByProductType, CompleteAssignmentStats, TopRequestedMedicine } from "./stockAssignment-stats.interface"
 import { MedicalSupplyType } from "../medical-supplies-available/medical-supplies-report.interface"
+import type { ChartConfiguration } from "chart.js"
+import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 
 export interface AssignmentReportByTypeSuppliesOptions {
   reportType: "day" | "month"
@@ -304,7 +306,31 @@ export class AssignmentReportMonthByMedicalSuppliesService {
             inArray(productsTable.statusId, [1, 2, 3, 4]),
           ),
         )
-        .orderBy(desc(assignmentTable.createdAt))
+        .orderBy(desc(assignmentTable.createdAt));
+
+      // 7. Top 5 requested medicines
+      const topRequestedMedicines = await this.db
+        .select({
+          productId: assignmentTable.productId,
+          productName: productsTable.name,
+          productCode: productsTable.code,
+          totalAssignments: count(assignmentTable.id),
+          totalQuantity: sum(assignmentTable.products),
+        })
+        .from(assignmentTable)
+        .innerJoin(productsTable, eq(productsTable.id, assignmentTable.productId))
+        .where(
+          and(
+            isNotNull(assignmentTable.employeeId),
+            eq(productsTable.type, options.supplyType),
+            inArray(productsTable.statusId, [1, 2, 3, 4]),
+            gte(assignmentTable.createdAt, startRange),
+            lte(assignmentTable.createdAt, endRange),
+          ),
+        )
+        .groupBy(assignmentTable.productId, productsTable.name, productsTable.code)
+        .orderBy(desc(sum(assignmentTable.products)))
+        .limit(5)
 
       // Procesar resultados
       const assignmentsByEmployee: AssignmentsByEmployee[] = assignmentsByEmployeeResult.map((row) => ({
@@ -365,6 +391,13 @@ export class AssignmentReportMonthByMedicalSuppliesService {
         assignmentsByFamily,
         registrationsByDay,
         monthlyAssignments: monthlyAssignmentsResult,
+        topRequestedMedicines: topRequestedMedicines.map((medicine) => ({
+          productId: medicine.productId,
+          productName: medicine.productName,
+          productCode: medicine.productCode,
+          totalAssignments: Number(medicine.totalAssignments),
+          totalQuantity: Number(medicine.totalQuantity) || 0,
+        })),
       }
 
       this.logger.log("Estadísticas completas de asignaciones del mes:", JSON.stringify(completeStats, null, 2))
@@ -451,7 +484,7 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           alignment: "center",
           color: "#666666",
           margin: [0, 5, 0, 0],
-        },
+        }
       }
 
       // Crear contenido del documento
@@ -492,6 +525,13 @@ export class AssignmentReportMonthByMedicalSuppliesService {
 
       // Detalle de Asignaciones
       this.addAssignmentDetailSection(content, assignmentStats, styles, options.reportType)
+
+      //Grafico top 5 de meicamentos
+      // Top medicines chart
+      const topMedicinesChartBase64 = await this.generateTopMedicinesChart(assignmentStats.topRequestedMedicines)
+      if (reportTitle === "REPORTE MENSUAL DE LAS ASIGNACIONES DE MEDICAMENTOS A EMPLEADOS" && topMedicinesChartBase64 && assignmentStats.topRequestedMedicines.length > 0) {
+        this.addTopMedicinesChartSection(content, assignmentStats, topMedicinesChartBase64, styles, options)
+      }
 
       // Información del sistema
       this.addSystemInfoSection(content, reportData, styles)
@@ -999,4 +1039,171 @@ export class AssignmentReportMonthByMedicalSuppliesService {
           return "Insumos Médicos"
       }
     }
+
+  private async generateTopMedicinesChart(topMedicines: TopRequestedMedicine[]): Promise<string> {
+    try {
+      const width = 800
+      const height = 400
+      const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height })
+
+      const labels = topMedicines.map((medicine) => this.capitalizeWords(medicine.productName))
+      const data = topMedicines.map((medicine) => medicine.totalQuantity)
+
+      const configuration: ChartConfiguration = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Cantidad Asignada",
+              data,
+              backgroundColor: "#003366",
+              borderColor: "#002244",
+              borderWidth: 1,
+              /*controla el ancho de las barras:
+               categoryPercentage: topMedicines.length === 1 ? 0.2 : 0.8,*/
+              categoryPercentage: topMedicines.length === 1 ? 0.2 : 0.3,
+              barPercentage: 0.6,
+            },
+          ],
+/*           datasets: [
+            {
+              label: "Cantidad Asignada",
+              data,
+              backgroundColor: "#003366",
+              borderColor: "#002244",
+              borderWidth: 1,
+            },
+          ], */
+        },
+        options: {
+          responsive: false,
+          plugins: {
+            title: {
+              display: false,
+              text: "Top 5 Medicamentos Más Solicitados",
+              font: {
+                size: 16,
+                weight: "bold",
+              },
+            },
+            legend: {
+              display: false,
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: "Cantidad",
+              },
+            },
+            x: {
+              title: {
+                display: true,
+                text: "Medicamentos",
+              },
+              ticks: {
+                maxRotation: 45,
+                minRotation: 0,
+              },
+            },
+          },
+        },
+      }
+
+      const imageBuffer = await chartJSNodeCanvas.renderToBuffer(configuration)
+      return `data:image/png;base64,${imageBuffer.toString("base64")}`
+    } catch (error) {
+      this.logger.error("Error generating top medicines chart:", error)
+      return ""
+    }
+  }
+
+  // Add top medicines chart section to PDF
+  private addTopMedicinesChartSection(
+    content: any[],
+    assignmentStats: CompleteAssignmentStats,
+    chartBase64: string,
+    styles: StyleDictionary,
+    options: AssignmentReportByTypeSuppliesOptions,
+  ): void {
+    const supplyType = this.getSupplyTypeName(options.supplyType)
+    const periodLabel = options.reportType === "day" ? "del Día" : "del Mes"
+
+    content.push(
+      { text: `Top 5 ${supplyType} Más Solicitados del Mes`,  style: "sectionTitle", alignment: "center" },
+      {
+        image: chartBase64,
+        width: 500,
+        alignment: "center",
+        margin: [0, 10, 0, 10],
+      },
+    )
+
+    // Add detailed table for top medicines
+    if (assignmentStats.topRequestedMedicines.length > 0) {
+      const tableBody = [
+        [
+          { text: "Código", style: "tableHeader" },
+          { text: "Medicamento", style: "tableHeader" },
+          { text: "Asignaciones", style: "tableHeader" },
+          { text: "Cantidad Total", style: "tableHeader" },
+        ],
+      ]
+
+      assignmentStats.topRequestedMedicines.forEach((medicine) => {
+        tableBody.push([
+          { text: medicine.productCode, style: "tableCellValue" },
+          { text: this.capitalizeWords(medicine.productName), style: "tableCellValue" },
+          { text: medicine.totalAssignments.toString(), style: "tableCellValue" },
+          { text: medicine.totalQuantity.toString(), style: "tableCellValue" },
+        ])
+      })
+
+      content.push({
+        table: {
+          widths: ["15%", "45%", "20%", "20%"],
+          body: tableBody,
+        },
+        layout: {
+          hLineWidth: (i, node) => (i === 0 || i === node.table.body.length ? 1 : 0.5),
+          vLineWidth: (i, node) => (i === 0 || i === node.table.widths.length ? 1 : 0.5),
+          hLineColor: (i, node) => (i === 0 || i === node.table.body.length ? "#003366" : "#BBBBBB"),
+          vLineColor: (i, node) => (i === 0 || i === node.table.widths.length ? "#003366" : "#BBBBBB"),
+          paddingLeft: (i, node) => 8,
+          paddingRight: (i, node) => 8,
+          paddingTop: (i, node) => 4,
+          paddingBottom: (i, node) => 4,
+        },
+        margin: [0, 10, 0, 20],
+      })
+    }
+  }
+
+capitalizeWords(cadena) {
+  if (!cadena) {
+    return '';
+  }
+
+  const palabras = cadena.toLowerCase().split(' ');
+
+  const palabrasCapitalizadas = palabras.map(palabra => {
+    if (palabra.length === 0) {
+      return '';
+    }
+    return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+  });
+
+  return palabrasCapitalizadas.join(' ');
+}
+
+  private capitalizarOracion(oracion: string): string {
+    if (oracion.length === 0) {
+      return ""
+    }
+    return oracion.charAt(0).toUpperCase() + oracion.slice(1)
+  }
+
 }
