@@ -372,29 +372,27 @@ export class MedicalSuppliesService {
   }
 
   async totalProductsOfMonth(): Promise<{ count: number }> {
-    const nowCaracas = new Date();
-    const year = nowCaracas.getFullYear();
-    const month = nowCaracas.getMonth();
+      const now = new Date()
+      const nowUtc = new Date(now.toISOString())
+      const currentYear = nowUtc.getUTCFullYear()
+      const currentMonth = nowUtc.getUTCMonth()
+      const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0))
+      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999))
 
-    // Obtener el primer día del mes actual en Caracas
-    const startOfMonthCaracas = new Date(year, month, 1, 0, 0, 0, 0);
+      const [result] = await this.db
+        .select({ count: count() })
+        .from(productsTable)
+        .where(
+          and(
+            and(
+                gte(productsTable.createdAt, startOfMonth),
+                lte(productsTable.createdAt, endOfMonth)
+            ),
+            inArray(productsTable.statusId, [1,2,3,4])
+          )
+        );
 
-    // Obtener el último día del mes actual en Caracas
-    const endOfMonthCaracas = new Date(year, month + 1, 0, 23, 59, 59, 999);
-
-    const [result] = await this.db
-      .select({ count: count() })
-      .from(productsTable)
-      .where(
-        and(
-          sql`${productsTable.createdAt} >= ${startOfMonthCaracas.toISOString()} AND ${productsTable.createdAt} <= ${endOfMonthCaracas.toISOString()}`,
-          // Condición para excluir statusId = 4 (productos caducados)
-          // or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) )
-          inArray(productsTable.statusId, [1,2,3,4])
-        )
-      );
-
-    return result || { count: 0 };
+      return result || { count: 0 };
   }
 
   //Para el contador de productos en el dashboard de almacen

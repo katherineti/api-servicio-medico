@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq, gte, ilike, inArray, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, inArray, lte, sql } from 'drizzle-orm';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { PG_CONNECTION, REPORT_STATUS_ELIMINADO, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO } from 'src/constants';
+import { PG_CONNECTION, REPORT_STATUS_DUPLICADO, REPORT_STATUS_INHABILITADO, REPORT_STATUS_ENPROCESO, REPORT_STATUS_FINALIZADO, REPORT_STATUS_COPIA_EDITADA } from 'src/constants';
 import { auditReportsTable_temp, reportStatusTable, usersTable } from 'src/db/schema';
 import { CreateReport, Reports } from 'src/db/types/reports.types';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,6 +44,12 @@ export class TempAuditorReportsService {
             const update = {
                 ...body, idDuplicate: null, updatedAt: null,
             };
+            this.logger.log("TempAuditorReportsService.create() body.code ", body.code , " , body.code.charAt(0): "  , Report.code.charAt(0))
+            this.logger.log("TempAuditorReportsService.create() body ", body)
+            this.logger.log("TempAuditorReportsService.create() Report de BD ", Report)
+            if(Report.code.charAt(0) === 'D'){
+                update.idDuplicate= Report.idDuplicate;
+            }
             const updated_ = await this.db
             .update(auditReportsTable_temp)
             .set(update)
@@ -56,7 +62,11 @@ export class TempAuditorReportsService {
         // 1. Verifica si ya existe un reporte con el mismo título
         const existingReports = await this.db.select()
         .from(auditReportsTable_temp)
-        .where(eq(auditReportsTable_temp.title, body.title))
+        .where(
+            eq( 
+                sql`lower(${auditReportsTable_temp.title})`, sql`lower(${body.title})`
+            )
+        )
         .limit(1);
 
         const existingReport = existingReports.length > 0 ? existingReports[0] : undefined;
@@ -238,7 +248,16 @@ export class TempAuditorReportsService {
             updateData.images= null,
             updateData.endDate = new Date();
         }
+        this.logger.log("update() body" , body)
+        this.logger.log("update() Report" , Report)
 
+        if(Report.code.charAt(0) === 'D'){
+            updateData.idDuplicate=Report.idDuplicate;
+        }
+        if(Report.code.charAt(0) === 'D' && Number(statusId) === REPORT_STATUS_FINALIZADO){
+            updateData.statusId= REPORT_STATUS_COPIA_EDITADA; //REPORT_STATUS_COPIA_EDITADA: La copia del reporte de auditoria, fue editada 
+        }
+ 
         const updated = await this.db
         .update(auditReportsTable_temp)
         .set(updateData)
@@ -305,6 +324,15 @@ export class TempAuditorReportsService {
 
         let updatedReport: Reports | undefined;
         try {
+        this.logger.log("update() body" , body)
+        this.logger.log("update() existingReport" , existingReport)
+        if(existingReport.code.charAt(0) === 'D'){
+            updateData.idDuplicate=existingReport.idDuplicate;
+        }
+        if(existingReport.code.charAt(0) === 'D' && Number(statusId) === REPORT_STATUS_FINALIZADO){
+            updateData.statusId= REPORT_STATUS_COPIA_EDITADA; //REPORT_STATUS_COPIA_EDITADA: La copia del reporte fue editada 
+        }
+
         const updatedReports = await this.db
             .update(auditReportsTable_temp)
             .set(updateData)
@@ -362,7 +390,7 @@ export class TempAuditorReportsService {
         throw new NotFoundException('El reporte no existe');
     }
     const updateData: Partial<Reports> = {
-        statusId: REPORT_STATUS_ELIMINADO,
+        statusId: REPORT_STATUS_INHABILITADO,
         // updatedAt: new Date()
     };
 
@@ -461,5 +489,87 @@ export class TempAuditorReportsService {
         }
 
         return body.additionalAuditorIds;
+    }
+
+    async duplicate(body: {id: number}): Promise<Reports>{ 
+        try {
+        body.id= Number(body.id);
+        const id_report = body.id;
+
+        if(id_report){
+            const Report = await this.getById(body.id); //Reporte de auditoria seleccionado, para ser duplicado
+            
+            if (!Report) {
+                throw new NotFoundException('El reporte de auditoria no existe');
+            }
+            
+            //Inserta en BD, la copia del reporte de auditoria seleccionado
+            const reportToCreate = {
+                ...Report,
+            };
+            // Eliminar la propiedad 'id'
+            delete reportToCreate.id;
+            let newReport = await this.db.insert(auditReportsTable_temp).values(reportToCreate).returning({ id: auditReportsTable_temp.id });
+            if (!newReport || newReport.length === 0 || !newReport[0].id) {
+                this.logger.error(`Error al insertar el reporte inicial.`);
+                throw new Error('Error al crear el reporte de auditoría.');
+            }
+            const newReportId = newReport[0].id;
+            const year = new Date().getFullYear();
+            const formattedId = `D${Report.auditorId}${uuidv4()}.${newReportId}.${year}`; 
+            const updateData: Partial<CreateReport> = {
+                code: formattedId,
+                idDuplicate: Report.id//id original del reporte de auditoria
+            }
+            if(Report.statusId===REPORT_STATUS_COPIA_EDITADA){
+                let status_report_original = 0;
+                if(Report.title){
+                    status_report_original= REPORT_STATUS_ENPROCESO
+                }
+                if(Report.summary_objective){
+                    status_report_original= REPORT_STATUS_ENPROCESO
+                }
+                if(Report.conclusions){
+                    status_report_original= REPORT_STATUS_FINALIZADO
+                }
+                updateData.statusId= status_report_original
+            }
+            const updated = await this.db
+            .update(auditReportsTable_temp)
+            .set(updateData)
+            .where(eq(auditReportsTable_temp.id, newReportId))
+            .returning();
+            this.logger.debug(`Copia de Informe de Auditoría creado exitosamente con el ID: ${newReportId}`);
+        
+            //Actualizacion del reporte de auditoria original:
+            /*
+            Caso - Duplicacion de una copia directa de un reporte auditoria
+            */
+            const update = {
+                ...Report, 
+                idDuplicate: Report.idDuplicate? Report.idDuplicate : null, 
+                statusId: REPORT_STATUS_DUPLICADO,
+                updatedAt: new Date(),
+            };
+            const updated_ = await this.db
+            .update(auditReportsTable_temp)
+            .set(update)
+            .where(eq(auditReportsTable_temp.id, body.id))
+            .returning();
+            this.logger.debug(`El estado del reporte de auditoria con el id:${body.id} fue actualizado a duplicado`);
+
+            return updated_[0];
+
+        }else{
+                throw new NotFoundException('Falta el id del reporte de auditoria');
+        }
+
+    } catch (err)  {
+      this.logger.error(`Error al duplicar el reporte de auditoría: `, err);
+      if (err instanceof ConflictException) {
+        throw err;
+      }
+      throw new Error(`Error al duplicar el reporte de auditoría: ${err}`);
+     }
     }
 }

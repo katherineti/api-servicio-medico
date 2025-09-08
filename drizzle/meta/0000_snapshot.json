@@ -1,5 +1,5 @@
 {
-  "id": "7554cac1-ffb8-4c6d-9c6a-c9bb7ca719f0",
+  "id": "78854317-f85d-4346-af17-e193bd13c38c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -305,15 +305,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "auditReports_temp_title_unique": {
-          "name": "auditReports_temp_title_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "title"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

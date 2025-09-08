@@ -33,8 +33,7 @@ CREATE TABLE "auditReports_temp" (
 	"idDuplicate" integer DEFAULT null,
 	"startDate" timestamp NOT NULL,
 	"endDate" timestamp,
-	"updatedAt" timestamp DEFAULT null,
-	CONSTRAINT "auditReports_temp_title_unique" UNIQUE("title")
+	"updatedAt" timestamp DEFAULT null
 );
 --> statement-breakpoint
 CREATE TABLE "categories" (

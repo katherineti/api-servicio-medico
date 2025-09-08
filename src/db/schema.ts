@@ -166,7 +166,8 @@ export const reportStatusTable = table("reportStatus",{
 export const auditReportsTable_temp = table("auditReports_temp", {
     id: t.serial().primaryKey(),
     code: t.varchar().notNull(),
-    title: t.varchar({ length: 50 }).notNull().unique(),
+    // title: t.varchar({ length: 50 }).notNull().unique(),
+    title: t.varchar({ length: 50 }).notNull(),
     receiver: t.varchar({ length: 50 }).notNull(),
     auditorId: t.integer().notNull().references(() => usersTable.id, { onDelete: 'cascade' }), //Auditor principal del reporte
     additionalAuditorIds: json().$type<number[]>().default([]),

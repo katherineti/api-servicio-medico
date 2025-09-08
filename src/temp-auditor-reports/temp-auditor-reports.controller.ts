@@ -35,6 +35,11 @@ export class TempAuditorReportsController {
           return this.tempAuditorReportsService.getAllAuditores();
         }
 
+    @Get(':id') //no esta en uso
+    getUser(@Param('id', ParseIntPipe) id: number): Promise<Reports | null> {
+      return this.tempAuditorReportsService.getById(id);
+    }
+
     @Post('getAll')
     @UsePipes(ValidationPipe)
     getProducts(@Body() body: SearchReportsDto): Promise<ReportsGetAll> {
@@ -116,6 +121,15 @@ export class TempAuditorReportsController {
       }
       
     }
+  }
+
+  @Post('duplicate')
+  // @Roles(TypesRoles.admin, TypesRoles.adminRRHH, TypesRoles.auditor)
+  async duplicate(
+    @Body() objectId: {id: number},
+  ): Promise<Reports> {
+
+    return this.tempAuditorReportsService.duplicate(objectId);
   }
 
 }
