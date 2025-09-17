@@ -22,3 +22,6 @@ export const REPORT_STATUS_COPIA_EDITADA = 5; //REPORT_STATUS_COPIA_EDITADA: La 
 export const jwtConstants = {
     secret: process.env.JWT_SECRET
 };
+
+// export const membreteCIIP = "membreteCIIP.jpeg"
+export const membreteCIIP = "CINTILLO-WEB-OFICIAL.jpg"

@@ -7,6 +7,7 @@ import  { MedicalReportsService } from "./medical-reports.service"
 import * as path from "path"
 import * as fs from "fs"
 import { BaseReportService } from "src/dashboard-report/medical-supplies-available/base-report.service"
+import { membreteCIIP } from "src/constants"
 
 @Injectable()
 export class MedicalReportPdfService extends BaseReportService {
@@ -135,7 +136,7 @@ export class MedicalReportPdfService extends BaseReportService {
         color: "#FFFFFF",
         bold: true,
         fontSize: 8,
-        alignment: "center",
+        alignment: "left",
         margin: [0, 2, 0, 2],
       },
       tableCellContent: {
@@ -148,7 +149,9 @@ export class MedicalReportPdfService extends BaseReportService {
         color: "#000000",
         margin: [2, 2, 2, 2],
         // @ts-ignore
-        wordWrap: 'break-word', 
+        // wordWrap: 'break-word', 
+        // minHeight: 2000, // <--- Aquí se establece la altura mínima
+        // background: "red",
         lineBreak: 'auto',
         alignment: 'justify',
       },
@@ -156,6 +159,7 @@ export class MedicalReportPdfService extends BaseReportService {
         fontSize: 8,
         color: "#000000",
         // decoration: "underline",
+        alignment: "justify",
         margin: [2, 2, 2, 2],
       },
       checkboxSquare: {
@@ -168,8 +172,12 @@ export class MedicalReportPdfService extends BaseReportService {
     let gobiernoLogo: string | null = null
 
     try {
-      const gobiernoPath = path.join(process.cwd(), "src",  "membreteCIIP.jpeg")
-
+      // const gobiernoPath = path.join(process.cwd(), "src",  membreteCIIP)
+      // const gobiernoPath = 'http://localhost:3000/uploads/CINTILLO-WEB-OFICIAL.jpg'
+      const gobiernoPath = path.join(process.cwd(), "uploads", membreteCIIP)
+      // const gobiernoPath = 'http://localhost:3000/uploads/CINTILLO-WEB-OFICIAL.jpg'
+console.log( "*****RUTA process.cwd()", path.join(process.cwd()) )
+console.log( "*****RUTA gobiernoPath", gobiernoPath )
       if (fs.existsSync(gobiernoPath)) {
         gobiernoLogo = fs.readFileSync(gobiernoPath).toString("base64")
       } else {
@@ -186,7 +194,17 @@ export class MedicalReportPdfService extends BaseReportService {
     const year = createdAtDate.getFullYear().toString()
     this.logger.log('reportData...',reportData)
 
-    const docDefinition: TDocumentDefinitions = {
+//Variables para probar el ancho de la celda con la longitud de caracteres del texto
+let pruebaApsCenter100caracteres='Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean m'
+let pruebaNombrePaciene='Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec qu'
+let pruebaLugarNac = 'Lorem ipsum dolor sit amet, consectetuer'
+let mivar='Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta.'
+let descripcioninforme700caracteres = `Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.
+
+Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu.
+
+In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus`
+const docDefinition: TDocumentDefinitions = {
       content: [
         // Header Section
         {
@@ -206,6 +224,8 @@ export class MedicalReportPdfService extends BaseReportService {
         {
           table: {
             widths: ["25%", "25%", "25%", "25%"],
+            heights: [30, 20], // Primera fila 20px, segunda fila 2000px
+
             body: [
               [
                 { text: "2. Centro APS:", style: "tableHeaderBlue" },
@@ -233,8 +253,9 @@ export class MedicalReportPdfService extends BaseReportService {
         {
           table: {
             widths: ["*", "*", "*", "*"],
+            heights: [null, 30, null, null, null], // Primera fila 20px, segunda fila 2000px
             body: [
-              [{ text: "Datos del Paciente", style: "tableHeaderBlue", colSpan: 4 }, {}, {}, {}],
+              [{ text: "Datos del Paciente", style: "tableHeaderBlue", colSpan: 4, alignment: "center" }, {}, {}, {}],
               [{ text: "Nombre y apellido:", style: "tableHeaderBlue", colSpan: 1 }, { text: this.toTitleCase(reportData.patientName), colSpan: 3, style: "tableCellUnderline" }, {}, {}],
               [ { text: "Lugar de Nacimiento:", style: "tableHeaderBlue", colSpan: 1 }, { text: this.toTitleCase(reportData.patientPlaceBirth), colSpan: 3, style: "tableCellUnderline" }, {}, {}],
               [
@@ -265,17 +286,17 @@ export class MedicalReportPdfService extends BaseReportService {
         {
           table: {
             widths: ["*"],
+            heights: [null, 230], // Primera fila 20px, segunda fila 2000px
             body: [
               [
-                {text:'Informe', colSpan: 1, style: "tableHeaderBlue" },
+                {text:'Informe', colSpan: 1, style: "tableHeaderBlue", alignment: "center" },
               ],
             [
                 {
                   text: this.capitalizarOracion(reportData.description) || "",
                   style: "tableCellContent_informe",
-                  minHeight: 200,
                   border: [true, true, true, true],
-                  colSpan: 1,
+                  // colSpan: 1,
                 },
               ],
             ],
@@ -297,6 +318,29 @@ export class MedicalReportPdfService extends BaseReportService {
         {
           table: {
             widths: ["25%", "25%", "25%", "25%"],
+            heights: [null, 70],
+            body: [
+              [
+                { text: "1. Nombre del Médico", style: "tableHeaderBlue" },
+                { text: "2. Cédula", style: "tableHeaderBlue" },
+                { text: "3. M.P.P.S. - C.M", style: "tableHeaderBlue" },
+                { text: "4. Firma y Sello", style: "tableHeaderBlue" },
+              ],
+              [
+                { text: this.toTitleCase(reportData.doctorName), style: "tableCellUnderline", minHeight: 40 },
+                { text: reportData.doctorCedula, style: "tableCellUnderline", alignment:"center" },
+                { text: reportData.mppsCM, style: "tableCellUnderline", alignment:"center" },
+                { text: "", style: "tableCellUnderline" }, // For signature and stamp
+              ],
+            ],
+          },
+          layout: this.getTableLayout(),
+          margin: [0, 10, 0, 0],
+        },
+  /*       // Doctor Info Footer Section
+        {
+          table: {
+            widths: ["25%", "25%", "25%", "25%"],
             body: [
               [
                 { text: "1. Nombre del Médico", style: "tableHeaderBlue" },
@@ -314,7 +358,7 @@ export class MedicalReportPdfService extends BaseReportService {
           },
           layout: this.getTableLayout(),
           margin: [0, 10, 0, 0],
-        },
+        }, */
       ],
       styles: styles,
       defaultStyle: {
@@ -326,7 +370,10 @@ export class MedicalReportPdfService extends BaseReportService {
         pageSize: "A4",
         pageMargins: [40, 80, 40, 60],//80 margen superior en cada pagina del pdf
         background: function(currentPage, pageSize)  {
-        const gobiernoPath = path.join(process.cwd(), "src", "membreteCIIP.jpeg")
+        // const gobiernoPath = path.join(process.cwd(), "src", membreteCIIP)
+
+        // const gobiernoPath = 'http://localhost:3000/uploads/CINTILLO-WEB-OFICIAL.jpg':
+        const gobiernoPath = path.join(process.cwd(), "uploads",  membreteCIIP)
         const gobiernoLogo = fs.readFileSync(gobiernoPath).toString("base64")
 
           // El logo en el fondo de cada página
