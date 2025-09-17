@@ -8,6 +8,7 @@ import type { CompleteUserStats } from "./dashboard-report.service"
 import { ChartJSNodeCanvas } from "chartjs-node-canvas"
 import type { ChartConfiguration } from "chart.js"
 import { IJwtPayload } from "src/auth/dto/jwt-payload.interface"
+import { membreteCIIP } from "src/constants"
 
 type CustomHeader = (currentPage: number, pageCount: number, pageSize: any) => any
 interface CustomDocumentDefinitions extends Omit<TDocumentDefinitions, "header"> {
@@ -762,10 +763,7 @@ export class PdfDashboardService {
    */
   private async loadLogoWithRetry(): Promise<Buffer | null> {
     const possibleLogoPaths = [
-      path.join(process.cwd(), "src", "membreteCIIP.jpeg"),
-      path.join(process.cwd(), "src", "assets", "membreteCIIP.jpeg"),
-      path.join(process.cwd(), "assets", "membreteCIIP.jpeg"),
-      path.join(process.cwd(), "membreteCIIP.jpeg"),
+      path.join(process.cwd(), "uploads", membreteCIIP)
     ]
 
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {

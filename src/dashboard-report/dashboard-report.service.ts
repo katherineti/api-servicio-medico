@@ -10,9 +10,9 @@ import PdfPrinter from "pdfmake"
 import * as fs from "fs"
 import * as path from "path"
 import type { Style, StyleDictionary, TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces"
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm"
+import { and, count, eq, gte, lte, sql } from "drizzle-orm"
 import { rolesTable, usersTable } from "src/db/schema"
-import { PG_CONNECTION } from "src/constants"
+import { membreteCIIP, PG_CONNECTION } from "src/constants"
 import { NeonDatabase } from "drizzle-orm/neon-serverless"
 
 export interface DashboardReportDto {
@@ -587,10 +587,7 @@ export class DashboardReportService {
    */
   async loadLogoWithRetry(): Promise<Buffer | null> {
     const possibleLogoPaths = [
-      path.join(process.cwd(), "src", "membreteCIIP.jpeg"),
-      path.join(process.cwd(), "src", "assets", "membreteCIIP.jpeg"),
-      path.join(process.cwd(), "assets", "membreteCIIP.jpeg"),
-      path.join(process.cwd(), "membreteCIIP.jpeg"),
+      path.join(process.cwd(), "uploads", membreteCIIP)
     ]
 
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
