@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common"
 import * as puppeteer from "puppeteer"
-// import type { GenerateRecipePdfDto } from "../dto/generate-medical-prescription-pdf.dto"
-import { API_URL } from "src/constants"
+import { API_URL, membreteCIIP } from "src/constants"
 import { MedicalPrescription } from "../dto/read-medical-prescription-dto"
 
 @Injectable()
@@ -311,7 +310,7 @@ export class RecipePdfService {
           <!-- RECIPE Section (Left) -->
           <div class="section">
           
-          <img src="${API_URL}uploads/membreteCIIP.jpeg" class="cintillo-cip" alt="Logo CIIP">
+          <img src="${API_URL}uploads/${membreteCIIP}" class="cintillo-cip" alt="Logo CIIP">
 
               <div class="header">
                   <h1>SERVICIO MÉDICO DEL CIIP</h1>
@@ -415,7 +414,7 @@ export class RecipePdfService {
           
           <!-- INDICACIONES Section (Right) -->
           <div class="section">
-              <img src="${API_URL}uploads/membreteCIIP.jpeg" class="cintillo-cip" alt="Logo CIIP">
+              <img src="${API_URL}uploads/${membreteCIIP}" class="cintillo-cip" alt="Logo CIIP">
 
               <div class="header">
                   <h1>SERVICIO MÉDICO DEL CIIP</h1>

@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { Style, StyleDictionary, TDocumentDefinitions, TFontDictionary } from 'pdfmake/interfaces';
 import { Reports } from 'src/db/types/reports.types';
+import { membreteCIIP } from 'src/constants';
 /**
  * Interfaz para errores personalizados del servicio
  */
@@ -854,10 +855,8 @@ private async createDocumentDefinition_(
       path.join(process.cwd(), 'logo-ciip.png')
     ]; */
     const possibleLogoPaths = [
-      path.join(process.cwd(), 'src', 'membreteCIIP.jpeg'),
-      // path.join(process.cwd(), 'src', 'assets', 'membreteCIIP.jpeg'),
-      // path.join(process.cwd(), 'assets', 'membreteCIIP.jpeg'),
-      // path.join(process.cwd(), 'membreteCIIP.jpeg')
+      // path.join(process.cwd(), 'src', 'membreteCIIP.jpeg')
+      path.join(process.cwd(), 'uploads', membreteCIIP)
     ];
     
     for (let attempt = 0; attempt < this.MAX_RETRIES; attempt++) {
@@ -1263,7 +1262,10 @@ private async loadImageWithRetry(reportId: number | string, imagePath: string): 
   }
 
   TitleTable(content, report){
-   return   content.push(
+    //variables de pruebas
+    let long50 = 'Sed ut perspiciatis unde omnis iste natus error si' 
+    let pruebaLong20000 = 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta.' 
+   return  content.push(
         {
           // Puedes ajustar el margen de la tabla según sea necesario
           margin: [0, 10, 0, 10], // [left, top, right, bottom]
@@ -1296,8 +1298,8 @@ private async loadImageWithRetry(reportId: number | string, imagePath: string): 
 
             body: [
                [
-                { text: 'Destinatario', style: 'tableHeader' },
-                { text: 'Auditor', style: 'tableHeader' },
+                { text: 'Destinatario', style: 'tableHeader' }, //campo receiver en BD. longitud 50
+                { text: 'Auditor', style: 'tableHeader' },//campo auditor=name user . longitud 200 
                 { text: 'Fecha de finalizado', style: 'tableHeader' }
               ],
               [
