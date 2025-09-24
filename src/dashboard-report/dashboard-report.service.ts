@@ -709,8 +709,16 @@ export class DashboardReportService {
 
       const currentYear = nowUtc.getUTCFullYear();
       const currentMonth = nowUtc.getUTCMonth();
+/*    const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0));
+      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999)); 
+*/
+
+      // En lugar de usar Date.UTC(..., currentMonth + 1, 0), es mejor calcular el primer día del siguiente mes y restarle un milisegundo.
+      // Calculamos el primer día del mes siguiente
+      const startOfNextMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 1, 0, 0, 0, 0));
+      // El final del mes actual es un milisegundo antes del inicio del mes siguiente
+      const endOfMonth = new Date(startOfNextMonth.getTime() - 1);
       const startOfMonth = new Date(Date.UTC(currentYear, currentMonth, 1, 0, 0, 0, 0));
-      const endOfMonth = new Date(Date.UTC(currentYear, currentMonth + 1, 0, 23, 59, 59, 999));
 
       const startOfYear = new Date(Date.UTC(currentYear, 0, 1, 0, 0, 0, 0));
       const endOfYear = new Date(Date.UTC(currentYear, 11, 31, 23, 59, 59, 999));
@@ -724,7 +732,8 @@ export class DashboardReportService {
           // totalUsers: count(), 
           //Usuarios del año:
           totalUsers: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfYear} AND ${usersTable.createdAt} <= ${endOfYear} THEN 1 ELSE NULL END)`,
-          usersThisMonth: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfMonth} AND ${usersTable.createdAt} <= ${endOfMonth} THEN 1 ELSE NULL END)`,
+          // usersThisMonth: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfMonth} AND ${usersTable.createdAt} < ${startOfNextMonth} THEN 1 ELSE NULL END)`,
+          usersThisMonth: sql<number>`count(CASE WHEN date_trunc('month', ${usersTable.createdAt}) = date_trunc('month', NOW()) THEN 1 ELSE NULL END)`,          
           usersToday: sql<number>`count(CASE WHEN ${usersTable.createdAt} >= ${startOfDay} AND ${usersTable.createdAt} <= ${endOfDay} THEN 1 ELSE NULL END)`,
           // ¡Se añade el filtro por año a los usuarios activos e inactivos!
           activeUsers: sql<number>`count(CASE WHEN ${usersTable.isActivate} = TRUE AND (${usersTable.createdAt} >= ${startOfYear} AND ${usersTable.createdAt} <= ${endOfYear}) THEN 1 ELSE NULL END)`,
@@ -834,7 +843,7 @@ const registrationsByMonth: UserRegistrationByMonth[] = monthCounts.map((count, 
   label: monthsEs[idx],
   count,
 }))
-
+console.log("usersThisMonth " , generalStats.usersThisMonth, Number(generalStats.usersThisMonth))
       const completeStats: CompleteUserStats = {
         totalUsers: Number(generalStats.totalUsers),
         usersToday: Number(generalStats.usersToday),
