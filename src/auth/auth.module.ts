@@ -20,8 +20,9 @@ import { LogsModule } from 'src/logs/logs.module';
     JwtModule.register({
       global: true,
       secret: jwtConstants.secret,
+      // La expiración fija se elimina para permitir el control desde el frontend.
       // signOptions: { expiresIn: '1d' },
-      signOptions: { expiresIn: '5m' },
+      // signOptions: { expiresIn: '5m' },
     }),
   ],
   controllers: [AuthController],
