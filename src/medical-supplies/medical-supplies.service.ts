@@ -12,6 +12,8 @@ import { CategoriesService, ICategory } from 'src/categories/categories.service'
 import { CreateProductDto } from './dto/create-product.dto';
 import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 import { LogsService } from 'src/logs/logs.service';
+import { IJwtPayload } from 'src/auth/dto/jwt-payload.interface';
+import { PgColumn } from 'drizzle-orm/pg-core';
 
 /* export interface stockMedicalSuppliesAvailables {
   sum_medicamentos: string,
@@ -88,8 +90,15 @@ export class MedicalSuppliesService {
       }
   }
 
-  async getAll(filter: SearchProductsDto): Promise<ProductsGetAll> {
+  async getAll(filter: SearchProductsDto, usersesion: IJwtPayload): Promise<ProductsGetAll> {
     const whereConditions = [];
+
+// --- Definiciones de Lógica de Negocio ---
+    const ROL_ADMIN_RRHH = 'admin RRHH'; // El valor exacto del rol en el token
+    const TYPE_ID_UNIFORME = 2;          // ID para Uniformes según typesProducts
+    // Verificamos si el usuario es el Admin de RRHH
+    const IS_RRHH_ADMIN = usersesion.role === ROL_ADMIN_RRHH;
+
     // Búsqueda por nombre (ilike) si se proporciona
     if (filter.name) {
       whereConditions.push(ilike(productsTable.name, `%${filter.name}%`));
@@ -107,6 +116,14 @@ export class MedicalSuppliesService {
 
     // Condición para excluir statusId = 4 (productos caducados)
     whereConditions.push(or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ));
+
+// 🚀 Lógica de Uniformes: Si NO es Admin RRHH, ocultar uniformes (type = 2)
+    if (!IS_RRHH_ADMIN) {
+        // Excluimos los uniformes (type != 2)
+        whereConditions.push(ne(productsTable.type, TYPE_ID_UNIFORME));
+    } 
+    // Si es Admin RRhH, NO se añade ninguna condición de 'type', 
+    // permitiendo que se muestren todos los tipos (incluyendo el 2).
 
     // Condición de búsqueda combinada (si hay alguna)
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
