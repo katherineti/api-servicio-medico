@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { NeonDatabase } from 'drizzle-orm/neon-serverless';
-import { PG_CONNECTION, PRODUCT_STATUS_INACTIVO } from 'src/constants';
+import { PG_CONNECTION, PRODUCT_STATUS_INACTIVO, PRODUCT_TYPE_UNIFORMES } from 'src/constants';
 import { categoriesTable, productsTable, productStatusTable, providersTable } from 'src/db/schema';
 import { count, desc, ilike, eq, and, sql, ne, sum, or, gte, lte, inArray } from 'drizzle-orm'
 import { SearchProductsDto } from './dto/search.products.dto';
@@ -95,7 +95,7 @@ export class MedicalSuppliesService {
 
 // --- Definiciones de Lógica de Negocio ---
     const ROL_ADMIN_RRHH = 'admin RRHH'; // El valor exacto del rol en el token
-    const TYPE_ID_UNIFORME = 2;          // ID para Uniformes según typesProducts
+    const TYPE_ID_UNIFORME = PRODUCT_TYPE_UNIFORMES;          // ID para Uniformes según typesProducts
     // Verificamos si el usuario es el Admin de RRHH
     const IS_RRHH_ADMIN = usersesion.role === ROL_ADMIN_RRHH;
 
