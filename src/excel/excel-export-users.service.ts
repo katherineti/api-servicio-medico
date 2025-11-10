@@ -1,9 +1,10 @@
 import { Inject, Injectable, Logger } from "@nestjs/common"
 import type { NeonDatabase } from "drizzle-orm/neon-serverless"
 import { usersTable, rolesTable } from "src/db/schema"
-import { and, eq, ilike, asc, gte, lt } from "drizzle-orm"
+import { and, eq, ilike, asc, gte, lt, desc } from "drizzle-orm"
 import { Workbook } from "exceljs"
 import { PG_CONNECTION } from "src/constants"
+import { Buffer } from "buffer" // <--- ¡Esta es la importación que falta!
 
 @Injectable()
 export class ExportUsersService {
@@ -50,7 +51,17 @@ export class ExportUsersService {
         .from(usersTable)
         .leftJoin(rolesTable, eq(usersTable.role, rolesTable.id))
         .where(and(...whereConditions))
-        .orderBy(asc(rolesTable.name), asc(usersTable.name))
+        // 💡 CLÁUSULA DE ORDENAMIENTO AGREGADA AQUÍ
+        .orderBy(
+          // Ordenar por Rol (Alfabéticamente ascendente)
+          asc(rolesTable.name), 
+
+          // 2. Ordenar por estado activo, inactivo
+          asc(usersTable.isActivate),          
+          
+          // Ordenar por Nombre de Usuario (Alfabéticamente ascendente)
+          asc(usersTable.name),
+        );
 
       if (format === "xlsx") {
         return await this.generateExcel(rows)
@@ -93,24 +104,43 @@ export class ExportUsersService {
     })
 
     const buffer = await workbook.xlsx.writeBuffer()
-    return Buffer.from(buffer)
+    
+    // 💡 Solución: Devolver el buffer directamente y usar 'as Buffer'
+    // La aserción de tipo resuelve el conflicto sin conversión.
+    return buffer as unknown as Buffer
+  }
+
+
+  private sanitizeCsv(data: string | number | boolean | Date | null | undefined): string {
+    if (data === null || data === undefined) {
+      return ""
+    }
+    // Convertir a string
+    let str = String(data)
+    
+    // Escapar comillas dobles existentes: replace " with ""
+    str = str.replace(/"/g, '""')
+    
+    // Si el campo contiene comas, saltos de línea o comillas, encerrarlo en comillas dobles.
+    if (str.includes(',') || str.includes('\n') || str.includes('\r') || str.includes('"')) {
+      return `"${str}"`
+    }
+    
+    return str
   }
 
   private async generateCsv(data: any[]): Promise<Buffer> {
-    let csv = "Nombre,Email,Rol,Estado,Fecha Creación\n"
+    
+    // 💡 PASO 1: Agregar el BOM (Byte Order Mark) para forzar UTF-8 en Excel
+    let csv = "\ufeffNombre,Email,Rol,Estado,Fecha Creación\n" 
 
     data.forEach((user) => {
-      const row = [
-        `"${user.name}"`,
-        user.email,
-        user.role || "N/A",
-        user.isActivate ? "Activo" : "Inactivo",
-        new Date(user.createdAt).toLocaleString("es-VE"),
-      ].join(",")
-
-      csv += row + "\n"
+      // 💡 PASO 2: Usar sanitizeCsv en cada campo de texto
+      const userLine = `${this.sanitizeCsv(user.name)},${this.sanitizeCsv(user.email)},${this.sanitizeCsv(user.role || 'N/A')},${user.isActivate ? 'Activo' : 'Inactivo'},${new Date(user.createdAt).toLocaleString('es-VE')}\n`
+      csv += userLine
     })
 
-    return Buffer.from(csv, "utf-8")
+    // 💡 PASO 3: Generar el Buffer con codificación 'utf8'
+    return Buffer.from(csv, "utf8")
   }
 }

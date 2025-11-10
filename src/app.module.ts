@@ -23,6 +23,7 @@ import { DashboardReportModule } from './dashboard-report/dashboard-report.modul
 import { MedicalReportsModule } from './medical-reports/medical-reports.module';
 import { PatientsModule } from './patients/patients.module';
 import { MedicalPrescriptionsModule } from './medical-prescriptions/medical-prescriptions.module';
+import { ExcelExportModule } from './excel/excel-export.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { MedicalPrescriptionsModule } from './medical-prescriptions/medical-pres
     MedicalReportsModule,
     PatientsModule,
     MedicalPrescriptionsModule,
+    ExcelExportModule
   ],
   // controllers: [AppController],
   controllers: [],

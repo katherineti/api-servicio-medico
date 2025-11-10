@@ -327,7 +327,11 @@ const docDefinition: TDocumentDefinitions = {
                 { text: "4. Firma y Sello", style: "tableHeaderBlue" },
               ],
               [
-                { text: this.toTitleCase(reportData.doctorName), style: "tableCellUnderline", minHeight: 40 },
+                { 
+                  text: this.toTitleCase(reportData.doctorName), 
+                  style: "tableCellUnderline", 
+                  // minHeight: 40
+                 },
                 { text: reportData.doctorCedula, style: "tableCellUnderline", alignment:"center" },
                 { text: reportData.mppsCM, style: "tableCellUnderline", alignment:"center" },
                 { text: "", style: "tableCellUnderline" }, // For signature and stamp
