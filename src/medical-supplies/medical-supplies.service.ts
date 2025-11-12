@@ -95,10 +95,13 @@ export class MedicalSuppliesService {
 
 // --- Definiciones de Lógica de Negocio ---
     const ROL_ADMIN_RRHH = 'admin RRHH'; // El valor exacto del rol en el token
+    const ROL_ALMACEN = 'almacen'; // El valor exacto del rol en el token
     const TYPE_ID_UNIFORME = PRODUCT_TYPE_UNIFORMES;          // ID para Uniformes según typesProducts
     // Verificamos si el usuario es el Admin de RRHH
     const IS_RRHH_ADMIN = usersesion.role === ROL_ADMIN_RRHH;
-
+    const IS_ALMACEN = usersesion.role === ROL_ALMACEN;
+console.log("IS_RRHH_ADMIN" , IS_RRHH_ADMIN)
+console.log("IS_ALMACEN" , IS_ALMACEN)
     // Búsqueda por nombre (ilike) si se proporciona
     if (filter.name) {
       whereConditions.push(ilike(productsTable.name, `%${filter.name}%`));
@@ -115,15 +118,18 @@ export class MedicalSuppliesService {
     }
 
     // Condición para excluir statusId = 4 (productos caducados)
+    //visibles los prod. con status: 1=disponibles, 3=Proximo a vencerse
+    //ocultos los prod. con status: 2=No Disponible, 4=Caducado
     whereConditions.push(or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ));
 
-// 🚀 Lógica de Uniformes: Si NO es Admin RRHH, ocultar uniformes (type = 2)
-    if (!IS_RRHH_ADMIN) {
-        // Excluimos los uniformes (type != 2)
+    // Lógica de Uniformes: Solo Admin RRHH o Almacén pueden verlos
+    // Se añade la restricción (excluir uniformes) SÓLO si el usuario NO es NINGUNO de los dos.
+    if (!(IS_RRHH_ADMIN || IS_ALMACEN)) {
+        // Excluimos los uniformes (type != TYPE_ID_UNIFORME)
         whereConditions.push(ne(productsTable.type, TYPE_ID_UNIFORME));
     } 
-    // Si es Admin RRhH, NO se añade ninguna condición de 'type', 
-    // permitiendo que se muestren todos los tipos (incluyendo el 2).
+    // Si es Admin RRhH O Almacén, la condición es falsa, NO se añade la restricción,
+    // y la consulta mostrará todos los tipos de productos (incluyendo Uniformes).
 
     // Condición de búsqueda combinada (si hay alguna)
     const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
