@@ -94,12 +94,15 @@ export class MedicalSuppliesService {
     const whereConditions = [];
 
 // --- Definiciones de Lógica de Negocio ---
+    const ROL_ADMIN = 'admin'; // El valor exacto del rol en el token
     const ROL_ADMIN_RRHH = 'admin RRHH'; // El valor exacto del rol en el token
     const ROL_ALMACEN = 'almacen'; // El valor exacto del rol en el token
     const TYPE_ID_UNIFORME = PRODUCT_TYPE_UNIFORMES;          // ID para Uniformes según typesProducts
     // Verificamos si el usuario es el Admin de RRHH
+    const IS_ADMIN = usersesion.role === ROL_ADMIN;
     const IS_RRHH_ADMIN = usersesion.role === ROL_ADMIN_RRHH;
     const IS_ALMACEN = usersesion.role === ROL_ALMACEN;
+console.log("IS_ADMIN" , IS_ADMIN)
 console.log("IS_RRHH_ADMIN" , IS_RRHH_ADMIN)
 console.log("IS_ALMACEN" , IS_ALMACEN)
     // Búsqueda por nombre (ilike) si se proporciona
@@ -123,8 +126,8 @@ console.log("IS_ALMACEN" , IS_ALMACEN)
     whereConditions.push(or( eq(productsTable.statusId, 1) , eq(productsTable.statusId, 3) ));
 
     // Lógica de Uniformes: Solo Admin RRHH o Almacén pueden verlos
-    // Se añade la restricción (excluir uniformes) SÓLO si el usuario NO es NINGUNO de los dos.
-    if (!(IS_RRHH_ADMIN || IS_ALMACEN)) {
+    // Se añade la restricción (excluir uniformes) SÓLO si el usuario NO es NINGUNO de estos roles.
+    if (!( IS_ADMIN || IS_RRHH_ADMIN || IS_ALMACEN)) {
         // Excluimos los uniformes (type != TYPE_ID_UNIFORME)
         whereConditions.push(ne(productsTable.type, TYPE_ID_UNIFORME));
     } 
