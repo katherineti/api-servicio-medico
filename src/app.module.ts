@@ -24,6 +24,7 @@ import { MedicalReportsModule } from './medical-reports/medical-reports.module';
 import { PatientsModule } from './patients/patients.module';
 import { MedicalPrescriptionsModule } from './medical-prescriptions/medical-prescriptions.module';
 import { ExcelExportModule } from './excel/excel-export.module';
+import { DbBackupModule } from './db-backup/db-backup.module';
 
 @Module({
   imports: [
@@ -50,7 +51,9 @@ import { ExcelExportModule } from './excel/excel-export.module';
     MedicalReportsModule,
     PatientsModule,
     MedicalPrescriptionsModule,
-    ExcelExportModule
+    //Exportacion de datos:
+    ExcelExportModule,
+    DbBackupModule
   ],
   // controllers: [AppController],
   controllers: [],
