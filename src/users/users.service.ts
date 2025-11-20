@@ -104,7 +104,7 @@ export class UsersService {
     const User = await this.getUserbyId(id);
 
     if (!User) {
-      throw new NotFoundException('La usuario no existe');
+      throw new NotFoundException('El usuario no existe');
     }
     
     const updateData: Partial<User> = {
@@ -308,5 +308,13 @@ export class UsersService {
     return result || { count: 0 };
   }
 
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
+    const updatedUser= await this.db
+      .update(usersTable)
+      .set({ password: hashedPassword })
+      .where(eq(usersTable.id, userId));
+
+    return updatedUser[0];
+  }
   
 }

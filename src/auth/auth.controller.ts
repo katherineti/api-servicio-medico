@@ -5,6 +5,9 @@ import { Public } from 'src/decorators/public.decorator';
 import { SignupDto } from './dto/signup.dto';
 import { Usersesion } from './strategies/usersesion.decorator';
 import { IJwtPayload } from './dto/jwt-payload.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -47,4 +50,32 @@ export class AuthController {
     async refreshToken(@Usersesion() user: IJwtPayload): Promise<{ token: string }> {
       return this.authService.refreshAccessToken(user);
     }
+
+/*   @Post('change-password')
+  @UsePipes(ValidationPipe)
+  async changePassword(
+    @Usersesion() user: IJwtPayload,
+    @Body() changePasswordDto: ChangePasswordDto
+  ): Promise<{ ok: boolean; message: string }> {
+    return this.authService.changePassword(user.sub, changePasswordDto);
+  } */
+
+  @Public()
+  @Post('forgot-password')
+  @UsePipes(ValidationPipe)
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto
+  ): Promise<{ ok: boolean; message: string; token?: string }> {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @UsePipes(ValidationPipe)
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto
+  ): Promise<{ ok: boolean; message: string }> {
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+
 }
