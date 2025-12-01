@@ -10,6 +10,7 @@ import { LogsService } from 'src/logs/logs.service';
 import { IcustomerAccessPoint } from 'src/logs/interfaces/logs.interface';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,8 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private logsService: LogsService
+    private logsService: LogsService,
+    private emailService: EmailService
   ) {}
 
     async signIn(email:string, password: string, customerAccessPoint: IcustomerAccessPoint): Promise<{ token: string }> {
@@ -165,124 +167,116 @@ async changePassword(
   }
 
 //restablecimiento de contraseña - no logueado
-
   private generateResetToken(): string {
-    const crypto = require('crypto');
-    return crypto.randomBytes(32).toString('hex');
+    const crypto = require("crypto")
+    return crypto.randomBytes(32).toString("hex")
   }
 
-  async forgotPassword(email: string): Promise<{ 
-    ok: boolean; 
-    message: string; 
-    token?: string; // Solo para desarrollo, en producción se enviaría por email
+  async forgotPassword(email: string): Promise<{
+    ok: boolean
+    message: string
+    token?: string // Solo para desarrollo, en producción se enviaría por email
   }> {
-    const user = await this.usersService.findOnByEmail(email);
+    const user = await this.usersService.findOnByEmail(email)
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
 
-    // Por seguridad, no revelar si el email existe o no
-    return {
-      ok: true,
-      message: 'Si el correo existe, recibirás un enlace de restablecimiento',
-    };
-    
+    if (!user || user.isActivate === false) {
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    if (user.isActivate === false) {
+      // Por seguridad, no revelar si el email existe o no
       return {
         ok: true,
-        message: 'Si el correo existe, recibirás un enlace de restablecimiento',
-      };
+        message: "Si el correo existe, recibirás un enlace de restablecimiento",
+      }
     }
 
     // Generar token único
-    const resetToken = this.generateResetToken();
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // Token válido por 1 hora
+    const resetToken = this.generateResetToken()
+    const expiresAt = new Date()
+    expiresAt.setHours(expiresAt.getHours() + 1) // Token válido por 1 hora
 
     // Guardar el token con su expiración
     this.resetTokens.set(resetToken, {
       userId: user.id,
       expiresAt,
-    });
+    })
 
-    Logger.debug(`Token de restablecimiento generado para usuario: ${user.email}`);
+    Logger.debug(`Token de restablecimiento generado para usuario: ${user.email}`)
 
-    // TODO: En producción, enviar el token por email al usuario
-    // await this.emailService.sendResetPasswordEmail(user.email, resetToken);
+    await this.emailService.sendResetPasswordEmail(user.email, resetToken)
 
-    // Por ahora, retornamos el token (solo para desarrollo)
+    // Retornamos mensaje de éxito (sin el token en producción)
     return {
       ok: true,
-      message: 'Si el correo existe, recibirás un enlace de restablecimiento',
-      token: resetToken, // Eliminar esto en producción
-    };
+      message: "Si el correo existe, recibirás un enlace de restablecimiento",
+      // token: resetToken, // Comentado para producción, descomentar solo si es necesario para pruebas manuales sin email
+    }
   }
 
-  async resetPassword(
-    resetPasswordDto: ResetPasswordDto
-  ): Promise<{ ok: boolean; message: string }> {
-    const { token, newPassword, confirmPassword } = resetPasswordDto;
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ ok: boolean; message: string }> {
+    const { token, newPassword, confirmPassword } = resetPasswordDto
 
     // Validar que las contraseñas coincidan
     if (newPassword !== confirmPassword) {
-      throw new UnauthorizedException('Las contraseñas no coinciden');
+      throw new UnauthorizedException("Las contraseñas no coinciden")
     }
 
     // Verificar si el token existe
-    const resetData = this.resetTokens.get(token);
+    const resetData = this.resetTokens.get(token)
 
     if (!resetData) {
-      throw new UnauthorizedException('Token inválido o expirado');
+      throw new UnauthorizedException("Token inválido o expirado")
     }
 
     // Verificar si el token ha expirado
     if (new Date() > resetData.expiresAt) {
-      this.resetTokens.delete(token);
-      throw new UnauthorizedException('Token expirado');
+      this.resetTokens.delete(token)
+      throw new UnauthorizedException("Token expirado")
     }
 
     // Obtener el usuario
-    const user = await this.usersService.getUserbyId(resetData.userId);
+    const user = await this.usersService.getUserbyId(resetData.userId)
 
     if (!user || user.isActivate === false) {
-      this.resetTokens.delete(token);
-      throw new NotFoundException('Usuario no encontrado o inactivo');
+      this.resetTokens.delete(token)
+      throw new NotFoundException("Usuario no encontrado o inactivo")
     }
 
     // Verificar que la nueva contraseña sea diferente a la actual
     const isSamePassword = await argon2.verify(
       (await this.usersService.findOnByEmail(user.email)).password,
-      newPassword
-    );
+      newPassword,
+    )
 
     if (isSamePassword) {
-      throw new UnauthorizedException('La nueva contraseña debe ser diferente a la actual');
+      throw new UnauthorizedException("La nueva contraseña debe ser diferente a la actual")
     }
 
     // Hash de la nueva contraseña
-    const hashedPassword = await argon2.hash(newPassword);
+    const hashedPassword = await argon2.hash(newPassword)
 
     // Actualizar la contraseña
-    await this.usersService.updateUserPassword(resetData.userId, hashedPassword);
+    await this.usersService.updateUserPassword(resetData.userId, hashedPassword)
 
     // Eliminar el token usado
-    this.resetTokens.delete(token);
+    this.resetTokens.delete(token)
 
-    Logger.debug(`Contraseña restablecida exitosamente para usuario ID: ${resetData.userId}`);
+    Logger.debug(`Contraseña restablecida exitosamente para usuario ID: ${resetData.userId}`)
 
     return {
       ok: true,
-      message: 'Contraseña restablecida exitosamente',
-    };
+      message: "Contraseña restablecida exitosamente",
+    }
   }
 
   cleanupExpiredTokens(): void {
-    const now = new Date();
+    const now = new Date()
     for (const [token, data] of this.resetTokens.entries()) {
       if (now > data.expiresAt) {
-        this.resetTokens.delete(token);
+        this.resetTokens.delete(token)
       }
     }
   }

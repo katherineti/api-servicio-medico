@@ -8,12 +8,14 @@ import { jwtConstants } from 'src/constants';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PassportModule } from '@nestjs/passport';
 import { LogsModule } from 'src/logs/logs.module';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [
     DrizzleDbConecctionModule,
     forwardRef(() => UsersModule),
     LogsModule,
+    EmailModule,
     PassportModule.register({
       defaultStrategy: 'jwt',
     }),
