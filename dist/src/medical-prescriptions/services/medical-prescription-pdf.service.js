@@ -1,0 +1,546 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var RecipePdfService_1;
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RecipePdfService = void 0;
+const common_1 = require("@nestjs/common");
+const puppeteer = __importStar(require("puppeteer"));
+const constants_1 = require("../../constants");
+let RecipePdfService = RecipePdfService_1 = class RecipePdfService {
+    constructor() {
+        this.logger = new common_1.Logger(RecipePdfService_1.name);
+    }
+    async generateRecipePdf(data) {
+        let browser;
+        try {
+            browser = await puppeteer.launch({
+                headless: true,
+                args: ["--no-sandbox", "--disable-setuid-sandbox"],
+            });
+            const page = await browser.newPage();
+            await page.setViewport({ width: 1123, height: 794 });
+            const html = this.generateHtmlTemplate(data);
+            await page.setContent(html, {
+                waitUntil: "networkidle0",
+                timeout: 30000,
+            });
+            const pdf = await page.pdf({
+                format: "A4",
+                landscape: true,
+                printBackground: true,
+                margin: {
+                    top: "10mm",
+                    right: "10mm",
+                    bottom: "10mm",
+                    left: "10mm",
+                },
+            });
+            return Buffer.from(pdf);
+        }
+        catch (error) {
+            this.logger.error("Error generating recipe PDF:", error);
+            throw new Error("Failed to generate recipe PDF");
+        }
+        finally {
+            if (browser) {
+                await browser.close();
+            }
+        }
+    }
+    generateHtmlTemplate(data) {
+        let patientBirthYear = '';
+        if (data.patientBirthdate) {
+            patientBirthYear = data.patientBirthdate.split('-')[0];
+        }
+        return `
+  <!DOCTYPE html>
+  <html>
+
+  <html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Receta Médica - CIIP</title>
+
+    <style>
+      * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1.3;
+    color: #000;
+    background: white;
+  }
+
+  .page {
+    width: 297mm;
+  //   min-height: 210mm;
+    min-height: 100%;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    background: white;
+  }
+
+  .section {
+    width: 50%;
+    height: 100%;
+  //   padding: 10mm;
+    padding: 5mm 5mm 5mm 5mm; /* Modificado: 5mm arriba, 5mm derecha, 10mm abajo, 5mm izquierda */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0px;
+  }
+
+  .cintillo-cip{
+    width: 100%;
+  }
+
+  .section:first-child {
+    border-right: 1px solid #000;
+  }
+
+  .header {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+
+  .header h1 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+
+  .header .address {
+    font-size: 10px;
+    margin-bottom: 3px;
+  }
+
+  .header .rif {
+    font-size: 10px;
+    font-weight: bold;
+  //   margin-bottom: 15px;
+  }
+
+  .form-fields {
+    margin-bottom: 20px;
+  }
+
+  .field-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .field-row.single {
+    justify-content: flex-start;
+  }
+
+  .field {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .field label {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .field .line {
+    border-bottom: 1px solid #000;
+    min-width: 120px;
+    height: 16px;
+    display: inline-block;
+    padding: 0 3px;
+    font-size: 10px;
+  }
+
+  /* .content-area {
+    flex-grow: 1;
+    margin-bottom: 20px;
+  } */
+
+  .content-area {
+      /* flex-grow: 1;  */
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+  }
+
+  .content-title {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
+
+  .content-box {
+    border: 1px solid #000;
+    /* min-height: 200px; */
+    padding: 10px;
+    font-size: 11px;
+    /* white-space: pre-wrap; */
+  }
+  .content-recipe {
+    border: 1px solid #ffffff;
+    min-height: 240px;
+    /* padding: 10px; */
+    /* font-size: 11px; */
+    white-space: pre-wrap;
+    width:100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
+  .width-indicaciones{
+    height: 350px; 
+  }
+
+  .bottom-section {
+    margin-top: auto;
+  }
+
+  .seal-and-doctor {
+    margin-bottom: 15px;  display: flex; flex-direction: column;
+  }
+
+  .seal-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    align-self: flex-end; 
+  }
+
+  .seal-box {
+    border: 1px solid #000;
+    width: 80px;
+    height: 40px;
+    display: inline-block;
+  }
+
+  .doctor-info h4 {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .doctor-name {
+    margin-bottom: 8px;
+  }
+
+  .doctor-name .line {
+    min-width: 250px;
+    max-width: 400px;
+  }
+
+  .doctor-details {
+      display: flex;
+      justify-content: space-between; /* Distribuye los elementos uniformemente */
+      align-items: center; /* Alinea los elementos verticalmente en el centro */
+  }
+
+  .doctor-details .field .line {
+    min-width: 80px;
+  }
+
+  .patient-info {
+    /* border-top: 1px solid #ccc;
+              padding-top: 15px; */
+  }
+
+  .patient-info h4 {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .patient-name {
+    margin-bottom: 8px;
+  }
+
+  .patient-name .line {
+    min-width: 250px;
+    max-width: 400px;
+  }
+
+  .patient-details {
+    display: flex;
+    gap: 30px;
+  }
+
+  /*         .code {
+              position: absolute;
+              bottom: 15mm;
+              right: 15mm;
+              font-size: 10px;
+              font-weight: bold;
+          } */
+  .code {
+    font-size: 10px;
+    font-weight: bold;
+  }
+
+  @media print {
+    .page {
+      margin: 0;
+      padding: 0;
+    }
+  }
+
+    </style>
+
+    
+  </head>
+  <body>
+    <div class="page">
+          <!-- RECIPE Section (Left) -->
+          <div class="section">
+          
+          <img src="${constants_1.API_URL}uploads/${constants_1.membreteCIIP}" class="cintillo-cip" alt="Logo CIIP">
+
+              <div class="header">
+                  <h1>SERVICIO MÉDICO DEL CIIP</h1>
+                  <div class="address">Av. Venezuela, Municipio Chacao, Urb. El Rosal, Torre Épsilon, Caracas - Venezuela</div>
+                  <div class="rif">RIF: G-20016252-0</div>
+              </div>
+              
+              <div class="form-fields">
+                  <div class="field-row">
+                      <div class="field">
+                          <label>Lugar:</label>
+                          <span class="line">${this.toSentenceCase(data.place) || ""}</span>
+                      </div>
+                      <div class="field">
+                          <label>Fecha de Emisión:</label>
+                          <span class="line">${data.createdAt || ""}</span>
+                      </div>
+                  </div>
+                  
+                  <div class="field-row single">
+                      <div class="field">
+                          <label>Fecha de Expiración:</label>
+                          <span class="line">${data.expirationDate || ""}</span>
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="content-area">
+
+                  <div>
+                      <div class="content-box">
+                        <div class="content-title">RECIPE:</div>
+
+                        <div class="content-recipe">${this.toSentenceCase(data.recipeContent) || ""}</div>
+
+                        <div class="bottom-section">
+                          <div class="seal-and-doctor">
+
+                                <div class="seal-row">
+                                    <div class="field">
+                                        <label>Sello:</label>
+                                        <span class="line"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="doctor-info">
+                                    <h4>Datos del Médico:</h4>
+                                    <div class="doctor-name">
+                                        <div class="field">
+                                            <label>Nombre y Apellido:</label>
+                                            <span class="line">${this.toTitleCase(data.doctorName) || ""}</span>
+                                        </div>
+                                    </div>
+                          <div class="doctor-details">
+                              <div class="field">
+                                  <label>Nº C. I:</label>
+                                  <span class="line">${data.doctorCedula || ""}</span>
+                              </div>
+                              <div class="field">
+                                  <label>M.P.P.S.:</label>
+                                  <span class="line">${this.toTitleCase(data.mpps) || ""}</span>
+                              </div>
+                              <div class="field">
+                                  <label>Firma:</label>
+                                  <span class="line"></span>
+                              </div>
+                          </div>
+                                </div>
+                            </div>
+                        </div>    
+                      </div>
+                  </div>
+                  <!-- </div> -->
+              </div>
+              
+              <div class=" content-box" style="margin-top: 0;">
+                  <div class="patient-info">
+                      <h4>Datos del Paciente:</h4>
+                      <div class="patient-name">
+                          <div class="field">
+                              <label>Nombre y Apellido:</label>
+                              <span class="line">${this.toTitleCase(data.patientName) || ""}</span>
+                          </div>
+                      </div>
+                      <div class="patient-details">
+                          <div class="field">
+                              <label>Nº C. I:</label>
+                              <span class="line">${data.patientCedula || ""}</span>
+                          </div>
+                          <div class="field">
+                              <label>Año de Nacimiento:</label>
+                            <!--  <span class="line">${data.patientBirthdate || ""}</span> -->
+                              <span class="line">${patientBirthYear || ""}</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="code">GGH-310414-RP-006</div>
+          </div>
+          
+          <!-- INDICACIONES Section (Right) -->
+          <div class="section">
+              <img src="${constants_1.API_URL}uploads/${constants_1.membreteCIIP}" class="cintillo-cip" alt="Logo CIIP">
+
+              <div class="header">
+                  <h1>SERVICIO MÉDICO DEL CIIP</h1>
+                  <div class="address">Av. Venezuela, Municipio Chacao, Urb. El Rosal, Torre Épsilon, Caracas - Venezuela</div>
+                  <div class="rif">RIF: G-20016252-0</div>
+              </div>
+              
+              <div class="form-fields">
+                  <div class="field-row">
+                      <div class="field">
+                          <label>Lugar:</label>
+                          <span class="line">${this.toSentenceCase(data.place) || ""}</span>
+                      </div>
+                      <div class="field">
+                          <label>Fecha de Emisión:</label>
+                          <span class="line">${data.createdAt || ""}</span>
+                      </div>
+                  </div>
+                  
+                  <div class="field-row single">
+                      <div class="field">
+                          <label>Fecha de Expiración:</label>
+                          <span class="line">${data.expirationDate || ""}</span>
+                      </div>
+                  </div>
+              </div>
+
+              <div class="content-area">
+                <div class="content-box">
+                  <div class="content-title">INDICACIONES:</div>
+                  <div class="content-recipe width-indicaciones">${this.toSentenceCase(data.indications) || ""}</div>
+                </div>
+              </div>
+              
+            
+              <div class=" content-box"  style="margin-top: 0;">
+                  <div class="patient-info">
+                      <h4>Datos del Paciente:</h4>
+                      <div class="patient-name">
+                          <div class="field">
+                              <label>Nombre y Apellido:</label>
+                              <span class="line">${this.toTitleCase(data.patientName) || ""}</span>
+                          </div>
+                      </div>
+                      <div class="patient-details">
+                          <div class="field">
+                              <label>Nº C. I:</label>
+                              <span class="line">${data.patientCedula || ""}</span>
+                          </div>
+                          <div class="field">
+                              <label>Año de Nacimiento:</label>
+                              <span class="line">${patientBirthYear || ""}</span>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+              
+              <div class="code">GGH-310414-IR-007</div>
+          </div>
+      </div>
+
+    <script>
+      
+    </script>
+  </body>
+  </html>
+  `;
+    }
+    toTitleCase(str) {
+        if (!str) {
+            return '';
+        }
+        return str
+            .toLowerCase()
+            .split(' ')
+            .map(word => {
+            if (word.length === 0) {
+                return '';
+            }
+            return word.charAt(0).toUpperCase() + word.slice(1);
+        })
+            .join(' ');
+    }
+    toSentenceCase(str) {
+        if (!str) {
+            return '';
+        }
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+};
+exports.RecipePdfService = RecipePdfService;
+exports.RecipePdfService = RecipePdfService = RecipePdfService_1 = __decorate([
+    (0, common_1.Injectable)()
+], RecipePdfService);
+//# sourceMappingURL=medical-prescription-pdf.service.js.map
