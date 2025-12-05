@@ -1,6 +1,5 @@
 import 'dotenv/config';
 
-export const PORT_API = 3000;
 export const API_URL= 'http://localhost:3000/'
 export const PG_CONNECTION = 'PG_CONNECTION';
 export const JWTSecret = process.env.JWT_SECRET;

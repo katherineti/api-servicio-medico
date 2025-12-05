@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.membreteCIIP = exports.jwtConstants = exports.REPORT_STATUS_COPIA_EDITADA = exports.REPORT_STATUS_INHABILITADO = exports.REPORT_STATUS_DUPLICADO = exports.REPORT_STATUS_ENPROCESO = exports.REPORT_STATUS_FINALIZADO = exports.PRODUCT_TYPE_UNIFORMES = exports.PRODUCT_STATUS_CADUCADO = exports.PRODUCT_STATUS_PROX_A_VENCERSE = exports.PRODUCT_STATUS_INACTIVO = exports.PRODUCT_STATUS_ACTIVO = exports.JWTSecret = exports.PG_CONNECTION = exports.API_URL = exports.PORT_API = void 0;
+exports.membreteCIIP = exports.jwtConstants = exports.REPORT_STATUS_COPIA_EDITADA = exports.REPORT_STATUS_INHABILITADO = exports.REPORT_STATUS_DUPLICADO = exports.REPORT_STATUS_ENPROCESO = exports.REPORT_STATUS_FINALIZADO = exports.PRODUCT_TYPE_UNIFORMES = exports.PRODUCT_STATUS_CADUCADO = exports.PRODUCT_STATUS_PROX_A_VENCERSE = exports.PRODUCT_STATUS_INACTIVO = exports.PRODUCT_STATUS_ACTIVO = exports.JWTSecret = exports.PG_CONNECTION = exports.API_URL = void 0;
 require("dotenv/config");
-exports.PORT_API = 3000;
 exports.API_URL = 'http://localhost:3000/';
 exports.PG_CONNECTION = 'PG_CONNECTION';
 exports.JWTSecret = process.env.JWT_SECRET;
