@@ -5,10 +5,10 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-  "scripts": {
-    "build": "npx nest build",
+"scripts": {
+    "build": "nest build", 
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node --max-old-space-size=512 dist/src/main.js",
+    "start": "node --max-old-space-size=512 dist/src/main.js", 
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main.js",

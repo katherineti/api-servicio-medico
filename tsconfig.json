@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "declaration": true,
+    "declaration": false,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -10,6 +10,9 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {      // <--- AÑADE ESTA SECCIÓN
+      "@/*": ["./*"] // <--- Esto mapea '@/' a la raíz del proyecto './'
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
