@@ -1,14 +1,14 @@
 {
   "name": "api-servicio-medico",
-  "version": "3.0.0",
+  "version": "0.0.1",
   "description": "",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
-"scripts": {
-    "build": "./node_modules/.bin/nest build", 
+  "scripts": {
+    "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node --max-old-space-size=512 dist/src/main.js", 
+    "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/src/main.js",
