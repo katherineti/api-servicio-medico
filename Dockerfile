@@ -1,9 +1,9 @@
 # --- FASE 1: BUILD (Compilación) ---
-# Se mantiene 'alpine' para la compilación, que funciona con 'apk add' para canvas.
 FROM node:20-alpine AS builder
 
-# CRÍTICO: Instalar dependencias de compilación para librerías nativas (como 'canvas' y 'sharp').
-RUN apk add --no-cache build-base g++ python3
+# CRÍTICO: Instalar dependencias de compilación completas.
+# Se añade pkgconfig y las librerías -dev necesarias para compilar 'canvas', 'sharp' y 'puppeteer'.
+RUN apk add --no-cache build-base g++ python3 pkgconfig cairo-dev jpeg-dev pango-dev giflib-dev
 
 # Establecemos el directorio de trabajo dentro del contenedor
 WORKDIR /app
@@ -14,17 +14,17 @@ COPY package*.json ./
 # Instalamos las dependencias
 RUN npm install
 
-# Copiamos el resto de los archivos del proyecto (Corregido el estilo para dockerfile-utils)
+# Copiamos el resto de los archivos del proyecto (Sintaxis corregida)
 COPY . /app/
 
-# Ejecutamos la compilación de NestJS (generará la carpeta 'dist')
+# Ejecutamos la compilación de NestJS
 RUN npm run build
 
 # --- FASE 2: PRODUCTION (Producción / Ejecución) ---
-# Usamos 'slim' (Debian) como probaste.
+# Usamos 'slim' como probaste.
 FROM node:20-slim AS production
 
-# CRÍTICO: Aplica parches de seguridad para eliminar vulnerabilidades de la imagen base.
+# CRÍTICO: Aplica parches de seguridad para eliminar vulnerabilidades de la imagen base (Debian).
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
 
 # Establecemos el directorio de trabajo
@@ -35,7 +35,7 @@ COPY package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 
-# Expone el puerto en el que escucha tu aplicación (Puerto Back4App: 3000)
+# Expone el puerto en el que escucha tu aplicación
 EXPOSE 3000
 
 # Define la variable de entorno para el modo de producción
