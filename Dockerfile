@@ -10,13 +10,13 @@ COPY package*.json ./
 RUN npm install
 
 # Copiamos el resto de los archivos del proyecto
-COPY . /app [cite: 2]
+COPY . /app/
 
 # Ejecutamos la compilación de NestJS (generará la carpeta 'dist')
 RUN npm run build
 
 # --- FASE 2: PRODUCTION (Producción / Ejecución) ---
-FROM node:20-alpine AS production
+FROM node:20-slim AS production
 
 WORKDIR /app
 
