@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
-import { AppService } from './app.service';
- 
+import {Controller, Get } from '@nestjs/common';
+import { Public } from './decorators/public.decorator';
+
 @Controller()
 export class AppController {
 
   constructor() {}
-
+  @Public()
   @Get()
   getHello(): string {
     return 'API Servicio Médico está funcionando correctamente.'; 
