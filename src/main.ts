@@ -17,8 +17,11 @@ async function bootstrap() {
   if (multerConfig?.storage?.options?.destination) {
     console.log(`[NestApp] Configuración de Multer: los archivos se guardarán en ${multerConfig.storage.options.destination}`);
   }
-  
-  await app.listen(process.env.PORT || 3000); 
-  console.log(`escuchando en el puerto ${process.env.PORT || 3000}`)
+
+// AHORA: Escucha en 0.0.0.0 (todas las interfaces) para ser accesible desde Docker.
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0'); 
+  console.log(`escuchando en el puerto ${port}`)
+
 }
 bootstrap();
