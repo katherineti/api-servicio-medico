@@ -4,16 +4,11 @@ import { AppService } from './app.service';
 @Controller()
 export class AppController {
 
-  constructor(private readonly appService: AppService) {}
+  constructor() {}
 
   @Get()
-  getHello() {
-    return this.appService.getUsers();
+  getHello(): string {
+    return 'API Servicio Médico está funcionando correctamente.'; 
   }
 
-  @Post()
-  // @Roles(RoleType.Admin)//solo  el admin puede crear usuario.
-  createUser( @Body() createUser: any ) {
-    return this.appService.createUser(createUser);
-  }
 }
